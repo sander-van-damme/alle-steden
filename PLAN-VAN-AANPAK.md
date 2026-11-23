@@ -2,7 +2,7 @@
 
 ## 1. Concept en ambitie
 
-**Alle Steden** is een persoonlijk ontdekkingsproject met als doel **alle Belgische plaatsen met de officiële status van stad** te bezoeken, bij voorkeur met de trein of het openbaar vervoer, en daarbij echt te ontdekken wat ze bijzonder maakt.
+**Alle Steden** is een persoonlijk ontdekkingsproject met als doel **alle Belgische plaatsen met de officiële status van stad** te bezoeken, bij voorkeur met de fiets (met ruimte voor uitzonderingen), en daarbij echt te ontdekken wat ze bijzonder maakt.
 
 Het doel is niet om zo snel mogelijk steden af te vinken. Een bezoek is vooral interessant wanneer we:
 
