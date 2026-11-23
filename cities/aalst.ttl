@@ -1,0 +1,23 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q13121 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden> .
+
+wd:Q13121 a schema:City ;
+    schema:name "Aalst"@nl, "Alost"@fr ;
+    wdt:P1567 "41002" ;
+    schema:containedInPlace wd:Q1114, wd:Q9337 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.938333333 ;
+        schema:longitude 4.039166666
+    ] .
+
+wd:Q2710193 a schema:EventSeries ;
+    schema:name "Aalst Carnaval"@nl ;
+    schema:description "Driedaags volksfeest met carnavalsstoeten, de Ajuinworp en de popverbranding."@nl ;
+    schema:location wd:Q13121 ;
+    schema:url <https://aalst.be/cultuur-sport-en-vrije-tijd/evenementen-en-activiteiten/evenementen/carnaval-in-aalst> .

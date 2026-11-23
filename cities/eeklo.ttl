@@ -1,0 +1,17 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q12440 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden> .
+
+wd:Q12440 a schema:City ;
+    schema:name "Eeklo"@nl ;
+    wdt:P1567 "43005" ;
+    schema:containedInPlace wd:Q1114, wd:Q9337 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 51.1858 ;
+        schema:longitude 3.5639
+    ] .

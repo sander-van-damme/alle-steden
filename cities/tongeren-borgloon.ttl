@@ -1,0 +1,30 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q125378487 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden>,
+        <https://www.vlaanderen.be/vlaamse-regering/beslissingen-van-de-vlaamse-regering/bekrachtiging-en-afkondiging-decreet-vrijwillige-samenvoeging-van-gemeenten-borgloon-en-tongeren> .
+
+wd:Q125378487 a schema:City ;
+    schema:name "Tongeren-Borgloon"@nl ;
+    wdt:P1567 "73111" ;
+    schema:containedInPlace wd:Q1095, wd:Q9337 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.793744704 ;
+        schema:longitude 5.404460843
+    ] .
+
+wd:Q1492516 a schema:Museum ;
+    schema:name "Gallo-Romeins Museum"@nl ;
+    schema:description "Archeologisch museum in Tongeren over het verleden van de streek."@nl ;
+    schema:containedInPlace wd:Q125378487 ;
+    schema:url <https://galloromeinsmuseum.be/> .
+
+wd:Q18655304 a schema:TouristAttraction ;
+    schema:name "Reading Between the Lines"@en ;
+    schema:alternateName "Doorkijkkerk"@nl ;
+    schema:description "Openluchtkunstwerk van Gijs Van Vaerenbergh bij Borgloon, in de vorm van een kerk."@nl ;
+    schema:containedInPlace wd:Q125378487 .

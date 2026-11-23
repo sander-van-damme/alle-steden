@@ -1,0 +1,18 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q34021 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden>,
+        <https://etaamb.openjustice.be/fr/decret-du-19-mai-2023_n2023203212> .
+
+wd:Q34021 a schema:City ;
+    schema:name "Bastenaken"@nl, "Bastogne"@fr ;
+    wdt:P1567 "82039" ;
+    schema:containedInPlace wd:Q1126, wd:Q231 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.004166666 ;
+        schema:longitude 5.72
+    ] .

@@ -1,0 +1,17 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q275863 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden> .
+
+wd:Q275863 a schema:City ;
+    schema:name "Bree"@nl, "Brée"@fr ;
+    wdt:P1567 "72004" ;
+    schema:containedInPlace wd:Q1095, wd:Q9337 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 51.133333333 ;
+        schema:longitude 5.583333333
+    ] .

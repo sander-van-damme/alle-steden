@@ -1,0 +1,23 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q12994 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden> .
+
+wd:Q12994 a schema:City ;
+    schema:name "Brugge"@nl, "Bruges"@fr ;
+    wdt:P1567 "31005" ;
+    schema:containedInPlace wd:Q1113, wd:Q9337 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 51.208888888 ;
+        schema:longitude 3.224166666
+    ] .
+
+wd:Q2441211 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Belfort van Brugge"@nl ;
+    schema:description "De middeleeuwse stadstoren aan de Markt, met een beiaard en uitzicht over Brugge."@nl ;
+    schema:containedInPlace wd:Q12994 ;
+    schema:url <https://www.visitbruges.be/nl/wat-te-doen/cultuur-en-erfgoed/belfort> .

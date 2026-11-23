@@ -1,0 +1,17 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q383723 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden> .
+
+wd:Q383723 a schema:City ;
+    schema:name "Herentals"@nl ;
+    wdt:P1567 "13011" ;
+    schema:containedInPlace wd:Q1116, wd:Q9337 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 51.176666666 ;
+        schema:longitude 4.836388888
+    ] .

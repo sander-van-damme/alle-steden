@@ -1,0 +1,17 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q462985 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden> .
+
+wd:Q462985 a schema:City ;
+    schema:name "Zinnik"@nl, "Soignies"@fr ;
+    wdt:P1567 "55040" ;
+    schema:containedInPlace wd:Q1129, wd:Q231 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.566666666 ;
+        schema:longitude 4.066666666
+    ] .

@@ -1,0 +1,18 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q239 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden> .
+
+wd:Q239 a schema:City ;
+    schema:name "Brussel"@nl, "Bruxelles"@fr ;
+    schema:alternateName "Stad Brussel"@nl, "Ville de Bruxelles"@fr ;
+    wdt:P1567 "21004" ;
+    schema:containedInPlace wd:Q240 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.846666666 ;
+        schema:longitude 4.351666666
+    ] .

@@ -1,0 +1,17 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q506739 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden> .
+
+wd:Q506739 a schema:City ;
+    schema:name "Limburg"@nl, "Limbourg"@fr ;
+    wdt:P1567 "63046" ;
+    schema:containedInPlace wd:Q1127, wd:Q231 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.6122 ;
+        schema:longitude 5.9403
+    ] .

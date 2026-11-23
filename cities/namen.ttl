@@ -1,0 +1,17 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q134121 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden> .
+
+wd:Q134121 a schema:City ;
+    schema:name "Namen"@nl, "Namur"@fr ;
+    wdt:P1567 "92094" ;
+    schema:containedInPlace wd:Q1125, wd:Q231 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.466666666 ;
+        schema:longitude 4.866666666
+    ] .

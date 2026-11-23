@@ -1,0 +1,17 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q314922 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden> .
+
+wd:Q314922 a schema:City ;
+    schema:name "Fleurus"@fr ;
+    wdt:P1567 "52021" ;
+    schema:containedInPlace wd:Q1129, wd:Q231 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.483333333 ;
+        schema:longitude 4.533333333
+    ] .

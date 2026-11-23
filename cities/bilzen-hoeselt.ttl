@@ -1,0 +1,18 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q125522830 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden>,
+        <https://www.bilzenhoeselt.be/fusie-bilzen-hoeselt> .
+
+wd:Q125522830 a schema:City ;
+    schema:name "Bilzen-Hoeselt"@nl ;
+    wdt:P1567 "73110" ;
+    schema:containedInPlace wd:Q1095, wd:Q9337 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.860545666 ;
+        schema:longitude 5.501570704
+    ] .

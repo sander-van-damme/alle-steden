@@ -1,0 +1,17 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q217216 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden> .
+
+wd:Q217216 a schema:City ;
+    schema:name "Bouillon"@fr ;
+    wdt:P1567 "84010" ;
+    schema:containedInPlace wd:Q1126, wd:Q231 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 49.795555555 ;
+        schema:longitude 5.068055555
+    ] .

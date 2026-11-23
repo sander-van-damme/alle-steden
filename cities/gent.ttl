@@ -1,0 +1,38 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q1296 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden> .
+
+wd:Q1296 a schema:City ;
+    schema:name "Gent"@nl, "Gand"@fr ;
+    wdt:P1567 "44021" ;
+    schema:containedInPlace wd:Q1114, wd:Q9337 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 51.053611111 ;
+        schema:longitude 3.725277777
+    ] .
+
+wd:Q950300 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Gravensteen"@nl ;
+    schema:description "Middeleeuwse burcht van de graven van Vlaanderen in het Gentse stadscentrum."@nl ;
+    schema:containedInPlace wd:Q1296 ;
+    schema:url <https://visit.gent.be/nl/zien-doen/gravensteen> .
+
+wd:Q2425969 a schema:EventSeries ;
+    schema:name "Gentse Feesten"@nl ;
+    schema:description "Jaarlijks stadsfestival met muziek, theater en straatanimatie."@nl ;
+    schema:location wd:Q1296 ;
+    schema:url <https://gentsefeesten.stad.gent/nl> .
+
+<#gentse-feesten-2027> a schema:Festival ;
+    schema:name "Gentse Feesten 2027"@nl ;
+    schema:superEvent wd:Q2425969 ;
+    schema:location wd:Q1296 ;
+    schema:startDate "2027-07-16"^^xsd:date ;
+    schema:endDate "2027-07-25"^^xsd:date ;
+    schema:url <https://gentsefeesten.stad.gent/nl/nieuws/noteer-alvast-gentse-feesten-2027-vinden-plaats-van-16-tot-25-juli> .

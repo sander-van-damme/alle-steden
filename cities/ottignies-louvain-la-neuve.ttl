@@ -1,0 +1,17 @@
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+<> a schema:Dataset ;
+    schema:about wd:Q329642 ;
+    dcterms:source <https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden> .
+
+wd:Q329642 a schema:City ;
+    schema:name "Ottignies-Louvain-la-Neuve"@fr ;
+    wdt:P1567 "25121" ;
+    schema:containedInPlace wd:Q1122, wd:Q231 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.666961111 ;
+        schema:longitude 4.589247222
+    ] .
