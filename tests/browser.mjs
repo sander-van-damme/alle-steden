@@ -2,6 +2,12 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? 'playwright');
+const shell = process.env.PLANNER_HEADLESS_MODULE ? (await import(process.env.PLANNER_HEADLESS_MODULE)).default : null;
+const proxy = process.env.PLANNER_CHROMIUM_PROXY;
+const launch = { headless: true,
+  ...(shell && { executablePath: await shell.executablePath(), args: shell.args.filter(arg => !['--disable-web-security', '--allow-running-insecure-content'].includes(arg)) }),
+  ...(proxy && { proxy: { server: proxy, bypass: 'localhost,127.0.0.1' } }),
+};
 
 const base = 'http://127.0.0.1:4173';
 const server = spawn(process.execPath, ['scripts/preview.mjs'], { stdio: ['ignore', 'pipe', 'inherit'] });
@@ -40,7 +46,7 @@ async function fixture(page, { upstreamFailure = false } = {}) {
 
 try {
   await Promise.race([once(server.stdout, 'data'), once(server, 'exit').then(([code]) => assert.fail('Preview exited: ' + code))]);
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch(launch);
   const desktop = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   pages.push(desktop);
   const errors = [];

@@ -1,3 +1,6 @@
+import { calendarMain, calendarHead } from './calendar-template.mjs';
+import { cityDirectoryMap } from './city-directory-map.mjs';
+
 const repository = 'https://github.com/sander-van-damme/alle-steden';
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -20,7 +23,7 @@ export function layout({ title, main, script = '', active = '' }) {
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span>Alle Steden</a>
-      <nav aria-label="Hoofdnavigatie"><a href="/#steden">Steden</a><a href="/planner/"${active === 'planner' ? ' aria-current="page"' : ''}>Planner</a><a href="${repository}">GitHub ${arrow}</a></nav>
+      <nav aria-label="Hoofdnavigatie"><a href="/#steden"${active === 'cities' ? ' aria-current="page"' : ''}>Steden</a><a href="/kalender/"${active === 'calendar' ? ' aria-current="page"' : ''}>Kalender</a><a href="/planner/"${active === 'planner' ? ' aria-current="page"' : ''}>Planner</a><a href="${repository}">GitHub ${arrow}</a></nav>
     </div>
   </header>
   ${main}
@@ -32,6 +35,10 @@ export function layout({ title, main, script = '', active = '' }) {
 </html>`;
 }
 
+export function calendarPage(catalog) {
+  return layout({ title: 'Kalender · Alle Steden', active: 'calendar', script: calendarHead, main: calendarMain(catalog) });
+}
+
 export function plannerPage(cities) {
   const regions = [...new Set(cities.map((city) => city.region))].sort((a, b) => a.localeCompare(b, 'nl-BE'));
   const citiesByRegion = regions.map((region) => `<optgroup label="${escapeHtml(region)}">${cities
@@ -41,13 +48,13 @@ export function plannerPage(cities) {
   return layout({
     title: 'Fietsplanner · Alle Steden',
     active: 'planner',
-    script: '<link rel="stylesheet" href="/assets/planner.css"><script type="module" src="/assets/planner.js"></script>',
+    script: '<link rel="stylesheet" href="/assets/planner.css"><link rel="stylesheet" href="/assets/planner-route-view.css"><script type="module" src="/assets/planner.js"></script>',
     main: `<main id="inhoud" class="wrap planner">
       <header class="planner-heading">
         <div>
           <p class="eyebrow">Alle Steden · Op de fiets</p>
           <h1>Plan een stadsrit.</h1>
-          <p>Kies een datum of plek, of blader door de komende weekenden. Ontdek welke steden je op één rit kunt combineren.</p>
+          <p>Zoek op datum of in de buurt van een stad. Of bekijk de komende weekenden en ontdek welke stops je op één rit kunt combineren.</p>
         </div>
         <span class="planner-heading-mark" aria-hidden="true">01<span>↗&#xfe0e;</span>02</span>
       </header>
@@ -55,11 +62,11 @@ export function plannerPage(cities) {
         <form id="planner-form" class="planner-panel" aria-labelledby="planner-options-title">
           <h2 id="planner-options-title">Waar begin je?</h2>
           <fieldset class="planner-mode">
-            <legend>Zoeken vanuit</legend>
+            <legend>Hoe wil je zoeken?</legend>
             <div class="planner-mode-options">
-              <label><input type="radio" name="mode" value="date" checked><span>Een datum</span></label>
-              <label><input type="radio" name="mode" value="place"><span>Een plek</span></label>
-              <label><input type="radio" name="mode" value="calendar"><span>Weekenden</span></label>
+              <label><input type="radio" name="mode" value="date" checked><span>Op datum</span></label>
+              <label><input type="radio" name="mode" value="place"><span>Op locatie</span></label>
+              <label><input type="radio" name="mode" value="calendar"><span>Komende weekenden</span></label>
             </div>
           </fieldset>
           <div class="planner-controls" data-mode-date>
@@ -68,18 +75,20 @@ export function plannerPage(cities) {
           </div>
           <p class="planner-hint" id="planner-mode-hint"></p>
           <div class="planner-controls">
-            <label>Vertrekgewest
+            <label>Gewest
               <select name="region" id="planner-region"><option value="">Heel België</option>${regionOptions}</select>
             </label>
-            <label>Vertrekstad
-              <select name="city" id="planner-city"><option value="">Geen vaste vertrekstad</option>${citiesByRegion}</select>
+            <label>In de buurt van
+              <select name="city" id="planner-city"><option value="">Geen voorkeur</option>${citiesByRegion}</select>
             </label>
           </div>
           <div class="planner-controls planner-distance">
-            <label>Max. fietsafstand (km) <input type="number" name="maxKm" value="85" min="15" max="160" step="1" required></label>
-            <label class="planner-check"><input type="checkbox" name="roundtrip"> Terug naar de eerste stad</label>
+            <label class="planner-slider-label" for="planner-max-km"><span>Maximale fietsafstand</span> <output for="planner-max-km" id="planner-distance-output">85 km</output>
+              <input id="planner-max-km" name="maxKm" type="range" min="15" max="160" step="5" value="85" aria-describedby="planner-distance-hint">
+            </label>
+            <label class="planner-check"><input type="checkbox" name="roundtrip"> Lusrondrit</label>
           </div>
-          <p class="planner-hint">Zonder terugrit eindigt de rit in de tweede stad.</p>
+          <p class="planner-hint" id="planner-distance-hint">Een lusrondrit eindigt waar je vertrekt. De heen- en terugweg kunnen overlappen.</p>
           <div class="planner-visit-options">
             <label class="planner-check"><input type="checkbox" name="scheduledOnly" aria-describedby="planner-visit-hint"> Alleen met bevestigde bezoekuren of evenementen</label>
             <p class="planner-hint" id="planner-visit-hint">Standaard tellen ook korte buitenstops mee. Dat is geen bevestiging dat je ergens naar binnen kunt.</p>
@@ -108,7 +117,7 @@ export function indexPage(cities) {
     .sort((a, b) => a.localeCompare(b, 'nl'))
     .map((region) => `<option>${escapeHtml(region)}</option>`).join('');
   const cards = cities.map(({ name, names, slug, region, province }) => `
-    <li class="city-card" data-names="${escapeHtml(names.join(' '))}" data-region="${escapeHtml(region)}">
+    <li class="city-card" data-city-slug="${escapeHtml(slug)}" data-names="${escapeHtml(names.join(' '))}" data-region="${escapeHtml(region)}">
       <a href="/steden/${slug}/">
         <span><strong>${escapeHtml(name)}</strong><small>${escapeHtml(province ?? region)}</small></span>
         <span class="city-arrow" aria-hidden="true">↗</span>
@@ -117,7 +126,8 @@ export function indexPage(cities) {
 
   return layout({
     title: 'Alle Steden · Stedengids van België',
-    script: '<script src="/assets/filter.js" defer></script>',
+    active: 'cities',
+    script: '<link rel="stylesheet" href="/assets/city-directory.css"><script src="/assets/filter.js" defer></script>',
     main: `<main id="inhoud" class="wrap home">
       <section class="hero" aria-labelledby="intro">
         <div class="hero-copy">
@@ -133,7 +143,7 @@ export function indexPage(cities) {
       </section>
       <section id="steden" class="directory" aria-labelledby="directory-title">
         <div class="section-heading">
-          <h2 id="directory-title">Stedenlijst</h2>
+          <h2 id="directory-title">Ontdek de steden</h2>
           <span id="count" class="result-count" role="status">${cities.length} steden</span>
         </div>
         <form id="filters" class="filters" role="search" hidden>
@@ -145,7 +155,10 @@ export function indexPage(cities) {
           </label>
         </form>
         <p id="empty" class="source-status" hidden>Geen steden gevonden. Probeer een andere naam of een ander gewest.</p>
-        <ul class="city-grid" id="city-list">${cards}</ul>
+        <div class="directory-workspace">
+          <div class="directory-list"><h3 class="visually-hidden">Stedenlijst</h3><ul class="city-grid" id="city-list">${cards}</ul></div>
+          ${cityDirectoryMap(cities, escapeHtml)}
+        </div>
       </section>
     </main>`,
   });
@@ -166,28 +179,33 @@ function entryDate(start, end) {
   return start ? `<p class="entry-meta">${time(start)}${end && end !== start ? ` tot ${time(end)}` : ''}</p>` : '';
 }
 
-function entrySource(source) {
+function verifyAttributes(url, linkIds) {
+  const id = linkIds?.get(url);
+  return id ? ` data-link-source="static" data-link-id="${id}"` : '';
+}
+
+function entrySource(source, linkIds) {
   try {
     const url = new URL(typeof source === 'string' ? source : source?.url);
     if (!/^https?:$/.test(url.protocol) || url.username || url.password) return '';
     const label = typeof source === 'object' ? source?.label : null;
-    return `<a class="entry-source" href="${escapeHtml(url.href)}">Bron: ${escapeHtml(label || url.hostname.replace(/^www\./, ''))}</a>`;
+    return `<a class="entry-source" href="${escapeHtml(url.href)}"${verifyAttributes(typeof source === 'string' ? source : source?.url, linkIds)}>Bron: ${escapeHtml(label || url.hostname.replace(/^www\./, ''))}</a>`;
   } catch {
     return '';
   }
 }
 
-function entryList(title, intro, kind, items) {
+function entryList(title, intro, kind, items, linkIds) {
   const liveNotice = kind === 'places' ? 'bezienswaardigheden' : 'evenementen';
   const cards = items.map(({ id, name, description, url, start, end, openingHours, exterior, source }) => {
     const hours = (Array.isArray(openingHours) ? openingHours : [openingHours]).filter(Boolean).join(' · ');
     return `<li${id ? ` data-item-id="${escapeHtml(id)}"` : ''}>
-      <h3>${url ? `<a href="${escapeHtml(url)}">${escapeHtml(name)} ${arrow}</a>` : escapeHtml(name)}</h3>
+      <h3>${url ? `<a href="${escapeHtml(url)}"${verifyAttributes(url, linkIds)}>${escapeHtml(name)} ${arrow}</a>` : escapeHtml(name)}</h3>
       ${entryDate(start, end)}
       ${exterior === true ? '<span class="entry-badge" data-exterior>Vanop de openbare weg te bekijken</span>' : ''}
       ${hours ? `<p class="entry-meta"><strong>Openingsuren:</strong> ${escapeHtml(hours)}</p>` : ''}
       ${description ? `<p class="entry-description">${escapeHtml(description)}</p>` : ''}
-      ${entrySource(source)}
+      ${entrySource(source, linkIds)}
     </li>`;
   }).join('');
 
@@ -212,7 +230,7 @@ const cityDecoration = `<div class="city-decoration" aria-hidden="true">
   </svg>
 </div>`;
 
-export function cityPage(city) {
+export function cityPage(city, linkIds) {
   const { name, names, slug, region, province, code, coordinates, cityUrl, description, places, events } = city;
   const aliases = names.filter((value) => value !== name);
   const mapUrl = coordinates
@@ -235,7 +253,7 @@ export function cityPage(city) {
           ${aliases.length ? `<p class="aliases">${escapeHtml(aliases.join(' · '))}</p>` : ''}
           ${description ? `<p class="city-description">${escapeHtml(description)}</p>` : ''}
           ${mapUrl ? `<div class="city-links">
-            <a class="button primary" href="/planner/?city=${encodeURIComponent(slug)}">Plan een rit vanuit ${escapeHtml(name)} <span aria-hidden="true">→</span></a>
+            <a class="button primary" href="/planner/?city=${encodeURIComponent(slug)}">Plan een rit in de buurt van ${escapeHtml(name)} <span aria-hidden="true">→</span></a>
             <a class="button secondary" href="${escapeHtml(mapUrl)}">Bekijk op de kaart ${arrow}</a>
           </div>` : ''}
         </div>
@@ -245,8 +263,8 @@ export function cityPage(city) {
         <a href="#places">Bezienswaardigheden</a><a href="#events">Evenementen</a><a href="#stadsdata">Stadsdata</a>
       </nav>
       <div class="visit-grid">
-        ${entryList('Bezienswaardigheden', 'Plekken om te ontdekken. Openingsuren staan erbij als de bron ze meegeeft. Bij buitenstops is toegang tot gebouwen niet bevestigd.', 'places', places)}
-        ${entryList('Evenementen', 'Activiteiten en terugkerende evenementen, met datums wanneer bekend.', 'events', events)}
+        ${entryList('Bezienswaardigheden', 'Plekken om te ontdekken. Openingsuren staan erbij als de bron ze meegeeft. Bij buitenstops is toegang tot gebouwen niet bevestigd.', 'places', places, linkIds)}
+        ${entryList('Evenementen', 'Activiteiten en terugkerende evenementen, met datums wanneer bekend.', 'events', events, linkIds)}
       </div>
       <details id="stadsdata" class="city-data">
         <summary>Stadsdata</summary>

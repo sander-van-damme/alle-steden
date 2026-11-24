@@ -51,7 +51,13 @@ async function setExactWeekend(page, region, city) {
   await page.locator('[name=weekend]').check();
   await page.locator('#planner-region').selectOption({label:region});
   await page.locator('#planner-city').selectOption(city);
-  await page.locator('[name=maxKm]').fill('85');
+  const maxKm = page.locator('[name=maxKm]');
+  if (await maxKm.getAttribute('type') === 'range') {
+    await maxKm.press('Home');
+    for (let km = 15; km < 85; km += 5) await maxKm.press('ArrowRight');
+    assert.equal(await maxKm.inputValue(), '85');
+    assert.equal(await page.locator('#planner-distance-output').textContent(), '85 km');
+  } else await maxKm.fill('85');
   await page.locator('[name=roundtrip]').uncheck();
   const strict = page.locator('[name=scheduledOnly]');
   if (await strict.count()) await strict.uncheck();
@@ -71,7 +77,8 @@ async function run(narrow, { region, slug, name, landmark }) {
     return;
   }
 
-  const card = page.locator('.trip-card').first();
+  const modern = await page.locator('#planner-max-km').count() > 0;
+  const card = page.locator(modern ? `.trip-card[data-trip-from=${slug}]` : '.trip-card').first();
   await card.waitFor({timeout:65000});
   assert.ok(routes.length>0);
   assert.match(await card.locator('h3').innerText(),new RegExp(name));
@@ -80,7 +87,7 @@ async function run(narrow, { region, slug, name, landmark }) {
   const body = await card.innerText();
   assert.match(body,/Vanop de openbare weg te bekijken/i);
   assert.match(body,/BRouter/);
-  assert.match(body,/28 november|29 november/i);
+  assert.match(await card.locator('.trip-heading').textContent(),/28 november|29 november/i);
   if (landmark) assert.match(body,landmark);
   assert.deepEqual(await page.evaluate(()=>[innerWidth,document.documentElement.scrollWidth]),[viewport.width,viewport.width]);
   console.log('Na',viewport.width,slug,(await card.innerText()).split('\n').slice(0,5).join(' | '),await page.locator('#planner-status').innerText());
@@ -92,9 +99,14 @@ async function run(narrow, { region, slug, name, landmark }) {
     const before = routes.length;
     await page.locator('[name=scheduledOnly]').check();
     await page.locator('#planner-submit').click();
-    await page.locator('#planner-status').filter({hasText:/Geen passende rit met gepubliceerde bezoekuren/}).waitFor({timeout:30000});
-    assert.equal(await page.locator('.trip-card').count(),0);
-    assert.equal(routes.length,before);
+    await page.locator('#planner-status[data-state=ready]').waitFor({timeout:65000});
+    if (modern) {
+      // Nearby origins are legitimate but every proposed stop must be hour-backed.
+      assert.equal(await page.locator('#planner-results .trip-exterior-metric').count(), 0);
+    } else {
+      assert.equal(await page.locator('.trip-card').count(),0);
+      assert.equal(routes.length,before);
+    }
     console.log('Strikte modus Ninove: geen buitenstop en geen onbewezen rit.');
     await page.goto(origin+'/steden/ninove/');
     const outside = page.locator('[data-static-results] li').filter({hasText:/oud stadhuis/i});

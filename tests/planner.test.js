@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { calendarDay, datesFor, hoursFor, visitWindows, schedulePair, planTrips, scenicEvidence } from '../site/assets/planner-core.js';
+import { calendarDay, datesFor, hoursFor, visitWindows, schedulePair, planTrips, scenicEvidence,
+  departureRadius, candidatePairs, groupItineraries, editVisitOptions, canScheduleEditedSlots, recalculateItinerary, distinctLoop } from '../site/assets/planner-core.js';
 
 const now = new Date('2026-11-24T11:00:00Z');
 const date = '2026-11-28';
@@ -84,10 +85,102 @@ test('calendar proposes distinct sourced pairs over multiple weekends without on
   const c = city('c', 4.12);
   let calls=0;
   const result = await planTrips([a,b,c],{...opts,mode:'calendar',city:''},{now,fetchRoute:async(points)=>{calls++;return makeRoute(points);}});
-  assert.equal(result.trips.length,8);
-  assert.equal(new Set(result.trips.map((trip)=>trip.weekend)).size,8);
+  assert.ok(result.trips.length < 8);
+  assert.equal(new Set(result.trips.flatMap((trip)=>trip.alternatives.map(({ weekend }) => weekend))).size,8);
+  assert.ok(result.trips.every(({ alternatives }) => alternatives.length === 16));
   assert.ok(new Set(result.trips.slice(0,3).map((trip)=>trip.cities.map(({slug})=>slug).sort().join(':'))).size>1);
   assert.ok(calls<=7);
+});
+
+test('identical itineraries use one card and retain exact date windows; another POI or route stays separate', async () => {
+  const sunday = '2026-11-29';
+  const second = city('b', 4.01, { places: [
+    { id:'museum-sat', name:'Zelfde naam', lat:51.01, lon:4.01, openingHours:['Sa 10:00-15:00'] },
+    { id:'museum-sun', name:'Zelfde naam', lat:51.02, lon:4.01, openingHours:['Su 12:00-17:00'] },
+  ] });
+  const filters = { ...opts, weekend:true };
+  const fetchRoute = async (points) => makeRoute(points);
+  const repeated = await planTrips([a,b],filters,{ now,fetchRoute });
+  assert.equal(repeated.trips.length,1);
+  assert.deepEqual(repeated.trips[0].alternatives.map((trip)=>trip.date),[date,sunday]);
+  const different = await planTrips([a,second],filters,{ now,fetchRoute });
+  assert.equal(different.trips.length,2);
+  assert.deepEqual(new Set(different.trips.map((trip) => trip.visits[1].id)),new Set(['museum-sat','museum-sun']));
+  const [one, two] = repeated.trips[0].alternatives;
+  const newGeometry = { ...two, route: { ...two.route, coordinates: [[3.75,51],[3.9,51.02],[4.01,51]] } };
+  assert.equal(groupItineraries([one,newGeometry]).length,2);
+});
+
+test('city search anchors a real radius, includes nearby origins, excludes far origins, but may cross region lines', async () => {
+  const anchor = city('anker', 3.75, { places: [] });
+  const local = city('lokaal', 3.85);
+  const far = city('ver', 4.31);
+  const walloon = city('over-grens', 3.91, { region:'Wallonië' });
+  const cities = [anchor,local,far,walloon];
+  const filters = { ...opts, city:'anker', region:'Vlaanderen', maxKm:55 };
+  const pairs = candidatePairs(cities,datesFor(filters,now),filters);
+  assert.equal(departureRadius(55,false),14);
+  assert.equal(departureRadius(55,true),7);
+  assert.deepEqual(new Set(pairs.map((pair)=>pair.from.slug)),new Set(['lokaal']));
+  assert.ok(pairs.some((pair)=>pair.to.slug === 'over-grens'));
+  const result = await planTrips(cities,filters,{now,fetchRoute:async(points)=>makeRoute(points)});
+  assert.ok(result.trips.some((trip)=>trip.cities[0].slug === 'lokaal' && trip.cities[1].slug === 'over-grens'));
+});
+
+test('visit editing uses real stop coordinates, updates distances, and rejects closures, duplicate windows and missed events', async () => {
+  const day = { lat:51, openingHours:['Sa 10:00-17:00'], visitMinutes:20 };
+  const timed = { id:'concert', name:'Concert', lat:51.05, lon:4.01, start:date+'T12:00:00+01:00', end:date+'T13:00:00+01:00' };
+  const townA = city('a',3.75,{places:[
+    { ...day, id:'archief', name:'Archief', lat:51.01, lon:3.76 },
+    { ...day, id:'tuin', name:'Tuin', lat:51.02, lon:3.77 },
+    { ...day, id:'dicht', name:'Zondagmuseum', lat:51.03, lon:3.78, openingHours:['Su 10:00-17:00'] },
+    { ...day, id:'no-coord', name:'Locatie niet bekend' },
+  ]});
+  const townB = city('b',4.01,{places:[{ ...day, id:'hal', name:'Hal', lat:51.04, lon:4.02 }],events:[timed]});
+  const result = await planTrips([townA,townB],opts,{now,fetchRoute:async(points)=>makeRoute(points,{minutes:30})});
+  const trip = result.trips[0];
+  const editor = editVisitOptions(trip,opts,now);
+  const key = (name) => editor.options.find((option)=>option.name===name)?.key;
+  assert.ok(!key('Zondagmuseum'));
+  assert.ok(editor.options.filter(({name})=>name==='Locatie niet bekend').every(({unroutable})=>unroutable));
+  const slots = ['Archief','Tuin','Concert'].map(key);
+  assert.equal(canScheduleEditedSlots([slots[0],slots[0]],editor.options),false);
+  const requests=[];
+  const fetchRoute=async(points)=>{
+    requests.push(points.map(({ lat,lon })=>[lat,lon]));
+    return makeRoute(points,{ km:3, minutes:9 });
+  };
+  const edited = await recalculateItinerary(trip,slots,opts,{now,fetchRoute});
+  assert.ok(edited.edited);
+  assert.deepEqual(edited.visits.map(({ name })=>name),['Archief','Tuin','Concert']);
+  assert.deepEqual(requests,[ [[51,3.75],[51.01,3.76]], [[51.01,3.76],[51.02,3.77]], [[51.02,3.77],[51.05,4.01]] ]);
+  assert.equal(edited.route.legs.length,3);
+  assert.equal(edited.km,9);
+  assert.equal(edited.visits[2].start,720);
+  assert.ok(edited.timeline.filter(({kind})=>kind==='bike').every(({start,end})=>end-start===17));
+  assert.ok(edited.timeline.every((item,i,array)=>!i || item.start>=array[i-1].end));
+  const slow = async (points) => makeRoute(points,{ km:3, minutes:130 });
+  await assert.rejects(recalculateItinerary(trip,slots,opts,{now,fetchRoute:slow}),/passen niet binnen/);
+  const beyond = async (points) => makeRoute(points,{ km:90, minutes:9 });
+  await assert.rejects(recalculateItinerary(trip,slots,opts,{now,fetchRoute:beyond}),/maximumafstand/);
+  await assert.rejects(recalculateItinerary(trip,slots,opts,{now,fetchRoute:async(points)=>makeRoute(points,{endpointSnapMetres:[151,2]})}),/geen bruikbare fietsroute/);
+});
+
+test('round trip prefers a real distinct return, but never mislabels a retraced line or loses working timing', async () => {
+  const options = { ...opts, roundtrip:true };
+  const meander = ([start,end], minutes = 60) => makeRoute([start,end],{
+    minutes, coordinates:[[start.lon,start.lat],[3.89,51.08],[end.lon,end.lat]],
+  });
+  const back = makeRoute([b,a]);
+  assert.equal(distinctLoop(makeRoute([a,b]),back),false);
+  assert.equal(distinctLoop(makeRoute([a,b]),meander([b,a])),true);
+  const chosen = await planTrips([a,b],options,{now,fetchRoute:async(points,{alternativeIndex})=>alternativeIndex ? meander(points) : makeRoute(points)});
+  assert.equal(chosen.trips[0].loop,true);
+  assert.equal(chosen.trips[0].returnRoute.minutes,60);
+  const fallback = await planTrips([a,b],options,{now,fetchRoute:async(points,{alternativeIndex})=>alternativeIndex ? meander(points,940) : makeRoute(points)});
+  assert.equal(fallback.trips[0].roundtrip,true);
+  assert.equal(fallback.trips[0].loop,false);
+  assert.equal(fallback.trips[0].returnRoute.minutes,55);
 });
 
 test('routing failure degrades honestly and replacing a run aborts before another route starts', async () => {

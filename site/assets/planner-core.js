@@ -1,10 +1,16 @@
+import { distanceToRoute } from './planner-routing.js';
+
 const halfDay = 12 * 60 * 60 * 1000;
 const dayMs = 2 * halfDay;
 const week = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const brusselsDate = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Brussels', year: 'numeric', month: '2-digit', day: '2-digit' });
 const brusselsTime = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Brussels', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 const num = (value) => Number.isFinite(value) ? value : null;
-export const tripLimits = Object.freeze({ start: 9 * 60, end: 18 * 60 + 30, availability: 8, cityTransfer: 12, bikeBuffer: 8, candidates: 7, results: 12 });
+export const tripLimits = Object.freeze({ start: 9 * 60, end: 18 * 60 + 30, availability: 8, cityTransfer: 12, bikeBuffer: 8, candidates: 7, results: 12, editStops: 5 });
+
+export function departureRadius(maxKm, roundtrip = false) {
+  return Math.max(5, Math.min(25, Math.round(Number(maxKm) / (roundtrip ? 8 : 4)) || 5));
+}
 
 export function calendarDay(now = new Date()) { return brusselsDate.format(now); }
 
@@ -166,13 +172,15 @@ export function validRoute(route) {
       Math.abs(point[0]) <= 180 && Math.abs(point[1]) <= 90));
 }
 
-function visitAt(window, arrival, dayEnd) {
+function visitAt(window, arrival, dayEnd, testOnly = false) {
   const start = Math.max(arrival, window.earliest), end = start + window.duration;
   if (end > Math.min(window.latest, dayEnd) || (window.kind === 'event' && start !== window.earliest)) return null;
-  return { city: { slug: window.city.slug, name: window.city.name }, name: window.name, url: window.url ?? window.website,
+  if (testOnly) return { start, end };
+  return { city: { slug: window.city.slug, name: window.city.name }, id: window.id, name: window.name, url: window.url ?? window.website,
+    lat: window.lat, lon: window.lon, optionKey: visitOptionKey(window),
     start, end, windowLabel: window.kind === 'event' ? 'Gepubliceerd tijdstip' : window.kind === 'exterior'
-      ? 'Vanop de openbare weg te bekijken · 25 min begroot; geen toegang tot het gebouw'
-      : 'Gepubliceerde openingsuren (80 min bezoek begroot)',
+      ? `Vanop de openbare weg te bekijken · ${window.duration} min begroot; geen toegang tot het gebouw`
+      : `Gepubliceerde openingsuren (${window.duration} min bezoek begroot)`,
     source: window.source, kind: window.kind };
 }
 
@@ -200,10 +208,10 @@ export function schedulePair(first, second, outbound, incoming, limits = tripLim
       const preferred = a.kind === 'event' ? a.earliest : Math.max(
         limits.start + transferA, a.earliest, Math.min(aLimit, b.earliest - travel - a.duration),
       );
-      const firstVisit = visitAt(a, Math.max(preferred, limits.start + transferA), limits.end);
+      const firstVisit = visitAt(a, Math.max(preferred, limits.start + transferA), limits.end, limits.testOnly);
       if (!firstVisit) continue;
       const arrives = firstVisit.end + travel;
-      const secondVisit = visitAt(b, arrives, limits.end - finalBudget);
+      const secondVisit = visitAt(b, arrives, limits.end - finalBudget, limits.testOnly);
       if (!secondVisit) continue;
       if (limits.testOnly) {
         feasibleQuality = Math.max(feasibleQuality ?? 0, a.quality + b.quality);
@@ -259,8 +267,12 @@ export function scenicEvidence(route, returnRoute) {
 export function candidatePairs(cities, days, options) {
   const byDate = new Map(days.map(({ date }) => [date, new Map(cities.map((city) => [city.slug, visitWindows(city, date, options)]))]));
   const pairs = [];
+  const anchor = options.city ? cities.find(({ slug }) => slug === options.city) : null;
+  if (options.city && !anchor) return [];
+  const radius = departureRadius(options.maxKm, options.roundtrip);
   for (const from of cities) {
-    if ((options.city && from.slug !== options.city) || (options.region && from.region !== options.region)) continue;
+    const originDistance = anchor ? approxKm(anchor, from) : 0;
+    if (originDistance > radius || (options.region && from.region !== options.region)) continue;
     for (const to of cities) {
       if (from.slug === to.slug) continue;
       const distance = approxKm(from, to);
@@ -272,10 +284,10 @@ export function candidatePairs(cities, days, options) {
         const quality = schedulePair(a, b, optimistic, options.roundtrip ? optimistic : null, { ...tripLimits, start: day.dayStart ?? tripLimits.start, testOnly: true });
         if (quality !== null) dates.push({ ...day, a, b, quality });
       }
-      if (dates.length) pairs.push({ from, to, distance, dates, quality: dates.reduce((best, day) => Math.max(best, day.quality), 0) });
+      if (dates.length) pairs.push({ from, to, distance, originDistance, dates, quality: dates.reduce((best, day) => Math.max(best, day.quality), 0) });
     }
   }
-  return pairs.sort((a, b) => a.distance - b.distance ||
+  return pairs.sort((a, b) => a.distance + 0.7 * a.originDistance - b.distance - 0.7 * b.originDistance ||
     b.dates.length - a.dates.length || a.from.name.localeCompare(b.from.name, 'nl-BE') || a.to.name.localeCompare(b.to.name, 'nl-BE'));
 }
 
@@ -291,7 +303,15 @@ function chooseCandidates(pairs, options) {
   if (options.mode === 'calendar' && !options.region && !options.city) {
     for (const region of [...new Set(pairs.map(({ from }) => from.region))]) add(pairs.find(({ from }) => from.region === region));
   }
-  const scheduled = pairs.filter(({ quality }) => quality > 0).sort((a, b) => b.quality - a.quality || a.distance - b.distance);
+  if (options.city) {
+    const exact = pairs.find(({ from }) => from.slug === options.city);
+    add(exact);
+    // Keep nearby origins visible even when the chosen city itself has many possible destinations.
+    const nearby = pairs.filter(({ from }) => from.slug !== options.city);
+    add(nearby.find(({ to }) => to.slug !== exact?.to.slug && to.slug !== options.city) ?? nearby[0]);
+  }
+  const scheduled = pairs.filter(({ quality }) => quality > 0).sort((a, b) => b.quality - a.quality ||
+    a.distance + a.originDistance - b.distance - b.originDistance);
   const highQualityTarget = Math.min(tripLimits.candidates - 2, selected.length + 3);
   for (const pair of scheduled) {
     if (selected.length >= highQualityTarget) break;
@@ -309,22 +329,242 @@ function chooseCandidates(pairs, options) {
 }
 function tripSort(a, b) { return b.score - a.score || a.date.localeCompare(b.date) || a.bikeMinutes - b.bikeMinutes || a.id.localeCompare(b.id); }
 
-function resultSelection(trips, mode) {
-  if (mode !== 'calendar') return trips.sort(tripSort).slice(0, tripLimits.results);
-  const grouped = new Map();
-  for (const trip of trips.sort(tripSort)) {
-    const group = grouped.get(trip.weekend) ?? [];
-    if (!group.some((entry) => [entry.cities[0].slug, entry.cities[1].slug].sort().join(':') ===
-      [trip.cities[0].slug, trip.cities[1].slug].sort().join(':'))) group.push(trip);
-    grouped.set(trip.weekend, group);
+function placeIdentity(visit) {
+  return [visit.kind, visit.city?.slug, visit.id ?? visit.url ?? visit.website ?? [visit.name, visit.source],
+    num(visit.lat), num(visit.lon)];
+}
+
+function visitOptionKey(window) {
+  return JSON.stringify([placeIdentity(window), window.earliest, window.latest, window.duration]);
+}
+
+export function groupItineraries(trips) {
+  const routes = new WeakMap();
+  const geometries = new Map();
+  function signature(route) {
+    if (!route) return null;
+    if (!routes.has(route)) {
+      const value = JSON.stringify([route.km, route.minutes, route.coordinates]);
+      if (!geometries.has(value)) geometries.set(value, geometries.size + 1);
+      routes.set(route, geometries.get(value));
+    }
+    return routes.get(route);
   }
-  const seen = new Set();
-  return [...grouped].sort(([a], [b]) => a.localeCompare(b)).flatMap(([, group]) => {
-    if (!group.length) return [];
-    const item = group.find(({ cities }) => !seen.has([cities[0].slug, cities[1].slug].sort().join(':'))) ?? group[0];
-    seen.add([item.cities[0].slug, item.cities[1].slug].sort().join(':'));
-    return [item];
+  const byPattern = new Map();
+  for (const trip of [...trips].sort(tripSort)) {
+    const key = JSON.stringify([trip.cities.map(({ slug }) => slug), signature(trip.route), signature(trip.returnRoute), trip.visits.map(placeIdentity)]);
+    if (!byPattern.has(key)) byPattern.set(key, []);
+    byPattern.get(key).push(trip);
+  }
+  return [...byPattern.values()].map(([best, ...others]) => {
+    const alternatives = [best, ...others].sort((a, b) => a.date.localeCompare(b.date));
+    return { ...alternatives[0], id: best.id, selectedTripId: alternatives[0].id, ranking: best.score, alternatives };
   });
+}
+
+function knownPoint(point) {
+  return Number.isFinite(point?.lat) && Number.isFinite(point?.lon) && point.lat >= 49 && point.lat <= 52 && point.lon >= 2 && point.lon <= 7;
+}
+
+export function editVisitOptions(trip, filters, now = new Date()) {
+  const day = datesFor(filters, now).find(({ date }) => date === trip.date);
+  if (!day) return { options: [], slots: [] };
+  const items = new Map();
+  for (const city of trip.editCities ?? trip.cities) {
+    for (const window of visitWindows(city, trip.date, filters)) {
+      if (!knownPoint(window) || !visitAt(window, day.dayStart, tripLimits.end, true)) continue;
+      const key = visitOptionKey(window);
+      items.set(key, { ...window, key, cityName: city.name });
+    }
+  }
+  const slots = trip.visits.map((visit) => {
+    const key = visit.optionKey;
+    if (!items.has(key)) items.set(key, { ...visit, key, cityName: visit.city?.name, unroutable: true });
+    return key;
+  });
+  return { options: [...items.values()].sort((a, b) => a.cityName.localeCompare(b.cityName, 'nl-BE') ||
+    a.name.localeCompare(b.name, 'nl-BE') || a.earliest - b.earliest), slots };
+}
+
+export function canScheduleEditedSlots(slots, options) {
+  if (!slots.length || slots.length > tripLimits.editStops) return false;
+  const seen = new Set();
+  for (const key of slots) {
+    const window = options.find((option) => option.key === key);
+    if (!window || window.unroutable || !knownPoint(window)) return false;
+    const identity = JSON.stringify(placeIdentity(window));
+    if (seen.has(identity)) return false;
+    seen.add(identity);
+  }
+  return true;
+}
+
+const noEditedPlan = 'Deze stops passen niet binnen de bezoekuren en de berekende fietstijden. Kies andere stops of een andere datum.';
+const routeUnavailable = 'Voor minstens één deel tussen de stops is geen bruikbare fietsroute gevonden.';
+const tooFar = 'De berekende route is langer dan de gekozen maximumafstand.';
+const legMinutes = (leg) => leg ? Math.ceil(leg.minutes) + tripLimits.bikeBuffer : 0;
+
+function scheduleEdited(windows, legs, returnRoute, limits) {
+  // The earliest achievable schedule is also the test of feasibility in a fixed visit order.
+  let arrival = limits.start;
+  const earliest = [];
+  for (const [index, window] of windows.entries()) {
+    const visit = visitAt(window, arrival + legMinutes(legs[index]), limits.end, true);
+    if (!visit) return null;
+    earliest.push(visit);
+    arrival = visit.end;
+  }
+  const finish = arrival + legMinutes(returnRoute);
+  if (finish > limits.end) return null;
+
+  // Keep that finish time but move visits later where possible, to avoid avoidable gaps.
+  const visits = new Array(windows.length);
+  let deadline = earliest.at(-1).end;
+  for (let index = windows.length - 1; index >= 0; index--) {
+    const window = windows[index];
+    const start = window.kind === 'event' ? window.earliest : Math.min(window.latest, deadline) - window.duration;
+    visits[index] = visitAt(window, start, deadline);
+    if (!visits[index] || start < earliest[index].start) return null;
+    deadline = start - legMinutes(legs[index]);
+  }
+  const timeline = [];
+  let time = visits[0].start - legMinutes(legs[0]);
+  let wait = 0;
+  for (const [index, visit] of visits.entries()) {
+    const travel = legMinutes(legs[index]);
+    if (travel) timeline.push({ kind: 'bike', start: time, end: time + travel, label: 'Fietsen naar ' + visit.name });
+    time += travel;
+    if (visit.start > time) {
+      timeline.push({ kind: 'wait', start: time, end: visit.start, label: 'Vrije tijd vóór volgend bezoek' });
+      wait += visit.start - time;
+    }
+    timeline.push({ kind: 'visit', start: visit.start, end: visit.end, label: visit.name });
+    time = visit.end;
+  }
+  if (returnRoute) timeline.push({ kind: 'return', start: time, end: finish, label: 'Terugfietsen naar het vertrekpunt' });
+  const slackMinutes = Math.max(0, Math.min(windows.at(-1).latest - visits.at(-1).end, limits.end - finish));
+  return { visits, timeline, finish, wait, slackMinutes };
+}
+
+export function combineRouteLegs(legs) {
+  const active = legs.filter(Boolean);
+  if (!active.length) return null;
+  if (active.length === 1) return active[0];
+  const points = [];
+  for (const leg of active) {
+    for (const point of leg.coordinates) {
+      const previous = points.at(-1);
+      if (!previous || previous[0] !== point[0] || previous[1] !== point[1]) points.push(point);
+    }
+  }
+  const signals = {};
+  for (const key of new Set(active.flatMap((leg) => Object.keys(leg.signals ?? {})))) {
+    signals[key] = active.every((leg) => Number.isFinite(leg.signals?.[key])) ? active.reduce((total, leg) => total + leg.signals[key], 0) : null;
+  }
+  return { source: active[0].source, coordinates: points, signals, legs: active,
+    minutes: active.reduce((total, leg) => total + leg.minutes, 0), km: active.reduce((total, leg) => total + leg.km, 0) };
+}
+
+function routeSamples(route) {
+  const points = route.coordinates;
+  const distances = points.slice(1).map((point, i) => approxKm({ lat: point[1], lon: point[0] }, { lat: points[i][1], lon: points[i][0] }));
+  const km = distances.reduce((sum, value) => sum + value, 0);
+  const spacing = Math.max(0.12, km / 32);
+  const positions = [];
+  let traversed = 0, target = spacing / 2;
+  for (const [i, distance] of distances.entries()) {
+    const start = points[i], end = points[i + 1];
+    while (distance > 0 && traversed + distance >= target) {
+      const share = (target - traversed) / distance;
+      positions.push([start[0] + share * (end[0] - start[0]), start[1] + share * (end[1] - start[1])]);
+      target += spacing;
+    }
+    traversed += distance;
+  }
+  return positions;
+}
+
+export function distinctLoop(outbound, incoming) {
+  if (!validRoute(outbound) || !validRoute(incoming)) return false;
+  const isDifferent = (from, reference) => {
+    const samples = routeSamples(from);
+    const tracks = reference.legs ?? [reference];
+    return samples.length && samples.filter((point) => tracks.every((leg) => distanceToRoute(point, leg.coordinates).distanceToRouteKm > 0.075)).length / samples.length >= 0.24;
+  };
+  return Boolean(isDifferent(outbound, incoming) && isDifferent(incoming, outbound));
+}
+
+export async function recalculateItinerary(trip, slots, filters, { fetchRoute, signal, now = new Date() } = {}) {
+  const { options } = editVisitOptions(trip, filters, now);
+  if (!canScheduleEditedSlots(slots, options)) throw new Error('Kies verschillende bezoeken waarvan de precieze locatie én bezoekuren bekend zijn.');
+  const windows = slots.map((key) => options.find((option) => option.key === key));
+  const day = datesFor(filters, now).find(({ date }) => date === trip.date);
+  const start = trip.startCity ?? trip.cities[0];
+  const a = [start, ...windows];
+  const legs = [];
+  async function between(from, to, alternativeIndex = 0) {
+    signal?.throwIfAborted();
+    const gap = approxKm(from, to);
+    if (gap < 0.001) return null; // Same point, not a missing cycling segment.
+    if (gap < 0.02) throw new Error('Twee gekozen stops liggen te dicht bij elkaar om als apart fietssegment te meten.');
+    let result;
+    try { result = await fetchRoute([from, to], { signal, alternativeIndex }); }
+    catch { signal?.throwIfAborted(); throw new Error(routeUnavailable); }
+    signal?.throwIfAborted();
+    if (!validRoute(result)) throw new Error(routeUnavailable);
+    if (result.endpointSnapMetres?.some((metres) => metres > 120)) throw new Error(routeUnavailable);
+    return result;
+  }
+  let ridden = 0;
+  for (let i = 1; i < a.length; i++) {
+    const leg = await between(a[i - 1], a[i]);
+    legs.push(leg);
+    ridden += leg?.km ?? 0;
+    if (ridden > filters.maxKm) throw new Error(tooFar);
+  }
+  const route = combineRouteLegs(legs);
+  if (!validRoute(route)) throw new Error('Deze stops leveren geen meetbare fietsroute op.');
+  let returnRoute = filters.roundtrip ? await between(a.at(-1), start) : null;
+  const limits = { ...tripLimits, start: day.dayStart };
+  let loop = returnRoute ? distinctLoop(route, returnRoute) : filters.roundtrip && !!route.legs && distinctLoop(route.legs[0], combineRouteLegs(route.legs.slice(1)));
+  if (returnRoute && !loop) {
+    try {
+      const candidate = await between(a.at(-1), start, 1);
+      if (candidate && route.km + candidate.km <= filters.maxKm && distinctLoop(route, candidate) && scheduleEdited(windows, legs, candidate, limits)) {
+        returnRoute = candidate;
+        loop = true;
+      }
+    } catch { signal?.throwIfAborted(); }
+  }
+  const km = route.km + (returnRoute?.km ?? 0);
+  if (km > filters.maxKm) throw new Error(tooFar);
+  const schedule = scheduleEdited(windows, legs, returnRoute, limits);
+  if (!schedule) throw new Error(noEditedPlan);
+  const scored = scenicEvidence(route, returnRoute);
+  const widestSnap = Math.max(0, ...[...legs, returnRoute].flatMap((leg) => leg?.endpointSnapMetres ?? []));
+  return {
+    ...trip, ...schedule, route, returnRoute, km, edited: true, startCity: start, editCities: trip.editCities ?? trip.cities,
+    cities: [...new Map([start, ...windows.map((window) => window.city)].map((city) => [city.slug, city])).values()],
+    roundtrip: filters.roundtrip, loop, pois: undefined,
+    bikeMinutes: [...legs, returnRoute].filter(Boolean).reduce((total, leg) => total + Math.ceil(leg.minutes), 0),
+    scoreNotes: [`Tijden herberekend tussen de gekozen locaties, met ${tripLimits.bikeBuffer} min marge per fietssegment.`,
+      ...(widestSnap > 35 ? [`De router sluit op fietsroutes aan; op één punt ligt die aansluiting circa ${widestSnap} m van de gekozen locatie.`] : []),
+      ...scored.notes],
+  };
+}
+
+function resultSelection(trips, mode) {
+  const grouped = groupItineraries(trips);
+  if (mode !== 'calendar') return grouped.slice(0, tripLimits.results);
+  // Put the strongest different outing for each upcoming weekend in contention before filling
+  // the remaining space. The card retains every verified date for that outing.
+  const weekends = [...new Set(trips.map(({ weekend }) => weekend))].sort();
+  const priority = [];
+  for (const weekend of weekends) {
+    const group = grouped.find((entry) => !priority.includes(entry) && entry.alternatives.some((t) => t.weekend === weekend));
+    if (group) priority.push(group);
+  }
+  return [...priority, ...grouped.filter((entry) => !priority.includes(entry))].slice(0, tripLimits.results);
 }
 
 export async function planTrips(cities, options, { fetchRoute, signal, now = new Date(), onProgress = () => {} } = {}) {
@@ -332,11 +572,11 @@ export async function planTrips(cities, options, { fetchRoute, signal, now = new
   const pairs = candidatePairs(cities, days, options);
   const candidates = chooseCandidates(pairs, options);
   const routes = new Map();
-  let failedRoutes = 0, checkedRoutes = 0;
-  async function routed(from, to) {
+  let failedRoutes = 0, checkedRoutes = 0, loopAttempts = 0;
+  async function routed(from, to, alternativeIndex = 0) {
     signal?.throwIfAborted();
-    const key = from.slug + ':' + to.slug;
-    if (!routes.has(key)) routes.set(key, Promise.resolve().then(() => fetchRoute([from, to], { signal })));
+    const key = [from.slug, to.slug, alternativeIndex].join(':');
+    if (!routes.has(key)) routes.set(key, Promise.resolve().then(() => fetchRoute([from, to], { signal, alternativeIndex })));
     const route = await routes.get(key);
     if (!validRoute(route)) throw new Error('Geen geldige fietsroute');
     return route;
@@ -359,22 +599,39 @@ export async function planTrips(cities, options, { fetchRoute, signal, now = new
     onProgress({ checkedRoutes, failedRoutes, countCandidates: candidates.length });
     const km = route.km + (returnRoute?.km ?? 0);
     if (km > options.maxKm || (options.roundtrip && !returnRoute)) continue;
-    const bikeMinutes = Math.ceil(route.minutes) + (returnRoute ? Math.ceil(returnRoute.minutes) : 0);
+    let loopReturn = null;
+    if (returnRoute) {
+      if (distinctLoop(route, returnRoute)) loopReturn = returnRoute;
+      else if (loopAttempts < 2) {
+        loopAttempts++;
+        try {
+          const candidate = await routed(pair.to, pair.from, 1);
+          if (route.km + candidate.km <= options.maxKm && distinctLoop(route, candidate)) loopReturn = candidate;
+        } catch { signal?.throwIfAborted(); }
+      }
+    }
     const scenic = scenicEvidence(route, returnRoute);
+    const scenicLoop = loopReturn && loopReturn !== returnRoute ? scenicEvidence(route, loopReturn) : scenic;
     for (const day of pair.dates) {
-      const schedule = schedulePair(day.a, day.b, route.minutes, returnRoute?.minutes ?? null, { ...tripLimits, start: day.dayStart ?? tripLimits.start });
+      const limits = { ...tripLimits, start: day.dayStart ?? tripLimits.start };
+      const loopSchedule = loopReturn ? schedulePair(day.a, day.b, route.minutes, loopReturn.minutes, limits) : null;
+      const schedule = loopSchedule ?? schedulePair(day.a, day.b, route.minutes, returnRoute?.minutes ?? null, limits);
       if (!schedule) continue;
-      const score = schedule.grade + scenic.score - bikeMinutes * 0.18;
+      const back = loopSchedule ? loopReturn : returnRoute;
+      const dayScenic = loopSchedule ? scenicLoop : scenic;
+      const bikeMinutes = Math.ceil(route.minutes) + (back ? Math.ceil(back.minutes) : 0);
+      const score = schedule.grade + dayScenic.score - bikeMinutes * 0.18;
       const outside = schedule.visits.filter(({ kind }) => kind === 'exterior').length;
       const scoreNotes = [
         outside === 2 ? 'Twee gedocumenteerde buitenstops, zonder afhankelijkheid van openingsuren.'
           : outside === 1 ? 'Eén gedocumenteerde buitenstop; het andere bezoek past binnen gepubliceerde tijden.'
             : schedule.visits.some(({ kind }) => kind === 'event') ? 'Minstens één bezoek met een gepubliceerd tijdstip.' : 'Beide bezoeken passen binnen gepubliceerde openingsuren.',
         'Rekent met minstens ' + tripLimits.cityTransfer + ' min per lokale verplaatsing en ' + tripLimits.bikeBuffer + ' min marge per fietsrit.',
-        ...scenic.notes,
+        ...dayScenic.notes,
       ];
       trips.push({ id: [day.date, pair.from.slug, pair.to.slug].join(':'), date: day.date, weekend: day.weekend, cities: [pair.from, pair.to],
-        route, returnRoute, km, bikeMinutes, score, scoreNotes, ...schedule });
+        route, returnRoute: back, roundtrip: options.roundtrip, loop: Boolean(loopSchedule),
+        km: route.km + (back?.km ?? 0), bikeMinutes, score, scoreNotes, ...schedule });
     }
   }
   return {
@@ -383,6 +640,7 @@ export async function planTrips(cities, options, { fetchRoute, signal, now = new
     checkedRoutes, failedRoutes,
     notes: [
       'Geen volledige rangschikking: ' + candidates.length + ' van ' + pairs.length + ' combinaties met passende bezoekmomenten kregen voorrang voor een echte routecheck.',
+      ...(options.city ? [`‘In de buurt van’ zoekt vertrekpunten tot ${departureRadius(options.maxKm, options.roundtrip)} km hemelsbreed rond de gekozen stad. De opgegeven maximale fietsafstand geldt voor de route zelf.`] : []),
       options.scheduledOnly
         ? 'Deze zoekopdracht gebruikt alleen bezoeken met gepubliceerde uren. Feest- en uitzonderingsdagen kunnen afwijken.'
         : 'Buitenstops gebruiken een voorzichtige planning tussen 10 en 16 uur, geen gepubliceerde openingstijden. Binnenbezoeken en evenementen vereisen gepubliceerde tijden.',

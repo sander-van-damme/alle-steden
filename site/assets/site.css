@@ -217,6 +217,18 @@ input, select { width: 100%; padding: 0.72rem 0.8rem; background: var(--white); 
   overflow-wrap: anywhere;
 }
 .entry-source { display: inline-block; margin-top: 0.32rem; color: var(--muted); font-size: 0.8rem; }
+.link-check-notice {
+  margin: 0.62rem 0 0;
+  border-left: 3px solid #ac7251;
+  border-radius: 0.25rem;
+  padding: 0.46rem 0.62rem;
+  background: #f4e7dc;
+  color: #73391d;
+  font-size: 0.88rem;
+}
+.entry-list .link-check-notice { margin-top: 0.62rem; color: #73391d; }
+.link-check-notice a { color: inherit; }
+.link-check-notice:focus-visible { outline: 2px solid #80501c; outline-offset: 2px; }
 .source-status {
   color: var(--muted);
   margin: 0.75rem 0;
@@ -266,4 +278,11 @@ button:focus-visible, summary:focus-visible {
 @media (max-width: 31rem) {
   .filters { grid-template-columns: 1fr; }
   .city-card a { padding-inline: 0.7rem; }
+}
+
+/* Keep the three main views easy to reach even on very narrow screens. */
+.top nav a[aria-current="page"] { text-decoration: underline; text-decoration-color: #7f8e62; text-decoration-thickness: .16em; }
+@media (max-width: 29rem) {
+  .top .top-inner { flex-wrap: wrap; gap: .25rem .8rem; padding-block: .6rem; }
+  .top nav { gap: .95rem; }
 }
