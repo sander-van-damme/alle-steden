@@ -38,6 +38,7 @@
 .planner-heading-mark span { font: 500 0.8em/1 system-ui, sans-serif; }
 .top-inner [aria-current="page"] { text-decoration: underline; text-underline-offset: 0.3em; }
 .planner-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.18fr); align-items: stretch; gap: 0.95rem; }
+.planner-workspace:has([data-mode-place][hidden]) { grid-template-columns: minmax(0, 1fr); max-width: 50rem; }
 .planner-panel {
   min-width: 0;
   background: var(--planner-card);
@@ -52,7 +53,7 @@
   font-size: 0.86rem;
   font-weight: 650;
 }
-.planner-mode-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.33rem; margin-top: 0.3rem; }
+.planner-mode-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.33rem; margin-top: 0.3rem; }
 .planner-mode-options label {
   position: relative;
   cursor: pointer;
@@ -121,6 +122,9 @@
 .planner-hint { color: var(--muted); margin: 0.55rem 0 0; font-size: 0.86rem; }
 .planner-hint:empty { margin: 0; }
 .planner-panel .button { min-height: 2.75rem; margin-top: 1rem; }
+.planner-actions { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 1rem; }
+.planner-actions .button { height: 100%; margin-top: 0; }
+.planner-actions > span { display: inline-flex; }
 .planner .button { cursor: pointer; font-family: inherit; }
 .planner .button.secondary { background: var(--planner-card); color: var(--accent); }
 .planner .button.secondary:hover { background: var(--soft); }
@@ -228,6 +232,12 @@
   color: var(--accent);
   cursor: pointer;
   font-weight: 680;
+}
+.trip-route-summary-hint {
+  display: block;
+  margin: 0.12rem 0 0 1.02rem;
+  color: var(--muted);
+  font-weight: 450;
 }
 .trip-route-detail[open] { padding-bottom: 0.82rem; }
 .trip-route-detail .planner-hint:not(:empty) { margin-bottom: 0.55rem; }

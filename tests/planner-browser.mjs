@@ -26,6 +26,9 @@ let missing = false;
 let directions = [];
 const mocksEnabled = process.env.LIVE_PLANNER !== '1';
 const iframeSafe = (page) => page.on('pageerror', (error) => errors.push(error.message));
+const renderedDates = (page) => page.locator('.trip-card[data-selected-date], [data-trip-date] option').evaluateAll(
+  (nodes) => [...new Set(nodes.map((node) => node.dataset.selectedDate || node.value?.split(':')[0]).filter(Boolean))].sort(),
+);
 
 async function installFixtures(context) {
   if (!mocksEnabled) return;
@@ -84,12 +87,16 @@ try {
   const response = await page.goto(base + '/planner/');
   assert.equal(response.status(),200);
   await page.locator('#planner-submit:enabled').waitFor();
-  assert.equal(await page.locator('#planner-map .planner-region').count(),3);
-  assert.equal(await page.locator('#planner-map .planner-map-city').count(),138);
+  assert.deepEqual(await page.locator('input[type=radio][name=mode]').evaluateAll(nodes=>nodes.map(n=>n.value)), ['date','place']);
+  assert.equal(await page.locator('input[name=mode]:checked').inputValue(), 'date');
+  assert.ok(await page.locator('[data-mode-date]').isVisible());
+  assert.ok(await page.locator('#planner-upcoming').isVisible());
+  assert.ok(!(await page.locator('#planner-map').isVisible()));
   await page.locator('#planner-date').fill(weekend);
   await page.locator('#planner-city').selectOption('gent');
   await page.locator('#planner-submit').click();
   await page.locator('.trip-card').first().waitFor({ timeout:48_000 });
+  assert.deepEqual(await renderedDates(page), [weekend]);
   const card = page.locator('.trip-card[data-trip-from=gent]').first();
   assert.match(await card.innerText(), /Gent/);
   await card.locator('[data-trip-route-summary]').click();
@@ -155,6 +162,14 @@ try {
   await p.locator('#planner-submit:enabled').waitFor();
   const width = await p.evaluate(()=>[innerWidth,document.documentElement.scrollWidth]);
   assert.equal(width[0],width[1]);
+  assert.deepEqual(await p.locator('input[type=radio][name=mode]').evaluateAll(nodes=>nodes.map(n=>n.value)), ['date','place']);
+  assert.ok(!(await p.locator('#planner-map').isVisible()));
+  await p.locator('input[name=mode][value=place]').check();
+  assert.ok(await p.locator('#planner-map').isVisible());
+  assert.ok(!(await p.locator('[data-mode-date]').isVisible()));
+  assert.ok(!(await p.locator('#planner-upcoming').isVisible()));
+  assert.equal(await p.locator('#planner-map .planner-region').count(),3);
+  assert.equal(await p.locator('#planner-map .planner-map-city').count(),138);
   await p.locator('#planner-map .planner-region').filter({has:p.locator('title',{hasText:'Vlaanderen'})}).dispatchEvent('click');
   assert.equal(await p.locator('#planner-region').inputValue(),'Vlaanderen');
   assert.equal(await p.locator('input[name=mode]:checked').inputValue(),'place');
@@ -163,11 +178,24 @@ try {
   await p.locator('#planner-submit').click();
   await p.locator('.planner-result-group .trip-card').first().waitFor({timeout:48_000});
   assert.ok(await p.locator('[data-trip-date]').count());
-  await p.locator('input[value=calendar]').check();
+  await p.locator('input[name=mode][value=date]').check();
+  assert.ok(!(await p.locator('#planner-map').isVisible()));
+  const weekday = advanceDay(weekend, -2);
+  await p.locator('#planner-date').fill(weekday);
+  await p.locator('input[name=weekend]').check();
   await p.locator('#planner-submit').click();
   await p.locator('.planner-result-group .trip-card').first().waitFor({timeout:48_000});
+  if (mocksEnabled) {
+    assert.deepEqual(await renderedDates(p), [weekend, advanceDay(weekend,1)]);
+  }
+  await p.locator('#planner-upcoming').click();
+  await p.locator('.planner-result-group .trip-card').first().waitFor({timeout:48_000});
+  assert.equal(await p.locator('input[name=mode]:checked').inputValue(), 'date');
+  assert.equal(await p.locator('#planner-date').inputValue(), weekday);
+  assert.ok(await p.locator('input[name=weekend]').isChecked());
   const groupedDate = p.locator('select[data-trip-date]').first();
   if (mocksEnabled) {
+    assert.ok((await renderedDates(p)).some(day => day > advanceDay(weekend,1)));
     assert.ok(await groupedDate.count());
     const before = await groupedDate.inputValue();
     const options = await groupedDate.locator('option').evaluateAll(nodes=>nodes.map(node=>node.value));
@@ -176,7 +204,7 @@ try {
     assert.notEqual(await groupedDate.inputValue(), before);
   }
   if (process.env.PLANNER_SCREENSHOT) await p.screenshot({ path:process.env.PLANNER_SCREENSHOT + '-mobile.png' });
-  console.log('Planner telefoon 390px: kaartselectie stad/gewest, plaatsmodus, kalender en geen horizontale overflow: geslaagd.');
+  console.log('Planner telefoon 390px: twee zoekmodi, kaart in locatiezoekmodus, datumweekend, optionele komende weekenden en geen horizontale overflow: geslaagd.');
 
   if (mocksEnabled) {
     missing = true;

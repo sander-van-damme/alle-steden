@@ -176,6 +176,62 @@ const validMeasure = (value, maximum) => {
   return Number.isFinite(measured) && measured >= 0 && measured <= maximum ? measured : null;
 };
 
+// Reconcile ordered message anchors against the independent geometry chain. BRouter's
+// OsmTrack skips missing message/tag rows and may aggregate equal tags; matching the sum
+// alone doesn't prove where a gap belongs. Only expose positions when every row's
+// actual endpoint and metre distance agree with the encoded track.
+// https://github.com/abrensch/brouter/blob/master/brouter-core/src/main/java/btools/router/OsmTrack.java
+// https://github.com/abrensch/brouter/blob/master/brouter-util/src/main/java/btools/util/CheapRuler.java
+export function bRouterSurfaceSegments(messages, geometry, metres) {
+  if (!Number.isSafeInteger(metres) || metres <= 0 || !Array.isArray(geometry) ||
+      geometry.length < 2 || geometry.length > coordinateLimit || !Array.isArray(messages) ||
+      messages.length < 2 || messages.length > geometry.length || !Array.isArray(messages[0])) return null;
+  const fields = ['Longitude', 'Latitude', 'Distance', 'WayTags'].map((field) => messages[0].indexOf(field));
+  if (fields.includes(-1)) return null;
+  const [longitude, latitude, distance, wayTags] = fields;
+  const decimal = (n) => Math.round(n * 1e6);
+  const integer = (n) => typeof n === 'number' && Number.isSafeInteger(n) ? n
+    : typeof n === 'string' && /^-?\d+$/.test(n) && Number.isSafeInteger(Number(n)) ? Number(n) : NaN;
+  const scales = new Map();
+  const routeMetres = new Map();
+  let traversed = 0, previous;
+  for (const point of geometry) {
+    const coordinates = readCoordinate(point);
+    if (!coordinates) return null;
+    const [x, y] = coordinates.map(decimal);
+    // The upstream coordinates are published in integer microdegrees.
+    if (Math.abs(coordinates[0] * 1e6 - x) > 1e-6 || Math.abs(coordinates[1] * 1e6 - y) > 1e-6) return null;
+    if (previous) {
+      if (x === previous[0] && y === previous[1]) return null;
+      // Reproduce distance integerization using the midpoint of each 0.1° latitude band.
+      const band = Math.floor((y + previous[1]) / 200_000);
+      if (!scales.has(band)) {
+        const phi = (band + 0.5) * Math.PI / 1800, cos = (i) => Math.cos(i * phi);
+        scales.set(band, [(111.41513 * cos(1) - 0.09455 * cos(3) + 0.00012 * cos(5)) / 1000,
+          (111.13209 - 0.56605 * cos(2) + 0.0012 * cos(4)) / 1000]);
+      }
+      const [mx, my] = scales.get(band);
+      traversed += Math.max(1, Math.round(Math.hypot((x - previous[0]) * mx, (y - previous[1]) * my)));
+      routeMetres.set(traversed, [x, y]);
+    }
+    previous = [x, y];
+  }
+  if (traversed !== metres) return null;
+  const segments = [];
+  let startM = 0;
+  for (const row of messages.slice(1)) {
+    if (!Array.isArray(row)) return null;
+    const m = integer(row[distance]), endM = startM + m, tags = tagsOf(row[wayTags]);
+    const vertex = routeMetres.get(endM);
+    if (!(m > 0) || !tags || !vertex || vertex[0] !== integer(row[longitude]) || vertex[1] !== integer(row[latitude])) return null;
+    const kind = knownPaved.has(tags.surface) ? 'paved' : knownUnpaved.has(tags.surface) ? 'unpaved' : 'unknown';
+    if (segments.at(-1)?.kind === kind) segments.at(-1).endM = endM;
+    else segments.push({ kind, startM, endM });
+    startM = endM;
+  }
+  return startM === metres ? segments : null;
+}
+
 export function normalizeBRouter(data, via = []) {
   const feature = data?.features?.find((item) => item?.geometry?.type === 'LineString');
   const points = feature?.geometry?.coordinates;
@@ -204,6 +260,7 @@ export function normalizeBRouter(data, via = []) {
   const km = metres / 1000;
   return {
     km, minutes: seconds / 60, coordinates, elevationM, waypoints: via,
+    surfaceSegments: bRouterSurfaceSegments(p.messages, coordinates, metres),
     viaSnapMetres, endpointSnapMetres,
     source: routeSource, signals: routeSignals(p.messages, km, validMeasure(p['filtered ascend'], 8000)),
   };

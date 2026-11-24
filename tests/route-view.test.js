@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { fetchRoute, normalizeBRouter } from '../site/assets/planner-routing.js';
-import { createRouteGpx, elevationProfile, surfaceBreakdown } from '../site/assets/planner-route-view.js';
+import { bRouterSurfaceSegments, fetchRoute, normalizeBRouter } from '../site/assets/planner-routing.js';
+import { createRouteGpx, elevationProfile, surfaceBreakdown, surfaceTimeline } from '../site/assets/planner-route-view.js';
 
 const points = [[4.1012, 50.81, 12], [4.1026, 50.82], [4.1047, 50.826, 0], [4.105, 50.827, -1.75]];
 const router = (coordinates, metres, ascent, messages) => normalizeBRouter({
@@ -91,4 +91,47 @@ test('first alternative is explicitly requested without changing valid endpoint 
   assert.equal((await fetchRoute(points, { fetcher, alternativeIndex: 1 })).coordinates.length, 2);
   await assert.rejects(fetchRoute(points, { fetcher, alternativeIndex: -1 }), RangeError);
   assert.deepEqual(calls, ['0','1']);
+});
+
+const anchors = [[3.7, 51.05, 10], [3.7, 51.051, 20], [3.7, 51.052, 30], [3.7, 51.053, 10]];
+const located = [
+  ['Latitude','Distance','Longitude','WayTags'],
+  ['51051000','111','3700000','highway=cycleway surface=asphalt'],
+  ['51052000','111','3700000','highway=cycleway'],
+  ['51053000','111','3700000','highway=track surface=gravel'],
+];
+
+test('exposes distance order only when every message anchor independently reconciles with BRouter track geometry', () => {
+  const actual = router(anchors, 333, '20', located);
+  assert.deepEqual(actual.surfaceSegments, [
+    {kind:'paved',startM:0,endM:111}, {kind:'unknown',startM:111,endM:222}, {kind:'unpaved',startM:222,endM:333},
+  ]);
+  assert.deepEqual(surfaceTimeline({route:actual}).breakdown, {km:.333,paved:.111,unpaved:.111,unknown:.111});
+  assert.equal(bRouterSurfaceSegments(located, anchors, 334), null);
+  assert.equal(bRouterSurfaceSegments([located[0], located[2], located[1], located[3]], anchors, 333), null);
+  assert.equal(bRouterSurfaceSegments([located[0], located[1], located[3]], anchors, 333), null);
+  // Same exact final sum, still invalid: first two message distances place anchors at wrong vertices.
+  const shifted = [located[0], [located[1][0], '112', ...located[1].slice(2)],
+    [located[2][0], '110', ...located[2].slice(2)], located[3]];
+  assert.equal(bRouterSurfaceSegments(shifted, anchors, 333), null);
+  const badTagAnchor = [...located.slice(0, -1), ['51053999','111','3700000','surface=gravel']];
+  assert.equal(bRouterSurfaceSegments(badTagAnchor, anchors, 333), null);
+  assert.equal(surfaceTimeline(trip), null);
+});
+
+test('combines genuine outbound and return chains but never puts composition estimates at an invented position', () => {
+  const first = router(anchors, 333, '20', located);
+  const secondAnchors = [...anchors].reverse();
+  const second = router(secondAnchors, 333, '20', [located[0], ...secondAnchors.slice(1).map(([,lat],i)=>[
+    Math.round(lat*1e6),'111','3700000',i===0 ? 'surface=compacted' : 'surface=asphalt',
+  ])]);
+  const edited = { route:{...first, legs:[first]}, returnRoute:second };
+  assert.deepEqual(surfaceTimeline(edited), {
+    segments:[...first.surfaceSegments, {kind:'unpaved',startM:333,endM:444},{kind:'paved',startM:444,endM:666}],
+    metres:666, returnAtM:333, breakdown:{km:.666,paved:.333,unpaved:.222,unknown:.111},
+  });
+  assert.equal(surfaceTimeline({route:first,returnRoute}), null);
+  assert.equal(surfaceTimeline({route:first,returnRoute:{...second,km:NaN}}), null);
+  assert.equal(surfaceTimeline({route:{...first,surfaceSegments:[{kind:'paved',startM:1,endM:333}]}}), null);
+  assert.equal(surfaceBreakdown({route:{...first, signals:{pavedKm:.3,unpavedKm:.2}}}).unknown,.333);
 });

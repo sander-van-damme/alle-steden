@@ -74,6 +74,7 @@ for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{
     assert.equal(tileCount, 0, 'Closed route never requests map tiles');
     await page.locator('summary').click();
     const map = page.locator('.route-map-viewport');
+    await map.scrollIntoViewIfNeeded();
     const layer = map.locator('svg > g').first();
     await layer.evaluate((el) => new Promise((resolve) => {
       if (el.getAttribute('transform')) resolve();

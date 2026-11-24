@@ -9,6 +9,7 @@ const shell = process.env.PLANNER_HEADLESS_MODULE ? (await import(process.env.PL
 const launch = shell ? { executablePath: await shell.executablePath(), args: shell.args } : {};
 const city = (slug, name, lon, lat) => ({ slug, name, lon, lat, region: 'Vlaanderen' });
 const cities = [city('gent', 'Gent', 3.7, 51.05), city('deinze', 'Deinze', 3.53, 50.98)];
+const mapCities = [...cities, city('oostende', 'Oostende', 2.918, 51.23), city('oudenburg', 'Oudenburg', 2.932, 51.215)];
 const choices = [
   { key: 'town-hall', name: 'Oud stadhuis', kind: 'exterior', cityName: 'Gent', lat: 51.05, lon: 3.7 },
   { key: 'church', name: 'Sint-Martinuskerk', kind: 'exterior', cityName: 'Deinze', lat: 50.98, lon: 3.53 },
@@ -29,6 +30,8 @@ const entries = (keys) => keys.map((key, i) => {
 const trip = (date, keys, id) => {
   const visits = entries(keys);
   return { id, date, cities, route, km: route.km, bikeMinutes: route.minutes, finish: 810, visits,
+    scoreNotes: ['11 km met verhard oppervlak in de bron', '2 km onverhard volgens de router',
+      '4 km op als fietspad gemapte wegen', 'Drukte en comfort zijn niet rechtstreeks gemeten.'],
     timeline: visits.map(({ name, start, end }) => ({ kind: 'visit', label: name, start, end })),
   };
 };
@@ -75,7 +78,9 @@ output.addEventListener('click',(event)=>{
   render();
 });
 bindPlannerDistance(form);
-renderCityMap(document.querySelector('#planner-map'), ${JSON.stringify(cities)});
+renderCityMap(document.querySelector('#planner-map'), ${JSON.stringify(mapCities)}, {
+  onCity: (slug) => { window.selectedFixtureCity = slug; },
+});
 render();
 window.disposeFixture = () => disposePlannerResults(output);
 `;
@@ -100,6 +105,18 @@ try {
   await page.goto(origin + '/planner/');
   const card = page.locator('.trip-card');
   await card.waitFor();
+  assert.deepEqual(await page.locator('[name="mode"]').evaluateAll((modes) => modes.map(({value}) => value)), ['date','place']);
+  assert.equal(await page.locator('[name="mode"]:checked').inputValue(), 'date');
+  assert.equal(await page.locator('[data-mode-place]').isVisible(), false);
+  assert.equal(await page.locator('#planner-upcoming').getAttribute('type'), 'button');
+  if (process.env.PLANNER_UI_SCREENSHOT) {
+    await page.locator('#planner-form').screenshot({ path: process.env.PLANNER_UI_SCREENSHOT + '-date-390.png' });
+  }
+  const mapPanel = page.locator('[data-mode-place]');
+  await mapPanel.evaluate((node) => { node.hidden = false; });
+  await mapPanel.locator('svg g').filter({ has: page.locator('title', { hasText: /^Oostende$/ }) }).locator('circle').last().click({ force: true });
+  assert.equal(await page.evaluate(() => window.selectedFixtureCity), 'oostende');
+  await mapPanel.evaluate((node) => { node.hidden = true; });
   assert.equal(await card.count(), 1, 'one route card for two alternate dates');
   const slider = page.locator('#planner-max-km');
   await slider.focus();
@@ -108,7 +125,17 @@ try {
   assert.equal(await card.locator('[data-trip-date] option').count(), 2);
   assert.equal(await card.locator('[data-route-detail] [download]').count(), 0, 'map only mounts on expansion');
 
-  await card.getByText('Bekijk route op kaart', { exact: true }).press('Enter');
+  const routeSummary = card.locator('[data-trip-route-summary]');
+  assert.match(await routeSummary.innerText(), /Kaart, hoogteprofiel en wegdek/);
+  assert.match(await routeSummary.innerText(), /download de GPX/);
+  const routeSignals = await card.locator('.trip-signals').innerText();
+  assert.doesNotMatch(routeSignals, /verhard oppervlak|onverhard volgens de router|wegdek niet bekend/);
+  assert.match(routeSignals, /fietspad/);
+  assert.match(routeSignals, /BRouter/);
+  if (process.env.PLANNER_UI_SCREENSHOT) {
+    await routeSummary.screenshot({ path: process.env.PLANNER_UI_SCREENSHOT + '-route-teaser-390.png' });
+  }
+  await routeSummary.press('Enter');
   await card.locator('[data-route-detail] [download]').waitFor();
   const date = card.locator('[data-trip-date]');
   await date.focus();

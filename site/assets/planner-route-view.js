@@ -71,12 +71,40 @@ export function surfaceBreakdown(trip) {
   let paved = 0, unpaved = 0;
   for (const leg of legs) {
     const p = leg.signals?.pavedKm, u = leg.signals?.unpavedKm;
-    if (!finite(p) || !finite(u) || p < 0 || u < 0 || p + u > leg.km * 1.08) continue;
-    const ratio = p + u > leg.km ? leg.km / (p + u) : 1;
-    paved += p * ratio;
-    unpaved += u * ratio;
+    if (!finite(p) || !finite(u) || p < 0 || u < 0 || p + u > leg.km + 1e-8) continue;
+    paved += p;
+    unpaved += u;
   }
   return { km, paved, unpaved, unknown: Math.max(0, km - paved - unpaved) };
+}
+
+const surfaceKinds = [['paved', 'Verhard'], ['unpaved', 'Onverhard'], ['unknown', 'Onbekend']];
+const surfaceKeys = new Set(surfaceKinds.map(([key]) => key));
+
+export function surfaceTimeline(trip) {
+  const outbound = routeParts(trip.route), inbound = routeParts(trip.returnRoute);
+  if (!outbound.length || trip.returnRoute && !inbound.length) return null;
+  const segments = [];
+  const totals = { paved: 0, unpaved: 0, unknown: 0 };
+  let metres = 0, returnAtM = null;
+  for (const [direction, legs] of [[0, outbound], [1, inbound]]) {
+    if (direction && legs.length) returnAtM = metres;
+    for (const leg of legs) {
+      if (!finite(leg.km) || leg.km <= 0 || !Array.isArray(leg.surfaceSegments) || segments.length + leg.surfaceSegments.length > 2000) return null;
+      let currentM = 0;
+      for (const segment of leg.surfaceSegments) {
+        const { kind, startM, endM } = segment ?? {};
+        if (!surfaceKeys.has(kind) || startM !== currentM || !Number.isSafeInteger(endM) || endM <= startM) return null;
+        segments.push({ kind, startM: startM + metres, endM: endM + metres });
+        totals[kind] += endM - startM;
+        currentM = endM;
+      }
+      if (currentM <= 0 || Math.abs(currentM - leg.km * 1000) > 1e-6) return null;
+      metres += currentM;
+    }
+  }
+  return { segments, metres, returnAtM,
+    breakdown: { km: metres / 1000, paved: totals.paved / 1000, unpaved: totals.unpaved / 1000, unknown: totals.unknown / 1000 } };
 }
 
 function segmentKm([lonA, latA], [lonB, latB]) {
@@ -119,32 +147,88 @@ export function elevationProfile(trip) {
     ascent: ascentKnown ? ascent : null };
 }
 
-function renderSurface(doc, breakdown) {
-  const figure = node(doc, 'figure', 'route-insight');
-  figure.append(node(doc, 'figcaption', '', 'Ondergrond'));
-  if (!breakdown || breakdown.paved + breakdown.unpaved <= 0) {
+const formatKm = (km) => (km > 0 && km < 0.05 ? '<0,1' : nf.format(km)) + ' km';
+// Allocate 1,000 tenths of a percentage point across the legend so rounding
+// doesn't make the shares appear to add up to 99% or 101%.
+function surfaceShares(breakdown) {
+  const entries = surfaceKinds.map(([kind]) => {
+    const exact = 1000 * breakdown[kind] / breakdown.km;
+    const rounded = Math.floor(exact);
+    return {kind, exact, rounded};
+  });
+  const byRemainder = [...entries].sort((a, b) => b.exact - b.rounded - (a.exact - a.rounded));
+  const left = 1000 - entries.reduce((sum, {rounded}) => sum + rounded, 0);
+  for (const entry of byRemainder.slice(0, Math.max(0, left))) entry.rounded++;
+  return Object.fromEntries(entries.map(({kind, exact, rounded}) => [kind,
+    (exact > 0 && rounded === 0 ? '<0,1' : nf.format(rounded / 10)) + '%']));
+}
+
+function renderSurface(doc, trip) {
+  const figure = node(doc, 'figure', 'route-insight route-surface');
+  const timeline = surfaceTimeline(trip);
+  const breakdown = timeline?.breakdown ?? surfaceBreakdown(trip);
+  const title = node(doc, 'figcaption', '', 'Wegdek');
+  figure.append(title);
+  if (!breakdown) {
     figure.append(node(doc, 'p', 'route-view-hint', 'Ondergrond niet beschikbaar voor deze route.'));
     return figure;
   }
+  const ordered = !!(timeline && breakdown.paved + breakdown.unpaved > 0);
+  figure.dataset.surfaceView = ordered ? 'distance' : 'composition';
+  const header = node(doc, 'div', 'route-surface-heading');
+  header.append(node(doc, 'h5', '', ordered ? 'Langs de route' : 'Verdeling over de hele route'),
+    node(doc, 'span', 'route-surface-mode', ordered ? 'In rijvolgorde' : 'Geen rijvolgorde'));
+  const graphic = node(doc, 'div', 'route-surface-graphic');
+  graphic.setAttribute('aria-hidden', 'true');
   const bar = node(doc, 'div', 'route-surface-bar');
-  bar.setAttribute('aria-hidden', 'true');
+  const slices = ordered ? timeline.segments.map(({ kind, startM, endM }) => ({kind, width: (endM - startM) / timeline.metres,
+    label: `${formatKm(startM / 1000)}–${formatKm(endM / 1000)} · ${surfaceKinds.find(([key]) => key === kind)[1]}`}))
+    : surfaceKinds.map(([kind]) => ({ kind, width: breakdown[kind] / breakdown.km }));
+  for (const {kind, width, label} of slices) {
+    if (width <= 0) continue;
+    const segment = node(doc, 'span', 'route-surface-' + kind);
+    segment.style.flexGrow = String(width);
+    if (label) segment.title = label;
+    bar.append(segment);
+  }
+  graphic.append(bar);
+  if (ordered) {
+    const scale = node(doc, 'div', 'route-surface-scale');
+    scale.append(node(doc, 'span', '', 'Start · 0 km'), node(doc, 'span', '', formatKm(breakdown.km / 2)),
+      node(doc, 'span', '', formatKm(breakdown.km)));
+    graphic.append(scale);
+    if (timeline.returnAtM != null) {
+      const divider = node(doc, 'span', 'route-surface-return');
+      divider.style.left = 100 * timeline.returnAtM / timeline.metres + '%';
+      divider.title = 'Start terugrit · ' + formatKm(timeline.returnAtM / 1000);
+      bar.append(divider);
+    }
+  }
   const legend = node(doc, 'ul', 'route-insight-legend');
-  for (const [key, name] of [['paved', 'Verhard'], ['unpaved', 'Onverhard'], ['unknown', 'Onbekend']]) {
+  const shares = surfaceShares(breakdown);
+  for (const [key, name] of surfaceKinds) {
     const km = breakdown[key];
-    if (km <= 0.0001) continue;
-    const part = node(doc, 'span', 'route-surface-' + key);
-    part.style.flexGrow = String(km);
-    bar.append(part);
-    const item = node(doc, 'li', 'route-surface-' + key, `${name}: ${km < 0.05 ? '<0,1' : nf.format(km)} km`);
+    const item = node(doc, 'li', 'route-surface-' + key);
+    const swatch = node(doc, 'span', 'route-surface-swatch');
+    swatch.setAttribute('aria-hidden', 'true');
+    const content = node(doc, 'span', 'route-surface-stat');
+    const details = node(doc, 'span', 'route-surface-stat-detail');
+    details.append(node(doc, 'span', '', name), node(doc, 'span', 'route-surface-km', formatKm(km)));
+    content.append(node(doc, 'strong', '', shares[key]), details);
+    item.append(swatch, content);
     legend.append(item);
   }
-  figure.append(bar, legend, node(doc, 'p', 'route-view-hint',
-    'Geschat met bekende OpenStreetMap-wegdektags. De balk toont hoeveel, niet waar.'));
+  const explanation = breakdown.paved + breakdown.unpaved === 0
+    ? 'Voor deze route ontbreekt bruikbare informatie over het wegdek.'
+    : ordered ? 'Arcering = onbekend wegdek.' : 'De kleuren tonen hoeveel, niet waar.';
+  figure.append(header, graphic, legend, node(doc, 'p', 'route-view-hint',
+    explanation + (ordered && timeline.returnAtM != null ? ' Streep: terugrit vanaf ' + formatKm(timeline.returnAtM / 1000) + '.' : '')
+      + ' Bron: OpenStreetMap via BRouter.'));
   return figure;
 }
 
 function renderElevation(doc, profile) {
-  const figure = node(doc, 'figure', 'route-insight');
+  const figure = node(doc, 'figure', 'route-insight route-altitude');
   figure.append(node(doc, 'figcaption', '', 'Hoogteprofiel'));
   if (!profile.known || !profile.km) {
     figure.append(node(doc, 'p', 'route-view-hint', 'Hoogtepunten niet beschikbaar voor deze route.'));
@@ -462,7 +546,7 @@ export function renderRouteView(trip, { document: doc = globalThis.document } = 
   if (!outbound.length || !doc?.defaultView) return null;
   const view = node(doc, 'section', 'route-view');
   const header = node(doc, 'header', 'route-view-header');
-  header.append(node(doc, 'h4', '', 'Fietsroute op de kaart'));
+  header.append(node(doc, 'h4', '', 'Fietsroute'));
   const gpx = createRouteGpx(trip);
   if (gpx) {
     const download = node(doc, 'a', 'route-view-gpx', 'Download GPX');
@@ -482,9 +566,9 @@ export function renderRouteView(trip, { document: doc = globalThis.document } = 
   }
   const label = 'Fietsroute ' + (trip.cities ?? []).map(({name}) => name).join(' naar ') + (inbound.length ? ' en terug' : '');
   const charts = node(doc, 'div', 'route-insights');
-  charts.append(renderSurface(doc, surfaceBreakdown(trip)), renderElevation(doc, elevationProfile(trip)));
+  charts.append(renderSurface(doc, trip), renderElevation(doc, elevationProfile(trip)));
   const map = createMap(doc, outbound, inbound, routeMarkers(trip, outbound), label, trip.edited === true);
-  view.append(header, map.figure, charts);
+  view.append(header, charts, map.figure);
   view.dismissRouteView = map.dispose;
   if (trip.returnRoute && !inbound.length) view.append(node(doc, 'p', 'route-view-hint', 'Geometrie voor de terugrit ontbreekt; de kaart toont alleen de heenrit.'));
   return view;

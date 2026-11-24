@@ -11,6 +11,9 @@ const mapSelection = document.querySelector('#planner-map-selection');
 const resultEl = document.querySelector('#planner-results');
 const statusEl = document.querySelector('#planner-status');
 const submit = document.querySelector('#planner-submit');
+const upcoming = document.querySelector('#planner-upcoming');
+const mapPanel = document.querySelector('[data-mode-place]');
+const dateAdjacent = formEl.querySelector('[data-date-adjacent]');
 const hint = document.querySelector('#planner-mode-hint');
 const cityField = formEl.elements.city;
 const regionField = formEl.elements.region;
@@ -49,10 +52,13 @@ function refreshMap() {
   });
   mapSelection.textContent = selected ? 'In de buurt van ' + selected.name : (region || 'Heel België');
   dateControls.hidden = mode !== 'date';
+  if (dateAdjacent) dateAdjacent.hidden = mode !== 'date';
+  if (mapPanel) mapPanel.hidden = mode !== 'place';
   dateField.disabled = mode !== 'date';
-  hint.textContent = mode === 'date' ? 'Doordeweeks gekozen? ‘Hele weekend’ zoekt op de volgende zaterdag en zondag.'
-    : mode === 'place' ? (selected ? `We zoeken vertrekpunten tot ${departureRadius(options().maxKm, options().roundtrip)} km hemelsbreed rond ${selected.name}. ` : 'Kies een stad of gewest. ') + 'We vergelijken de komende acht weekenden.'
-      : 'Ontdek een ander voorstel per weekend, waar de beschikbare gegevens het toelaten.';
+  formEl.elements.weekend.disabled = mode !== 'date';
+  hint.textContent = mode === 'date' ? 'Kies één dag. Hele weekend zoekt op de zaterdag en zondag bij die datum.'
+    : (selected ? `We zoeken vertrekpunten tot ${departureRadius(options().maxKm, options().roundtrip)} km hemelsbreed rond ${selected.name}. ` : 'Kies een stad of gewest. ') + 'We vergelijken de komende acht weekenden.';
+  if (mode !== 'place') return;
   renderCityMap(mapEl, cities, {
     city, region,
     onCity: (slug) => {
@@ -246,10 +252,15 @@ formEl.addEventListener('change', (event) => {
   if (event.target === regionField && regionField.value && cityField.selectedOptions[0]?.dataset.region !== regionField.value) cityField.value = '';
   refreshMap();
 });
-formEl.addEventListener('submit', async (event) => {
-  event.preventDefault();
+async function startSearch(withUpcoming = false) {
   if (!cities.length) return;
   const filters = options();
+  if (withUpcoming) {
+    if (filters.mode !== 'date') return;
+    // A secondary action in the date panel, not a user-visible third mode.
+    // Date and whole-weekend inputs are preserved for the regular submit.
+    filters.mode = 'calendar';
+  }
   if (filters.mode === 'place' && !filters.city && !filters.region) {
     setPlannerStatus(statusEl, 'Kies eerst een stad of gewest als vertrekpunt.', 'error');
     cityField.focus();
@@ -298,7 +309,12 @@ formEl.addEventListener('submit', async (event) => {
     if (job === current && !current.signal.aborted) setPlannerStatus(statusEl,
       error?.message === 'Kies een datum vanaf vandaag tot één jaar vooruit.' ? error.message : 'Zoeken lukt momenteel niet. Probeer opnieuw.', 'error');
   }
+}
+formEl.addEventListener('submit', (event) => {
+  event.preventDefault();
+  void startSearch(Boolean(upcoming && event.submitter === upcoming));
 });
+if (upcoming?.type === 'button') upcoming.addEventListener('click', () => void startSearch(true));
 resultEl.addEventListener('click', (event) => {
   const button = event.target.closest('button');
   const trip = displayedTrip(event);
@@ -354,5 +370,6 @@ try {
   }
   refreshMap();
   submit.disabled = false;
+  if (upcoming) upcoming.disabled = false;
   setPlannerStatus(statusEl, 'Kies een vertrekpunt of datum om echte fietsroutes te vergelijken.', 'ready');
 } catch { setPlannerStatus(statusEl, 'De stedenlijst kon niet worden geladen. Laad deze pagina opnieuw.', 'error'); }

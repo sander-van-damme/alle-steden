@@ -105,7 +105,7 @@ export function renderCityMap(container, cities, { onCity, onRegion, city, regio
     shape.addEventListener('click', () => onRegion?.(name));
     map.append(shape);
   }
-  for (const [name, coordinates] of [['Vlaanderen', [3.72, 51.3]], ['Wallonië', [5.02, 49.94]]]) {
+  for (const [name, coordinates] of (city ? [] : [['Vlaanderen', [3.72, 51.3]], ['Wallonië', [5.02, 49.94]]])) {
     const [x, y] = project(coordinates);
     const label = svgElement('text', { x, y, 'text-anchor': 'middle', class: 'planner-region-caption' });
     label.textContent = name;
@@ -115,6 +115,8 @@ export function renderCityMap(container, cities, { onCity, onRegion, city, regio
   const visible = cities.filter((item) => coordPair(cityCoords(item))).sort((a, b) =>
     Number(a.slug === city) - Number(b.slug === city) || collator.compare(a.name, b.name));
   const active = visible.find((item) => item.slug === city);
+  const targets = visible.filter((item) => !region || item.region === region)
+    .map((item) => ({ slug: item.slug, point: project(cityCoords(item)) }));
   for (const item of visible) {
     const [x, y] = project(cityCoords(item));
     const muted = region && item.region !== region;
@@ -126,7 +128,19 @@ export function renderCityMap(container, cities, { onCity, onRegion, city, regio
     const marker = svgElement('circle', { r: item.slug === city ? 6 : 3.6 });
     labelSvg(group, item.name);
     group.append(hitArea, marker);
-    group.addEventListener('click', () => onCity?.(item.slug));
+    group.addEventListener('click', (event) => {
+      // Larger touch targets can overlap. Resolve a pointer activation from
+      // its actual position rather than whichever SVG target was painted last.
+      const transform = event.isTrusted && event.detail > 0 && map.getScreenCTM();
+      if (!transform) return onCity?.(item.slug);
+      const pointer = new DOMPoint(event.clientX, event.clientY).matrixTransform(transform.inverse());
+      let selected = item.slug, nearest = Infinity;
+      for (const { slug, point: [px, py] } of targets) {
+        const distance = (px - pointer.x) ** 2 + (py - pointer.y) ** 2;
+        if (distance < nearest) { nearest = distance; selected = slug; }
+      }
+      onCity?.(selected);
+    });
     map.append(group);
   }
   if (active) {
@@ -273,21 +287,24 @@ function renderTimeline(trip) {
 function renderSignals(trip) {
   const panel = element('section', 'trip-signals');
   panel.append(element('h4', '', 'Hoe aangenaam is de route?'));
-  const notes = trip.scoreNotes ?? [];
-  if (notes.length) {
+  // The expanded route view owns surface and elevation breakdowns.
+  const notes = (trip.scoreNotes ?? []).filter((note) => !/verhard oppervlak in de bron|onverhard volgens de router|geschatte hoogtemeters klimmen/i.test(note));
+  const safety = notes.find((note) => /niet rechtstreeks gemeten/i.test(note));
+  const highlights = notes.filter((note) => /als fietspad gemapte|als grotere weg gemapte/i.test(note)).slice(0, 2);
+  if (highlights.length) {
     const list = element('ul', 'trip-signal-list');
-    for (const note of notes) list.append(element('li', '', note));
+    for (const note of highlights) list.append(element('li', '', note));
     panel.append(list);
-  } else {
-    panel.append(element('p', 'planner-hint', 'Verkeer, wegdek, uitzicht en verlichting zijn niet bevestigd.'));
   }
-  const routeLegs = [trip.route, trip.returnRoute].filter(Boolean);
-  const knownSurface = routeLegs.map((leg) => leg.signals?.surfaceKnownKm);
-  if (routeLegs.length && knownSurface.every(Number.isFinite) && trip.km > 0) {
-    const knownPercent = Math.min(100, Math.round(100 * knownSurface.reduce((sum, km) => sum + km, 0) / trip.km));
-    if (knownPercent < 100) panel.append(element('p', 'planner-hint', `Van ${100 - knownPercent}% van de route is het wegdek niet bekend.`));
-  } else if (notes.length) {
-    panel.append(element('p', 'planner-hint', 'Onbekend hoeveel van het wegdek gedocumenteerd is.'));
+  panel.append(element('p', 'planner-hint', safety ?? 'Verkeersdrukte en rijcomfort zijn niet gemeten.'));
+  const more = notes.filter((note) => note !== safety && !highlights.includes(note));
+  if (more.length) {
+    const details = element('details', 'planner-limits trip-signal-details');
+    details.append(element('summary', '', 'Meer route-informatie'));
+    const list = element('ul', 'trip-signal-list');
+    for (const note of more) list.append(element('li', '', note));
+    details.append(list);
+    panel.append(details);
   }
   const credits = element('p', 'planner-hint trip-credits');
   credits.append('Routebron: ');
@@ -477,7 +494,9 @@ function renderEditor(trip) {
 function renderRouteDetails(trip, open) {
   const view = element('details', 'trip-route-detail');
   view.dataset.tripRoute = '';
-  const summary = element('summary', '', 'Bekijk route op kaart');
+  const summary = element('summary');
+  summary.append(element('span', 'trip-route-summary-title', 'Kaart, hoogteprofiel en wegdek'),
+    element('small', 'trip-route-summary-hint', 'Bekijk de route en download de GPX.'));
   summary.dataset.tripRouteSummary = '';
   const status = element('p', 'planner-hint');
   status.setAttribute('role', 'status');
@@ -606,7 +625,7 @@ export function renderPlannerResults(container, results, { mode = 'date', schedu
   const openRoutes = new Set([...container.querySelectorAll('[data-trip-route][open]')]
     .map((view) => view.closest('[data-trip-key]').dataset.tripKey));
   const tripCard = (trip) => renderTrip(trip, openRoutes.has(String(trip.id)));
-  const limitsOpen = container.querySelector('.planner-limits')?.open;
+  const limitsOpen = container.querySelector(':scope > .planner-limits')?.open;
   const main = document.createDocumentFragment();
   const { trips = [], countCandidates, checkedRoutes, failedRoutes, notes = [] } = results;
   if (Number.isFinite(countCandidates) || Number.isFinite(checkedRoutes)) {

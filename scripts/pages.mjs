@@ -54,7 +54,7 @@ export function plannerPage(cities) {
         <div>
           <p class="eyebrow">Alle Steden · Op de fiets</p>
           <h1>Plan een stadsrit.</h1>
-          <p>Zoek op datum of in de buurt van een stad. Of bekijk de komende weekenden en ontdek welke stops je op één rit kunt combineren.</p>
+          <p>Vertrek van een datum of zoek in de buurt van een stad. Ontdek welke stops je op één rit kunt combineren.</p>
         </div>
         <span class="planner-heading-mark" aria-hidden="true">01<span>↗&#xfe0e;</span>02</span>
       </header>
@@ -65,8 +65,7 @@ export function plannerPage(cities) {
             <legend>Hoe wil je zoeken?</legend>
             <div class="planner-mode-options">
               <label><input type="radio" name="mode" value="date" checked><span>Op datum</span></label>
-              <label><input type="radio" name="mode" value="place"><span>Op locatie</span></label>
-              <label><input type="radio" name="mode" value="calendar"><span>Komende weekenden</span></label>
+              <label><input type="radio" name="mode" value="place"><span>In de buurt van</span></label>
             </div>
           </fieldset>
           <div class="planner-controls" data-mode-date>
@@ -93,10 +92,15 @@ export function plannerPage(cities) {
             <label class="planner-check"><input type="checkbox" name="scheduledOnly" aria-describedby="planner-visit-hint"> Alleen met bevestigde bezoekuren of evenementen</label>
             <p class="planner-hint" id="planner-visit-hint">Standaard tellen ook korte buitenstops mee. Dat is geen bevestiging dat je ergens naar binnen kunt.</p>
           </div>
-          <button type="submit" class="button primary" id="planner-submit" disabled>Zoek ritten <span aria-hidden="true">→</span></button>
+          <div class="planner-actions">
+            <button type="submit" class="button primary" id="planner-submit" disabled>Zoek ritten <span aria-hidden="true">→</span></button>
+            <span data-date-adjacent>
+              <button type="button" class="button secondary" id="planner-upcoming" disabled>Bekijk komende weekenden</button>
+            </span>
+          </div>
           <noscript><p>Schakel JavaScript in om de planner te gebruiken. De <a href="/#steden">stedenlijst</a> blijft beschikbaar.</p></noscript>
         </form>
-        <figure class="planner-panel planner-map-panel">
+        <figure class="planner-panel planner-map-panel" data-mode-place hidden>
           <div class="planner-map-heading"><h2>Kies op de kaart</h2><span id="planner-map-selection" aria-live="polite"></span></div>
           <p class="planner-hint">Klik op een stad of gewest, of kies dezelfde opties in het formulier.</p>
           <div class="planner-map" id="planner-map"></div>
