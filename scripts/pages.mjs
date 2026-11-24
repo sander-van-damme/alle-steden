@@ -50,6 +50,7 @@ export function indexPage(cities) {
     main: `<main id="inhoud" class="wrap home">
       <section class="hero" aria-labelledby="intro">
         <div class="hero-copy">
+          <p class="eyebrow">Een Belgische stedengids</p>
           <h1 id="intro">België, stad<br>voor stad.</h1>
           <p>Een ontdekkingsreis langs alle Belgische steden met een officiële stadstitel. Liefst op de fiets.</p>
           <a class="button primary" href="#steden">Bekijk alle steden <span aria-hidden="true">↓</span></a>
@@ -62,7 +63,7 @@ export function indexPage(cities) {
       <section id="steden" class="directory" aria-labelledby="directory-title">
         <div class="section-heading">
           <h2 id="directory-title">Stedenlijst</h2>
-          <span id="count" role="status">${cities.length} steden</span>
+          <span id="count" class="result-count" role="status">${cities.length} steden</span>
         </div>
         <form id="filters" class="filters" role="search" hidden>
           <label>Zoek op stadsnaam
@@ -72,24 +73,60 @@ export function indexPage(cities) {
             <select id="region"><option value="">Alle gewesten</option>${regionOptions}</select>
           </label>
         </form>
-        <p id="empty" hidden>Geen steden gevonden.</p>
+        <p id="empty" class="source-status" hidden>Geen steden gevonden. Probeer een andere naam of een ander gewest.</p>
         <ul class="city-grid" id="city-list">${cards}</ul>
       </section>
     </main>`,
   });
 }
 
-function entryList(title, items) {
-  if (!items.length) return '';
-  return `<section class="entries">
-    <h2>${title}</h2>
-    <ul>${items.map(({ name, description, url, start, end }) => `<li>
+function visitDate(value) {
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const date = new Date(dateOnly ? value + 'T12:00:00Z' : value);
+  if (Number.isNaN(date.getTime())) return escapeHtml(value);
+  return escapeHtml(new Intl.DateTimeFormat('nl-BE', {
+    timeZone: 'Europe/Brussels', day: 'numeric', month: 'short', year: 'numeric',
+    ...(!dateOnly && { hour: 'numeric', minute: '2-digit' }),
+  }).format(date));
+}
+
+function entryDate(start, end) {
+  const time = (value) => `<time datetime="${escapeHtml(value)}">${visitDate(value)}</time>`;
+  return start ? `<p class="entry-meta">${time(start)}${end && end !== start ? ` tot ${time(end)}` : ''}</p>` : '';
+}
+
+function entryList(title, intro, kind, items) {
+  const liveNotice = kind === 'places' ? 'bezienswaardigheden' : 'evenementen';
+  const cards = items.map(({ id, name, description, url, start, end, openingHours }) => {
+    const hours = (Array.isArray(openingHours) ? openingHours : [openingHours]).filter(Boolean).join(' · ');
+    return `<li${id ? ` data-item-id="${escapeHtml(id)}"` : ''}>
       <h3>${url ? `<a href="${escapeHtml(url)}">${escapeHtml(name)} ${arrow}</a>` : escapeHtml(name)}</h3>
-      ${description ? `<p>${escapeHtml(description)}</p>` : ''}
-      ${start ? `<p><time datetime="${escapeHtml(start)}">${escapeHtml(start)}</time>${end ? ` – <time datetime="${escapeHtml(end)}">${escapeHtml(end)}</time>` : ''}</p>` : ''}
-    </li>`).join('')}</ul>
+      ${entryDate(start, end)}
+      ${hours ? `<p class="entry-meta"><strong>Openingsuren:</strong> ${escapeHtml(hours)}</p>` : ''}
+      ${description ? `<p class="entry-description">${escapeHtml(description)}</p>` : ''}
+    </li>`;
+  }).join('');
+
+  return `<section id="${kind}" class="entries" aria-labelledby="${kind}-title" data-live-${kind}>
+    <div class="entries-heading"><h2 id="${kind}-title">${title}</h2><p>${intro}</p></div>
+    <ul class="entry-list" data-static-results${!cards ? ' hidden' : ''}>${cards}</ul>
+    <ul class="entry-list" data-results></ul>
+    <p class="source-status" data-status role="status" aria-live="polite"></p>
+    <button type="button" class="button secondary retry" data-retry hidden>Opnieuw proberen</button>
+    <div class="official-links" data-official-links hidden></div>
+    <noscript><p class="source-status">Schakel JavaScript in om extra ${liveNotice} uit externe bronnen te laden.</p></noscript>
   </section>`;
 }
+
+const cityDecoration = `<div class="city-decoration" aria-hidden="true">
+  <svg viewBox="0 0 330 230" preserveAspectRatio="xMaxYMid slice" focusable="false">
+    <path d="M350 52c-51 1-59 67-101 69s-61-45-95-26c-34 19-13 54-40 78-23 21-53 14-72 23"
+      fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 7" stroke-linecap="round"/>
+    <path d="M125 102V72l14-17 14 17v21m7-7V55l12-14V22l14-15 14 15v18l13 15v40m-43-48v19m18-19v29m28 22V76l19-16 19 16v22m-19-16v13"
+      fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="42" cy="196" r="5" fill="currentColor"/><circle cx="249" cy="121" r="5" fill="currentColor"/>
+  </svg>
+</div>`;
 
 export function cityPage(city) {
   const { name, names, slug, region, province, code, coordinates, cityUrl, description, places, events } = city;
@@ -97,25 +134,41 @@ export function cityPage(city) {
   const mapUrl = coordinates
     ? `https://www.openstreetmap.org/?mlat=${coordinates.latitude}&mlon=${coordinates.longitude}#map=13/${coordinates.latitude}/${coordinates.longitude}`
     : undefined;
+  const qid = new URL(cityUrl).pathname.split('/').at(-1);
+  const regionClass = region === 'Vlaanderen' ? 'flemish' : region === 'Wallonië' ? 'walloon' : 'brussels';
 
   return layout({
     title: `${name} · Alle Steden`,
-    main: `<main id="inhoud" class="wrap detail">
-      <a class="back" href="/#steden">← Alle steden</a>
+    script: '<script type="module" src="/assets/city-live.js"></script>',
+    main: `<main id="inhoud" class="wrap detail ${regionClass}" data-city="${escapeHtml(slug)}"
+      data-name="${escapeHtml(name)}" data-region="${escapeHtml(region)}" data-qid="${escapeHtml(qid)}"
+      data-code="${escapeHtml(code)}" data-aliases="${escapeHtml(JSON.stringify(aliases))}">
+      <a class="back" href="/#steden"><span aria-hidden="true">←</span> Alle steden</a>
       <header class="city-heading">
-        <p class="location">${escapeHtml([region, province].filter(Boolean).join(' · '))}</p>
-        <h1>${escapeHtml(name)}</h1>
-        ${aliases.length ? `<p class="aliases">${escapeHtml(aliases.join(' · '))}</p>` : ''}
-        ${description ? `<p class="city-description">${escapeHtml(description)}</p>` : ''}
-        <div class="city-links">
-          ${mapUrl ? `<a class="button primary" href="${escapeHtml(mapUrl)}">Bekijk op de kaart ${arrow}</a>` : ''}
-          <a class="button secondary" href="${escapeHtml(cityUrl)}">Wikidata ${arrow}</a>
-          <a class="button secondary" href="/data/${slug}.ttl" download>Download Turtle <span aria-hidden="true">↓</span></a>
+        <div class="city-intro">
+          <p class="location">${escapeHtml([region, province].filter(Boolean).join(' · '))}</p>
+          <h1>${escapeHtml(name)}</h1>
+          ${aliases.length ? `<p class="aliases">${escapeHtml(aliases.join(' · '))}</p>` : ''}
+          ${description ? `<p class="city-description">${escapeHtml(description)}</p>` : ''}
+          ${mapUrl ? `<div class="city-links"><a class="button primary" href="${escapeHtml(mapUrl)}">Bekijk op de kaart ${arrow}</a></div>` : ''}
         </div>
+        ${cityDecoration}
       </header>
-      ${entryList('Bezienswaardigheden', places)}
-      ${entryList('Evenementen', events)}
-      <p class="code">NIS-code ${escapeHtml(code)}</p>
+      <nav class="city-nav" aria-label="Op deze pagina">
+        <a href="#places">Bezienswaardigheden</a><a href="#events">Evenementen</a><a href="#stadsdata">Stadsdata</a>
+      </nav>
+      <div class="visit-grid">
+        ${entryList('Bezienswaardigheden', 'Plekken om te ontdekken. Openingsuren staan erbij als de bron ze meegeeft.', 'places', places)}
+        ${entryList('Evenementen', 'Activiteiten en terugkerende evenementen, met datums wanneer bekend.', 'events', events)}
+      </div>
+      <details id="stadsdata" class="city-data">
+        <summary>Stadsdata</summary>
+        <p class="code">NIS-code ${escapeHtml(code)}</p>
+        <div class="city-links">
+          <a class="button secondary" href="${escapeHtml(cityUrl)}">Wikidata ${arrow}</a>
+          <a class="button secondary" href="/data/${escapeHtml(slug)}.ttl" download>Download Turtle <span aria-hidden="true">↓</span></a>
+        </div>
+      </details>
     </main>`,
   });
 }

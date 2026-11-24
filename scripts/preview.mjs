@@ -2,12 +2,14 @@ import { createServer } from 'node:http';
 import { stat, readFile } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { onRequest } from '../functions/api/city-live.js';
 
 const directory = fileURLToPath(new URL('../dist', import.meta.url));
 const mediaTypes = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
   '.ttl': 'text/turtle; charset=utf-8',
   '.webp': 'image/webp',
 };
@@ -19,6 +21,17 @@ await stat(resolve(directory, 'index.html')).catch(() => {
 createServer(async (request, response) => {
   try {
     const url = new URL(request.url, 'http://localhost');
+    if (url.pathname === '/api/city-live') {
+      const result = await onRequest({
+        request: new Request(url, { method: request.method }),
+        env: { UIT_API_KEY: process.env.UIT_API_KEY, ASSETS: {
+          fetch: async () => new Response(await readFile(resolve(directory, 'data/cities.json'))),
+        } },
+      });
+      response.writeHead(result.status, Object.fromEntries(result.headers));
+      response.end(Buffer.from(await result.arrayBuffer()));
+      return;
+    }
     let path = resolve(directory, '.' + decodeURIComponent(url.pathname));
     if (path !== directory && !path.startsWith(directory + sep)) throw new Error('Ongeldig pad');
     if ((await stat(path)).isDirectory()) {

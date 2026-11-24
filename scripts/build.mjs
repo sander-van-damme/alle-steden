@@ -80,10 +80,12 @@ function readCity(filename, turtle) {
   function entries(subjects) {
     return [...new Map(subjects.map((entity) => [entity.value, entity])).values()]
       .map((entity) => ({
+        id: entity.value,
         name: text(entity, 'name'),
         description: text(entity, 'description'),
         start: text(entity, 'startDate'),
         end: text(entity, 'endDate'),
+        openingHours: labels(entity, 'openingHours').map((term) => term.value),
         url: objects(entity, 'url').find((term) => term.termType === 'NamedNode' &&
           /^https?:\/\//.test(term.value))?.value ?? itemUrl(entity),
       }))
@@ -124,6 +126,7 @@ for (const property of ['cityUrl', 'code']) {
 
 await rm(output, { recursive: true, force: true });
 await cp(resolve(root, 'site'), output, { recursive: true });
+await mkdir(resolve(output, 'data'), { recursive: true });
 
 async function writePage(path, html) {
   const directory = resolve(output, path);
@@ -134,6 +137,8 @@ async function writePage(path, html) {
 await Promise.all([
   cp(source, resolve(output, 'data'), { recursive: true, filter: (path) => path === source || path.endsWith('.ttl') }),
   writePage('.', indexPage(cities)),
+  writeFile(resolve(output, 'data', 'cities.json'), JSON.stringify(Object.fromEntries(cities.map(({ slug, name, names, region, cityUrl }) =>
+    [slug, { name, names, region, qid: cityUrl.split('/').at(-1) }])))),
   writeFile(resolve(output, '404.html'), layout({
     title: 'Pagina niet gevonden · Alle Steden',
     main: '<main id="inhoud" class="wrap detail"><h1>Pagina niet gevonden</h1><p><a href="/">Terug naar de stedenlijst</a></p></main>',
