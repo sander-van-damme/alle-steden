@@ -6,7 +6,8 @@
   "engines": { "node": ">=22" },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "preview": "node scripts/preview.mjs"
+    "preview": "node scripts/preview.mjs",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": { "n3": "2.13.12" }
 }
