@@ -42,3 +42,12 @@ wd:Q2974385 a schema:LandmarksOrHistoricalBuildings ;
     ] ;
     schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/91034-CLT-0001-01> ;
     dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/91034-CLT-0001-01>, <https://www.dinant.be/wp-content/uploads/2024/11/guide_operationnel.pdf> .
+
+<#museumzondag-2027-patrimoine-medieval-mosan> a schema:Event ;
+    schema:name "Museumzondag: Maison du patrimoine médiéval mosan"@nl ;
+    schema:genre "Museumprogramma"@nl ;
+    schema:description "In Bouvignes-sur-Meuse. Speciale museumzondag van Arts&Publics met gratis museumtoegang; raadpleeg de organisator voor het programma."@nl ;
+    schema:location wd:Q108247 ;
+    schema:startDate "2027-10-03"^^xsd:date ;
+    schema:url <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> ;
+    dcterms:source <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> .

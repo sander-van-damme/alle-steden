@@ -61,6 +61,12 @@ Vijf agendavermeldingen in vier stadsbestanden. Alleen gepubliceerde feiten, in 
 
 Niet opnemen als bevestigde plannerbezoeken: de vermelding gaat over meerdaagse festivalperiodes, alleen een startuur van een deelactiviteit of een tocht zonder bezoekvenster. Controleer op overlap als een live publicatie later binnen het importvenster komt.
 
+## Arts&Publics: speciale museumzondagen · 24 november 2026
+
+De organisator publiceert de [kalender 2027](https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/). Twaalf speciale programma’s als afzonderlijke evenementen in negen opgenomen gemeenten: Stad Brussel, Doornik, Aarlen, Ottignies-Louvain-la-Neuve, Bergen, Spa, Namen, Luik en Dinant. Sprimont (eveneens 4 juli) is geen catalogusstad. De aankondiging van Mundaneum en Pôle muséal de Mons blijft één gezamenlijk programma. Alleen vastgelegde datum, locatie, feit van gratis museumtoegang en link; geen gekopieerd programma of media.
+
+De [Brusselse organisatorfiche voor 3 januari](https://artsetpublics.be/agenda/dimanche-que-gratuit-au-musee-mode-dentelle-2/) vermeldt 10.00–17.00 uur. Bij de elf andere datums zijn in de jaarkalender geen daguren vermeld. De Brusselse inloop duurt zeven uur en is geen vaste activiteit voor de fietsplanner; de andere records missen een gepland tijdstip. De algemene regeling voor gratis museumtoegang wordt niet als terugkerende evenementreeks geïmporteerd.
+
 ## Onderhoud en meting
 
 1. Zet een bron eerst als kandidaat in dit bestand. Noteer laatst gecontroleerde datum, officiële dataset/publisher, werkelijk endpoint en licentie voor de dataset (niet alleen catalogus), vereiste bronvermelding en geografie.

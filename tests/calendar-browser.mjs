@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { spawn } from 'node:child_process';
+import { visitWindows } from '../site/assets/planner-core.js';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? 'playwright');
 const shell = process.env.PLANNER_HEADLESS_MODULE ? (await import(process.env.PLANNER_HEADLESS_MODULE)).default : null;
@@ -171,6 +172,41 @@ try {
   const plannerCatalogue = await (await desktop.request.get(origin + '/planner-data.json')).json();
   assert.equal(plannerCatalogue.flatMap(({ events }) => events)
     .filter(({ id }) => /mons-en-lumieres-2027|unesco-express-2027|laetare-2027|cwarme-2027/u.test(id)).length, 0);
+
+  const museumCatalogue = await (await desktop.request.get(origin + '/calendar-data.json')).json();
+  const museumDays = museumCatalogue.events.filter(({ id }) => id.includes('museumzondag-2027-'));
+  assert.equal(museumDays.length, 12);
+  assert.equal(new Set(museumDays.map(({ city }) => city)).size, 9);
+  assert.deepEqual(museumDays.map(({ start }) => start.slice(0,10)).sort(), [
+    '2027-01-03','2027-02-07','2027-03-07','2027-04-04','2027-05-02','2027-06-06',
+    '2027-07-04','2027-08-01','2027-09-05','2027-10-03','2027-11-07','2027-12-05',
+  ]);
+  assert.equal(museumDays.filter(({ start }) => start.includes('T')).length, 1);
+  assert.ok(museumDays.every(({ name, city, category }) => !/Sprimont/.test(name) && city !== 'sprimont' && category === 'Museumprogramma'));
+  for (const event of museumDays) {
+    const city = plannerCatalogue.find(({ slug }) => slug === event.city);
+    assert.ok(!visitWindows(city, event.start.slice(0,10), { scheduledOnly: true }).some(({ id }) => id === event.id),
+      'A special open day is not a scheduled bike stop.');
+  }
+
+  await desktop.goto(origin + '/kalender/?stad=brussel&maand=2027-01');
+  await loaded(desktop);
+  await desktop.locator('#calendar-category').selectOption('Museumprogramma');
+  let sunday = desktop.locator('.calendar-event').filter({ hasText: 'Museumzondag: Mode & Kant Museum' });
+  assert.equal(await sunday.count(), 1);
+  assert.match(await sunday.innerText(), /10:00–17:00.*gratis museumtoegang/su);
+  await desktop.locator('[data-day="2027-01-10"]').click();
+  assert.equal(await sunday.count(), 0, 'We do not infer a recurring weekly or free-entry event.');
+
+  await phone.goto(origin + '/kalender/?stad=dinant&maand=2027-10');
+  await loaded(phone);
+  await phone.locator('#calendar-category').selectOption('Museumprogramma');
+  await phone.locator('[data-day="2027-10-03"]').tap();
+  sunday = phone.locator('.calendar-event').filter({ hasText: 'Museumzondag: Maison du patrimoine médiéval mosan' });
+  assert.equal(await sunday.count(), 1);
+  assert.match(await sunday.innerText(), /Uur niet vermeld.*Bouvignes-sur-Meuse/su);
+  const organizer = await sunday.getByRole('link', { name: 'Bron bij de activiteit' }).getAttribute('href');
+  assert.equal(organizer, 'https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/');
 
   const offline = await browser.newPage({ javaScriptEnabled: false });
   await offline.goto(origin + '/kalender/');

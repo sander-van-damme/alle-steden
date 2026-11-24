@@ -52,3 +52,21 @@ wd:Q83407 a schema:City ;
     schema:endDate "2027-02-13"^^xsd:date ;
     schema:url <https://monsenlumieres.be/mons-en-lumieres-au-chateau-dhavre/> ;
     dcterms:source <https://monsenlumieres.be/edition-2027/> .
+
+<#museumzondag-2027-mumons> a schema:Event ;
+    schema:name "Museumzondag: MUMONS"@nl ;
+    schema:genre "Museumprogramma"@nl ;
+    schema:description "Een speciale museumzondag van Arts&Publics met gratis museumtoegang. Bekijk de activiteiten en eventuele voorwaarden bij de organisator."@nl ;
+    schema:location wd:Q83407 ;
+    schema:startDate "2027-06-06"^^xsd:date ;
+    schema:url <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> ;
+    dcterms:source <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> .
+
+<#museumzondag-2027-mundaneum-pole-museal> a schema:Event ;
+    schema:name "Museumzondag: Mundaneum en Pôle muséal de Mons"@nl ;
+    schema:genre "Museumprogramma"@nl ;
+    schema:description "Gezamenlijke museumzondag van Arts&Publics. Raadpleeg de organisator zodra de afzonderlijke locaties en activiteiten bekend zijn."@nl ;
+    schema:location wd:Q83407 ;
+    schema:startDate "2027-11-07"^^xsd:date ;
+    schema:url <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> ;
+    dcterms:source <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> .

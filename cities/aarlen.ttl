@@ -2,6 +2,7 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <> a schema:Dataset ;
     schema:about wd:Q675960 ;
@@ -32,3 +33,12 @@ wd:Q675960 a schema:City ;
     ] ;
     schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/81001-CLT-0002-01> ;
     dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/81001-CLT-0002-01> .
+
+<#museumzondag-2027-musee-archeologique> a schema:Event ;
+    schema:name "Museumzondag: Musée Archéologique d’Arlon"@nl ;
+    schema:genre "Museumprogramma"@nl ;
+    schema:description "Een speciale museumzondag van Arts&Publics met gratis museumtoegang. Bekijk de activiteiten en eventuele voorwaarden bij de organisator."@nl ;
+    schema:location wd:Q675960 ;
+    schema:startDate "2027-03-07"^^xsd:date ;
+    schema:url <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> ;
+    dcterms:source <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> .

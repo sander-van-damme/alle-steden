@@ -51,3 +51,12 @@ wd:Q19697920 a schema:Museum ;
     ] ;
     schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/92094-CLT-0011-01> ;
     dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/92094-CLT-0011-01>, <https://whc.unesco.org/fr/list/0943/cartes/> .
+
+<#museumzondag-2027-trema> a schema:Event ;
+    schema:name "Museumzondag: TreM.a"@nl ;
+    schema:genre "Museumprogramma"@nl ;
+    schema:description "Een speciale museumzondag van Arts&Publics met gratis museumtoegang. Bekijk de activiteiten en eventuele voorwaarden bij de organisator."@nl ;
+    schema:location wd:Q134121 ;
+    schema:startDate "2027-08-01"^^xsd:date ;
+    schema:url <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> ;
+    dcterms:source <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> .

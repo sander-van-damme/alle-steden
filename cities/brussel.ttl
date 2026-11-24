@@ -39,3 +39,13 @@ wd:Q1255327 a schema:LandmarksOrHistoricalBuildings ;
     ] ;
     schema:url <https://www.brussel.be/grote-markt-van-brussel> ;
     dcterms:source <https://www.brussel.be/grote-markt-van-brussel>, <https://whc.unesco.org/en/decisions/2749/>, <https://www.wikidata.org/wiki/Q1255327> .
+
+<#museumzondag-2027-musee-mode-dentelle> a schema:Event ;
+    schema:name "Museumzondag: Mode & Kant Museum"@nl ;
+    schema:genre "Museumprogramma"@nl ;
+    schema:description "Een speciale museumzondag van Arts&Publics met gratis museumtoegang. Bekijk de activiteiten en eventuele voorwaarden bij de organisator."@nl ;
+    schema:location wd:Q239 ;
+    schema:startDate "2027-01-03T10:00:00+01:00"^^xsd:dateTime ;
+    schema:endDate "2027-01-03T17:00:00+01:00"^^xsd:dateTime ;
+    schema:url <https://artsetpublics.be/agenda/dimanche-que-gratuit-au-musee-mode-dentelle-2/> ;
+    dcterms:source <https://artsetpublics.be/agenda/dimanche-que-gratuit-au-musee-mode-dentelle-2/> .

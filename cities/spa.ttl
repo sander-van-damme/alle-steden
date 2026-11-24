@@ -2,6 +2,7 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <> a schema:Dataset ;
     schema:about wd:Q39865 ;
@@ -32,3 +33,12 @@ wd:Q39865 a schema:City ;
     ] ;
     schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/63072-CLT-0016-01> ;
     dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/63072-CLT-0016-01> .
+
+<#museumzondag-2027-ville-eaux> a schema:Event ;
+    schema:name "Museumzondag: Musée de la Ville d’eaux"@nl ;
+    schema:genre "Museumprogramma"@nl ;
+    schema:description "Een speciale museumzondag van Arts&Publics met gratis museumtoegang. Bekijk de activiteiten en eventuele voorwaarden bij de organisator."@nl ;
+    schema:location wd:Q39865 ;
+    schema:startDate "2027-07-04"^^xsd:date ;
+    schema:url <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> ;
+    dcterms:source <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> .
