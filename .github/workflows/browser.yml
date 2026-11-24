@@ -2,7 +2,7 @@ name: Browserchecks
 
 on:
   push:
-    branches: ['codex/alle-steden-*']
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -11,7 +11,8 @@ permissions:
 
 jobs:
   browser:
-    runs-on: ubuntu-latest
+    # Playwright 1.56.1 supports 24.04, not the 26.04 ubuntu-latest runner.
+    runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
