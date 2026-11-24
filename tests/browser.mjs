@@ -122,9 +122,46 @@ try {
 
   await desktop.clock.setFixedTime(new Date('2026-11-24T11:00:00+01:00'));
   await desktop.route('https://opendata.brussels.be/api/**', (route) => json(route, { results: [] }));
+  await desktop.unroute('https://query.wikidata.org/sparql?**');
+  await desktop.route('https://query.wikidata.org/sparql?**', (route) => json(route, {results:{bindings:[
+    {item:{value:'http://www.wikidata.org/entity/Q1165167'},name:{value:'Joods Museum van België'}},
+  ]}}));
   await desktop.goto(base + '/steden/brussel/');
+  const closedForWorks = desktop.locator('[data-live-places] li').filter({hasText:'Joods Museum van België'});
+  await closedForWorks.getByText(/gesloten voor renovatie/u).waitFor();
+  assert.match(await closedForWorks.innerText(), /activiteiten op andere locaties/u);
+  assert.equal(await closedForWorks.getByRole('link',{name:'Actuele informatie bij het museum'}).getAttribute('href'),
+    'https://www.mjb-jmb.org/votre-visite/infos-pratiques/');
   await desktop.getByText('Hier zijn geen extra evenementen gevonden.', { exact: false }).waitFor();
   assert.ok(await desktop.getByRole('heading', { name: 'Winterpret en kerstmarkt 2026' }).isVisible());
+
+  await desktop.unroute('https://query.wikidata.org/sparql?**');
+  await desktop.route('https://query.wikidata.org/sparql?**', (route) => json(route, {
+    results: {bindings:[
+      {item:{value:'http://www.wikidata.org/entity/Q3330123'},name:{value:'Musée des Celtes'},osmWay:{value:'1234567'}},
+      {item:{value:'http://www.wikidata.org/entity/Q22222223'},name:{value:'Totemus, des Celtes à aujourd’hui'},osmWay:{value:'2345678'}},
+    ]},
+  }));
+  await desktop.route('https://geoservices.wallonie.be/**', (route) => json(route, {features:[]}));
+  await desktop.unroute('https://api.openstreetmap.org/api/0.6/ways.json?**');
+  const osmLookup = desktop.waitForRequest('https://api.openstreetmap.org/api/0.6/ways.json?**');
+  await desktop.route('https://api.openstreetmap.org/api/0.6/ways.json?**', route => json(route, {
+    elements:[
+      {id:1234567,tags:{wikidata:'Q3330123',opening_hours:'Mo-Su 10:00-17:00'}},
+      {id:2345678,tags:{wikidata:'Q22222223',opening_hours:'Mo-Su 12:00-18:00'}},
+    ],
+  }));
+  await desktop.goto(base + '/steden/libramont-chevigny/');
+  const movedMuseum = desktop.locator('[data-live-places] li').filter({has:desktop.getByRole('heading',{name:'Musée des Celtes',exact:true})});
+  await movedMuseum.locator('[data-visit-notice]').waitFor();
+  assert.match(await movedMuseum.innerText(), /sluiting.*1 december 2026.*verhuizing/u);
+  assert.equal(await movedMuseum.getByRole('link', {name:'Actuele informatie bij het museum'}).getAttribute('href'),
+    'https://www.museedesceltes.be/');
+  const osmRequest = new URL((await osmLookup).url());
+  assert.equal(osmRequest.searchParams.get('ways'),'2345678');
+  await desktop.getByText('Mo-Su 12:00-18:00', { exact:false }).waitFor();
+  assert.equal(await movedMuseum.getByText('Openingsuren:',{exact:false}).count(),0);
+  assert.equal(await desktop.locator('[data-live-places] li').filter({hasText:'Totemus, des Celtes à aujourd’hui'}).locator('[data-visit-notice]').count(),0);
 
   const fallback = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   pages.push(fallback);

@@ -43,7 +43,40 @@ function sourceLine(item) {
   return paragraph;
 }
 
+const visitorNotices = new Map([
+  ['Q3330123', {
+    url: 'https://www.museedesceltes.be/',
+    text: 'Het museum kondigt een sluiting aan vanaf 1 december 2026 wegens verhuizing.',
+  }],
+  ['Q1165167', {
+    url: 'https://www.mjb-jmb.org/votre-visite/infos-pratiques/',
+    text: 'Het museumgebouw is gesloten voor renovatie. Er zijn wel activiteiten op andere locaties.',
+  }],
+]);
+function visitNotice(item) {
+  const qid = item.wikidata ?? /^https?:\/\/www\.wikidata\.org\/entity\/(Q[1-9]\d*)$/.exec(item.id ?? '')?.[1];
+  if (visitorNotices.has(qid)) return visitorNotices.get(qid);
+  // Only this exact venue identity can inherit the closure outside Wikidata.
+  // A link to an off-site event from the same museum does not imply closure there.
+  const website = visitorUrl(item.website);
+  if (website && /^(musée juif de belgique|joods museum van belgië|jewish museum of belgium)$/iu.test(item.name) &&
+    /^(www\.)?mjb-jmb\.org$/.test(new URL(website).hostname)) return visitorNotices.get('Q1165167');
+}
+function appendVisitNotice(card, item) {
+  const notice = visitNotice(item);
+  if (!notice) return false;
+  card.querySelectorAll('[data-hours], .entry-meta:has(strong)').forEach((node) => node.remove());
+  if (!card.querySelector('[data-visit-notice]')) {
+    const row = el('p', notice.text + ' ', 'entry-description');
+    row.dataset.visitNotice = '';
+    row.append(link('Actuele informatie bij het museum', notice.url));
+    card.append(row);
+  }
+  return true;
+}
+
 function appendHours(card, item) {
+  if (appendVisitNotice(card, item)) return;
   if (!item.hours || card.querySelector('[data-hours], .entry-meta strong')) return;
   const row = el('p', '', 'entry-meta');
   row.dataset.hours = '';
@@ -243,7 +276,7 @@ function enhanceSection(section, city, type) {
     }));
     if (revision !== requestId || type !== 'places') return;
     render(true);
-    extraHours = await getOsmHours(mappedPlaces);
+    extraHours = await getOsmHours(mappedPlaces.filter((item) => !visitNotice(item)));
     if (revision !== requestId || !extraHours.size) return;
     render();
   };

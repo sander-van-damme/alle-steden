@@ -67,6 +67,12 @@ De organisator publiceert de [kalender 2027](https://artsetpublics.be/programmes
 
 De [Brusselse organisatorfiche voor 3 januari](https://artsetpublics.be/agenda/dimanche-que-gratuit-au-musee-mode-dentelle-2/) vermeldt 10.00–17.00 uur. Bij de elf andere datums zijn in de jaarkalender geen daguren vermeld. De Brusselse inloop duurt zeven uur en is geen vaste activiteit voor de fietsplanner; de andere records missen een gepland tijdstip. De algemene regeling voor gratis museumtoegang wordt niet als terugkerende evenementreeks geïmporteerd.
 
+## Erkende musea · live · 24 november 2026
+
+- [Fédération Wallonie-Bruxelles / ODWB](https://www.odwb.be/explore/dataset/adresses-des-musees-reconnus-en-communaute-francaise/information/), [datasetmetadata](https://www.odwb.be/api/explore/v2.1/catalog/datasets/adresses-des-musees-reconnus-en-communaute-francaise), CC BY 4.0. Uit 80 bronrecords leveren exacte, geografisch bewaakte zoekvragen in de steekproef **52 bruikbare bronvermeldingen over 24 gemeenten**. Dat is geen telling van nieuwe plekken. Zie [afbakening en controles](fwb-museums.md). Lees alleen publieke museumgegevens; geen telefoons, e-mail, ondernemingsgegevens of afgeleide openingstijden.
+- Dezelfde live Wikidata/PIVOT-antwoorden plus vaste kaart vóór en na: **Luik 106 → 109** plaatskaarten, met Maison de la Science, Aquarium-Muséum en Maison de la Métallurgie als drie nieuwe vermeldingen. **Komen-Waasten 31 → 30**: één bestaande dubbele rubaneriekaart vervalt, de overblijvende museumkaart krijgt adres en officiële bron. Onzekere identiteiten worden niet samengevoegd.
+- [Musée des Celtes](https://www.museedesceltes.be/) kondigt sluiting vanaf 1 december aan wegens verhuizing. Laat het oude FWB-adres weg; de vroegere Wikidata-kaart houdt de waarschuwingslink en toont geen onbevestigde uren. [Joods Museum van België](https://www.mjb-jmb.org/votre-visite/infos-pratiques/): gebouw gesloten voor renovatie, buitenshuisprogramma is iets anders. Neem deze adressen niet opnieuw als nieuw bezoek op zonder actuele bevestiging.
+
 ## Onderhoud en meting
 
 1. Zet een bron eerst als kandidaat in dit bestand. Noteer laatst gecontroleerde datum, officiële dataset/publisher, werkelijk endpoint en licentie voor de dataset (niet alleen catalogus), vereiste bronvermelding en geografie.
