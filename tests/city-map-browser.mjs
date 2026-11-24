@@ -21,6 +21,16 @@ try {
   assert.equal(await desktop.locator('[data-city-pin]').count(), 138);
   const card = desktop.locator('[data-city-slug="gent"]');
   const pin = desktop.locator('[data-city-pin="gent"]');
+  await card.locator('a').hover();
+  assert.equal(await desktop.locator('[data-city-pin]:not([hidden])').count(), 138);
+  assert.equal(await desktop.locator('[data-pin-highlight]').getAttribute('data-pin-highlight'), 'gent');
+  assert.ok(await desktop.locator('[data-pin-highlight]').evaluate((layer) => {
+    const dot = document.querySelector('[data-city-pin="gent"] .directory-pin-dot');
+    const matrix = layer.getCTM();
+    const location = new DOMPoint(Number(dot.getAttribute('cx')), Number(dot.getAttribute('cy'))).matrixTransform(dot.getCTM());
+    return Math.abs(matrix.e - location.x) < .01 && Math.abs(matrix.f - location.y) < .01 &&
+      layer.previousElementSibling.hasAttribute('data-map-pins') && getComputedStyle(layer).pointerEvents === 'none';
+  }));
   await desktop.locator('#query').fill('gand');
   assert.equal(await desktop.locator('[data-city-pin]:not([hidden])').count(), 1);
   await card.locator('a').hover();
@@ -38,6 +48,7 @@ try {
   await desktop.keyboard.press('ArrowRight');
   const active = await desktop.locator(':focus').getAttribute('data-city-pin');
   assert.notEqual(active, first);
+  assert.equal(await desktop.locator('[data-pin-highlight]').getAttribute('data-pin-highlight'), active);
   assert.ok(await desktop.locator(`[data-city-slug="${active}"]`).evaluate(e=>e.classList.contains('is-active')));
   await desktop.keyboard.press('Enter');
   assert.equal(await desktop.locator(':focus').getAttribute('id'), 'directory-map-link');
@@ -45,14 +56,19 @@ try {
   assert.deepEqual(errors, []);
 
   const phone = await browser.newPage({viewport:{width:390,height:780}, isMobile:true, hasTouch:true});
-  await phone.goto(origin + '/#steden');
-  await phone.locator('#query').fill('ninove');
-  await phone.locator('[data-city-pin="ninove"] .directory-pin-hit').tap();
-  assert.equal(await phone.locator('#directory-map-label').textContent(), 'Ninove');
-  assert.ok(await phone.locator('[data-city-slug="ninove"]').evaluate(e=>e.classList.contains('is-active')));
-  assert.equal(await phone.evaluate(()=>document.documentElement.scrollWidth),390);
-  await phone.locator('#directory-map-link').tap();
-  await phone.waitForURL('**/steden/ninove/');
+  for (const width of [320, 390]) {
+    await phone.setViewportSize({ width, height: 780 });
+    await phone.goto(origin + '/#steden');
+    await phone.locator('#query').fill('ninove');
+    await phone.locator('[data-city-pin="ninove"] .directory-pin-hit').tap();
+    assert.equal(await phone.locator('#directory-map-label').textContent(), 'Ninove');
+    assert.equal(await phone.locator('[data-pin-highlight]').getAttribute('data-pin-highlight'), 'ninove');
+    assert.equal(await phone.locator('.directory-pin-center').evaluate(e=>getComputedStyle(e).strokeWidth), '15px');
+    assert.ok(await phone.locator('[data-city-slug="ninove"]').evaluate(e=>e.classList.contains('is-active')));
+    assert.equal(await phone.evaluate(()=>document.documentElement.scrollWidth),width);
+    await phone.locator('#directory-map-link').tap();
+    await phone.waitForURL('**/steden/ninove/');
+  }
   console.log('Stedenkaart: desktop hover en toetsenbord, mobiel tikken, gefilterde markers en correcte stadslink.');
 } finally {
   await browser?.close();

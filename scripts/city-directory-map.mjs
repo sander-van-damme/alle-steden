@@ -20,6 +20,12 @@ export function cityDirectoryMap(cities, esc) {
     <div class="directory-map-count" aria-hidden="true">${cities.length}</div></div>
     <svg class="directory-map-svg" viewBox="0 0 ${width} ${height}" role="group" aria-label="Stedenkaart; gebruik de pijltjestoetsen om van stad te wisselen">
       <g aria-hidden="true">${shapes}</g><g data-map-pins>${pins}</g>
+      <g class="directory-pin-highlight" data-highlight-layer aria-hidden="true" pointer-events="none" hidden>
+        <circle class="directory-pin-halo" r=".1"/>
+        <circle class="directory-pin-edge" r=".1"/>
+        <circle class="directory-pin-ring" r=".1"/>
+        <circle class="directory-pin-center" r=".1"/>
+      </g>
     </svg>
     <div class="directory-map-focus"><p id="directory-map-label">Kies een bolletje of wijs een stad in de lijst aan.</p><a id="directory-map-link" hidden>Bekijk stad <span aria-hidden="true">↗</span></a></div>
     <figcaption>Gewestgrenzen: <a href="https://simplemaps.com/gis/country/be">SimpleMaps</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>).</figcaption>

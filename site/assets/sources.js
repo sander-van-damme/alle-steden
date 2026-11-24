@@ -8,6 +8,14 @@ const gent = 'https://data.stad.gent';
 const ccby = 'https://creativecommons.org/licenses/by/4.0/';
 
 export const sources = {
+  adeps: { label: 'Points verts de l’ADEPS', href: 'https://www.odwb.be/explore/dataset/points-verts-de-ladeps/information/',
+    license: ccby, attribution: 'Fédération Wallonie-Bruxelles · ADEPS' },
+  idees: { label: 'Idées de sorties', href: 'https://ideessorties.be/', terms: 'https://ideessorties.be/agenda' },
+  randonneurs: { label: 'Randonneurs Belgium', href: 'https://randonneurs.be/kalender/', terms: 'https://randonneurs.be/api/docs/' },
+  brusselsMarkets: { label: 'Stad Brussel · markten', href: brussels + '/explore/dataset/marches-plein-air-vbx/information/',
+    license: 'https://creativecommons.org/publicdomain/zero/1.0/', attribution: 'Ville de Bruxelles · Affaires économiques / Data Management' },
+  liegeMarkets: { label: 'Ville de Liège · marchés', href: 'https://opendata.liege.be/explore/dataset/marches/information/',
+    license: ccby, attribution: 'Ville de Liège' },
   wikidata: { label: 'Wikidata', href: 'https://www.wikidata.org/wiki/Wikidata:Data_access', license: 'https://creativecommons.org/publicdomain/zero/1.0/' },
   flanders: { label: 'Toerisme Vlaanderen', href: portal },
   wallonia: { label: 'Tourisme Wallonie', href: 'https://geoportail.wallonie.be/catalogue/91721175-5f01-410c-8c78-37c1d1893ba2.html', license: ccby },

@@ -15,6 +15,7 @@ const shortDay = new Intl.DateTimeFormat('nl-BE', { day: 'numeric', month: 'shor
 
 function eventCard(item, cities, selectedDay) {
   const article = node('article', 'calendar-event');
+  article.dataset.calendarSource = item.source;
   const date = item.day;
   const heading = node('h3');
   if (item.url) {
@@ -32,6 +33,8 @@ function eventCard(item, cities, selectedDay) {
   meta.append(place, ' · ' + eventTime(item));
   body.append(heading, meta);
   if (item.venue && item.venue !== cities[item.city].name) body.append(node('p', 'calendar-event-venue', item.venue));
+  if (item.scheduleBased && !item.description) body.append(node('p', 'calendar-event-venue',
+    'Normaal marktrooster. Controleer eventuele uitzonderingen bij de bron.'));
   if (item.description) body.append(node('p', 'calendar-event-description', item.description));
 
   const footer = node('p', 'calendar-event-footer');
@@ -42,6 +45,12 @@ function eventCard(item, cities, selectedDay) {
     const source = node('a', 'calendar-event-source', provider?.label ?? 'Bron bij de activiteit');
     source.href = sourceLink;
     footer.append(source);
+    if (provider?.license) {
+      const licence = node('a', 'calendar-event-source', provider.license.includes('/by/4.0/') ? 'CC BY 4.0'
+        : provider.license.includes('/zero/') ? 'CC0' : 'Licentie');
+      licence.href = provider.license;
+      footer.append(licence);
+    }
   } else footer.append(node('span', 'calendar-event-source', 'Lokale catalogus'));
   body.append(footer);
   article.append(dateBadge, body);
@@ -89,6 +98,8 @@ async function start() {
   let abort;
   let sequence = 0;
   const cache = new Map();
+  const pageSize = 48;
+  let agendaLimit = pageSize;
 
   const regionControl = find('calendar-region');
   const cityControl = find('calendar-city');
@@ -174,7 +185,7 @@ async function start() {
     find('calendar-status').textContent = statusText(live.coverage, liveCalendarSpan(span, today), selection.length, pending, scope);
     const itemList = find('calendar-events');
     if (selection.length) {
-      itemList.replaceChildren(...selection.map((item) => eventCard(item, byCity, selectedDay)));
+      itemList.replaceChildren(...selection.slice(0, agendaLimit).map((item) => eventCard(item, byCity, selectedDay)));
     } else {
       const panel = node('div', 'calendar-empty');
       panel.append(node('span', 'calendar-empty-icon', '○'),
@@ -184,22 +195,29 @@ async function start() {
       itemList.replaceChildren(panel);
     }
 
+    const more = find('calendar-more');
+    more.hidden = selection.length <= agendaLimit;
+    more.textContent = `Toon meer (${Math.max(0, selection.length - agendaLimit)})`;
     const sourceList = find('calendar-sources');
     const providerStates = { ok: 'geladen', empty: 'geen resultaten binnen deze periode', failed: 'niet bereikbaar',
       limited: 'eerste resultaten', unconfigured: 'niet ingesteld', 'not-configured': 'niet ingesteld' };
     const sourceItems = [node('li', '', 'Lokale catalogus · altijd inbegrepen')];
-    for (const { source, state } of live.coverage) {
+    for (const { source, state, count } of live.coverage) {
       if (!Object.hasOwn(sources, source)) continue;
       const item = node('li');
       const link = node('a', '', sources[source].label);
       link.href = sources[source].href;
       item.append(link, ' · ' + (providerStates[state] ?? 'beschikbaar'));
+      if (Number.isSafeInteger(count) && count > 0) item.append(` · ${count} ${count === 1 ? 'vermelding' : 'vermeldingen'}`);
+      const { attribution } = sources[source];
+      if (attribution) item.append(' · ' + attribution);
       sourceItems.push(item);
     }
     sourceList.replaceChildren(...sourceItems);
   }
 
   async function loadLive() {
+    agendaLimit = pageSize;
     const token = ++sequence;
     abort?.abort();
     const span = liveCalendarSpan(monthDays(month), today);
@@ -218,7 +236,7 @@ async function start() {
     const controller = new AbortController();
     abort = controller;
     try {
-      const result = await fetchCalendarMonth(cities, { ...scope, span, origin: location.origin, signal: controller.signal });
+      const result = await fetchCalendarMonth(cities, { ...scope, span, origin: location.origin, today, signal: controller.signal });
       if (token !== sequence) return;
       live = { ...result, items: result.items
         .map((item) => Object.hasOwn(byCity, item?.city) && calendarEvent(item, item.city)).filter(Boolean)
@@ -241,6 +259,7 @@ async function start() {
     const changed = month !== next;
     month = next;
     selectedDay = day;
+    agendaLimit = pageSize;
     focusedDay = day || month + '-01';
     updateUrl();
     if (changed) void loadLive();
@@ -263,18 +282,27 @@ async function start() {
     updateUrl();
     void loadLive();
   });
-  categoryControl.addEventListener('change', () => { scope.category = categoryControl.value; render(); });
+  categoryControl.addEventListener('change', () => { scope.category = categoryControl.value; agendaLimit = pageSize; render(); });
+  find('calendar-more').addEventListener('click', () => {
+    const firstNew = agendaLimit;
+    agendaLimit += pageSize;
+    render();
+    const item = find('calendar-events').children[firstNew];
+    if (item) { item.tabIndex = -1; item.focus({ preventScroll: true }); }
+  });
   find('calendar-prev').addEventListener('click', () => selectMonth(moveMonth(month, -1)));
   find('calendar-next').addEventListener('click', () => selectMonth(moveMonth(month, 1)));
   find('calendar-today').addEventListener('click', () => selectMonth(today.slice(0, 7), today));
   find('calendar-clear-day').addEventListener('click', () => {
     selectedDay = '';
+    agendaLimit = pageSize;
     render({ focus: true });
   });
   calendarGrid.addEventListener('click', (event) => {
     const day = event.target.closest('button[data-day]')?.dataset.day;
     if (!day) return;
     selectedDay = day;
+    agendaLimit = pageSize;
     focusedDay = day;
     render({ focus: true });
   });

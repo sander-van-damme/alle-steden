@@ -4,6 +4,7 @@ const region = document.querySelector('#region');
 const count = document.querySelector('#count');
 const empty = document.querySelector('#empty');
 const map = document.querySelector('.directory-map');
+const highlight = map?.querySelector('[data-highlight-layer]');
 const pins = new Map([...document.querySelectorAll('[data-city-pin]')].map(pin => [pin.dataset.cityPin, pin]));
 const label = document.querySelector('#directory-map-label');
 const detail = document.querySelector('#directory-map-link');
@@ -27,16 +28,18 @@ function paint() {
     old?.pin?.classList.remove('is-active');
     entry?.card.classList.add('is-active');
     entry?.pin?.classList.add('is-active');
-    // Elevate overlapping visible dots without moving the focused element (which blurs in browsers).
-    map?.querySelector('[data-pin-highlight]')?.remove();
-    if (entry?.pin) {
-      const dot = entry.pin.querySelector('.directory-pin-dot').cloneNode();
-      dot.removeAttribute('class');
-      dot.setAttribute('class', 'directory-pin-highlight');
-      dot.setAttribute('data-pin-highlight', '');
-      dot.setAttribute('pointer-events', 'none');
-      dot.setAttribute('aria-hidden', 'true');
-      entry.pin.parentNode.after(dot);
+    // A separate top layer highlights exactly the normal marker's center,
+    // without moving the focused link or changing which pin receives input.
+    if (highlight) {
+      const dot = entry?.pin?.querySelector('.directory-pin-dot');
+      if (dot) {
+        highlight.setAttribute('transform', `translate(${dot.getAttribute('cx')} ${dot.getAttribute('cy')})`);
+        highlight.dataset.pinHighlight = next;
+        highlight.removeAttribute('hidden');
+      } else {
+        highlight.setAttribute('hidden', '');
+        delete highlight.dataset.pinHighlight;
+      }
     }
     emphasized = next;
   }
@@ -86,6 +89,7 @@ for (const entry of entries) {
     target.addEventListener('pointerleave', () => { if (hovered === entry.id) { hovered = undefined; paint(); } });
     target.addEventListener('focus', () => {
       focused = entry.id;
+      if (target.matches(':focus-visible')) hovered = undefined;
       if (target === entry.pin && roving !== entry.id) {
         byId.get(roving)?.pin?.setAttribute('tabindex', '-1');
         roving = entry.id;

@@ -1,5 +1,7 @@
 import { addCalendarDays, cityNames, fetchCityEvents, getGent, getJson, getNamur, localToday,
   walloonAgendaItems, walloonAgendaQuery } from './sources.js';
+import { preferAdeps } from './adeps-events.js';
+import { extraAgendaJobs } from './agenda-extras.js';
 import { maxCalendarEventDays } from './calendar-core.js';
 
 const wallonia = 'Wallonië';
@@ -52,24 +54,17 @@ export async function fetchCalendarMonth(cities, options) {
     ? AbortSignal.any([signal, request.signal]) : signal ?? request.signal });
   const networkOptions = { fetcher, calendar: true, minimumStart: addCalendarDays(span.from, -maxCalendarEventDays) };
   const chosenCity = city && cities.find(({ slug }) => slug === city);
-  if (chosenCity) {
-    const live = await fetchCityEvents(chosenCity, { ...span, origin, ...networkOptions });
-    return {
-      items: live.items.map((item) => ({ ...item, city })),
-      coverage: live.coverage,
-      // Local endpoints deliberately return their first bounded page.
-      scoped: true,
-    };
-  }
-
-  const work = [];
-  if (!region || region === flanders) {
+  const work = options.extraSources === false ? [] : extraAgendaJobs(cities, {
+    city, region, span, rawFetcher: native, fetcher, signal, today: options.today,
+  });
+  const localRequest = chosenCity ? fetchCityEvents(chosenCity, { ...span, origin, ...networkOptions }) : null;
+  if (!chosenCity && (!region || region === flanders)) {
     const gent = cities.find(({ slug }) => slug === 'gent');
     if (gent) work.push(['gent', async () => ({
       items: (await getGent(span.from, { ...networkOptions, through: span.through })).map((item) => ({ ...item, city: gent.slug })),
     })]);
   }
-  if (!region || region === wallonia) {
+  if (!chosenCity && (!region || region === wallonia)) {
     const namur = cities.find(({ slug }) => slug === 'namen');
     if (namur) work.push(['namur', async () => ({
       items: (await getNamur(span.from, { ...networkOptions, through: span.through })).map((item) => ({ ...item, city: namur.slug })),
@@ -78,12 +73,16 @@ export async function fetchCalendarMonth(cities, options) {
       work.push(['imio', () => regionalWalloonEvents(cities, span, networkOptions)]);
     }
   }
-  const results = await Promise.allSettled(work.map(([, run]) => run()));
+  const [results, local] = await Promise.all([Promise.allSettled(work.map(([, run]) => run())), localRequest]);
   const coverage = results.map((result, index) => {
     const [source] = work[index];
     if (result.status === 'rejected') return { source, state: 'failed' };
     const value = result.value;
-    return { source, state: value.limited ? 'limited' : value.items.length ? 'ok' : 'empty' };
+    return { source, state: value.limited ? 'limited' : value.items.length ? 'ok' : 'empty', count: value.items.length };
   });
-  return { items: results.flatMap((result) => result.value?.items ?? []), coverage };
+  return {
+    items: preferAdeps([...(local?.items ?? []).map((item) => ({ ...item, city })), ...results.flatMap((result) => result.value?.items ?? [])]),
+    coverage: [...(local?.coverage ?? []), ...coverage],
+    ...(local && { scoped: true }),
+  };
 }

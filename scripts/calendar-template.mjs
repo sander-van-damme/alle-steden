@@ -59,11 +59,12 @@ export function calendarMain({ cities, events }, now = new Date()) {
           </div>
           <p id="calendar-status" class="calendar-status" role="status"></p>
           <div id="calendar-events"></div>
+          <button id="calendar-more" type="button" class="button secondary" aria-controls="calendar-events" hidden>Toon meer</button>
         </section>
       </div>
       <details class="calendar-sources"><summary>Bronnen en dekking</summary>
-        <p>Deze kalender is niet volledig. De lokale catalogus wordt aangevuld met een beperkt aantal openbare agenda’s. Zonder stadsfilter zie je de bronnen van Gent en Namen en een selectie van iMio voor Wallonië. Kies één stad om beschikbare stadsbronnen te raadplegen. Het ontbreken van een activiteit betekent niet dat er niets te doen is.</p>
-        <p>Alle dagen en tijden zijn Belgisch. Activiteiten met een onuitgewerkte herhaling of een periode van meer dan een jaar slaan we over. Bij een periode zonder daguren kun je de precieze planning bij de bron controleren.</p>
+        <p>Deze kalender is niet volledig. De lokale catalogus wordt aangevuld met een beperkt aantal openbare agenda’s. Naast de stadsagenda’s gebruiken we Idées de sorties, Randonneurs Belgium, ADEPS en de open marktgegevens van Brussel en Luik. De nationale lijst van iMio blijft een steekproef; kies een stad voor gerichtere resultaten. Het ontbreken van een activiteit betekent niet dat er niets te doen is.</p>
+        <p>Alle dagen en tijden zijn Belgisch. Activiteiten met een onuitgewerkte herhaling of een periode van meer dan een jaar slaan we over. Bij een periode zonder daguren kun je de precieze planning bij de bron controleren. De herhalende markten zijn berekend uit de gewone uren van de stad; controleer verplaatsingen en uitzonderingen bij de bron.</p>
         <ul id="calendar-sources"></ul>
       </details>
     </div>

@@ -214,3 +214,5 @@
   .calendar-hero-art { width: 3.7rem; }
   .calendar-paging button { min-width: 2.38rem; padding-inline: .42rem; }
 }
+
+#calendar-more { margin: .75rem 0 0; background: var(--white); color: var(--accent); cursor: pointer; }

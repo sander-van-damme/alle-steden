@@ -266,6 +266,7 @@ export function cityPage(city, linkIds) {
         ${entryList('Bezienswaardigheden', 'Plekken om te ontdekken. Openingsuren staan erbij als de bron ze meegeeft. Bij buitenstops is toegang tot gebouwen niet bevestigd.', 'places', places, linkIds)}
         ${entryList('Evenementen', 'Activiteiten en terugkerende evenementen, met datums wanneer bekend.', 'events', events, linkIds)}
       </div>
+      <p class="calendar-city-link"><a class="button secondary" href="/kalender/?stad=${encodeURIComponent(slug)}">Bekijk de kalender voor ${escapeHtml(name)} ${arrow}</a></p>
       <details id="stadsdata" class="city-data">
         <summary>Stadsdata</summary>
         <p class="code">NIS-code ${escapeHtml(code)}</p>

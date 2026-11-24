@@ -1,6 +1,6 @@
 .directory-workspace { display: grid; grid-template-columns: 1.04fr minmax(0, .96fr); gap: clamp(.85rem, 2.6vw, 2.4rem); align-items: start; }
 .directory-workspace .city-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
-.directory-map { --map-highlight: #943f31; position: sticky; top: .7rem; min-width: 0; padding: clamp(.65rem, 2.3vw, 1.55rem); border: 1px solid #cdd6c8; border-radius: .75rem; background: #eff1e9; }
+.directory-map { --map-highlight: #b53b28; position: sticky; top: .7rem; min-width: 0; padding: clamp(.65rem, 2.3vw, 1.55rem); border: 1px solid #cdd6c8; border-radius: .75rem; background: #eff1e9; }
 .directory-map-heading { display: flex; justify-content: space-between; gap: .5rem; align-items: start; }
 .directory-map-heading .eyebrow { margin: 0; color: #52635b; font-size: .68rem; }
 .directory-map-heading h3 { margin: .12rem 0 .45rem; font: 500 clamp(1.55rem, 3vw, 2.2rem)/1.08 var(--display); letter-spacing: -.04em; }
@@ -12,9 +12,7 @@
 .directory-pin { touch-action: manipulation; cursor: pointer; }
 .directory-pin-hit { fill: transparent; }
 .directory-pin-dot { fill: #34594b; stroke: #f9faf4; stroke-width: 1.15px; pointer-events: none; }
-.directory-pin.is-active .directory-pin-dot { r: 7.1; fill: var(--map-highlight); stroke: #fff; stroke-width: 1.8px; }
 .directory-pin:focus-visible { outline: 0; }
-.directory-pin:focus-visible .directory-pin-dot { stroke: #602217; stroke-width: 2.4px; }
 .city-card.is-active a { border-color: #a75c4d; background: #f4e8e0; }
 .city-card.is-active .city-arrow { color: #943f31; }
 .directory-map-focus { display: flex; flex-wrap: wrap; gap: .1rem .65rem; justify-content: space-between; align-items: baseline; min-height: 2.3rem; padding: .55rem .68rem; color: #41584b; background: #f9faf4; border-radius: .35rem; font-size: .82rem; }
@@ -28,8 +26,14 @@
 @media (max-width: 29rem) {
   .directory-workspace .city-card a { padding: .65rem; }
 }
-.directory-pin-highlight { r: 7.2; fill: var(--map-highlight); stroke: #fff; stroke-width: 1.8px; }
-.directory-map-svg:focus-within .directory-pin-highlight { stroke: #5e2b1d; stroke-width: 2.1px; }
+/* Concentric, non-scaling strokes keep the active dot legible even on a phone. */
+.directory-pin-highlight { pointer-events: none; }
+.directory-pin-highlight circle { fill: none; vector-effect: non-scaling-stroke; }
+.directory-pin-halo { stroke: #b53b28; stroke-opacity: .22; stroke-width: 30px; }
+.directory-pin-edge { stroke: #652c22; stroke-width: 23px; }
+.directory-pin-ring { stroke: #fff9ed; stroke-width: 20px; }
+.directory-pin-center { stroke: var(--map-highlight); stroke-width: 15px; }
+.directory-map-svg:focus-within .directory-pin-edge { stroke: #3d231e; stroke-width: 25px; }
 
 .directory-list { min-width: 0; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

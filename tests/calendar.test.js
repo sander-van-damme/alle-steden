@@ -74,7 +74,7 @@ test('calendar live scope is forward-looking and capped at three calls without f
     id: '40', title: 'Festival à Verviers', owner_name: 'Verviers', address_city: 'Verviers',
     category: 'concert_festival', start_datetime: '2026-12-04T23:00:00Z', end_datetime: '2026-12-05T23:00:00Z', whole_day: 1,
   };
-  const result = await fetchCalendarMonth(cities, { span: { from: '2026-12-01', through: '2026-12-31' }, fetcher: async (url) => {
+  const result = await fetchCalendarMonth(cities, { extraSources: false, span: { from: '2026-12-01', through: '2026-12-31' }, fetcher: async (url) => {
     calls.push(url);
     if (!url.pathname.includes('evenements-en-wallonie')) {
       assert.match(url.searchParams.get('where'), /(?:datedebut|date_start) >= date'2025-11-30'/);
@@ -97,7 +97,7 @@ test('calendar live scope is forward-looking and capped at three calls without f
 
 test('city query does not call other areas and provider failure is distinct from not-configured', async () => {
   const calls = [];
-  const live = await fetchCalendarMonth(cities, { city: 'gent', origin: 'https://example.org',
+  const live = await fetchCalendarMonth(cities, { extraSources: false, city: 'gent', origin: 'https://example.org',
     span: { from: '2026-12-01', through: '2026-12-31' }, fetcher: async (url) => {
       calls.push(url);
       return url.host === 'example.org' ? new Response(JSON.stringify({ state: 'unconfigured', items: [] }))
@@ -122,7 +122,7 @@ test('static fallback lists dated public catalog entries even if JavaScript cann
 test('calendar city scope retains verified overnight iMio timestamps and does not affect the planner adapter', async () => {
   const response = { results: [{ id: 'overnight', title: 'Nachtconcert', owner_name: 'Verviers',
     address_city: 'Verviers', category: 'concert_festival', start_datetime: overnight.start, end_datetime: overnight.end }] };
-  const result = await fetchCalendarMonth(cities, { city: 'verviers', span: { from: '2026-12-01', through: '2026-12-31' },
+  const result = await fetchCalendarMonth(cities, { extraSources: false, city: 'verviers', span: { from: '2026-12-01', through: '2026-12-31' },
     fetcher: async () => Response.json(response) });
   assert.equal(result.items[0].start, overnight.start);
   assert.match(eventTime(calendarEvent(result.items[0], 'verviers')), /23:30.*01:30/);

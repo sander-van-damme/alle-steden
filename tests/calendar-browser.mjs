@@ -19,6 +19,16 @@ const fixture = {
 };
 async function install(page, { fails = false, pauseGent = null } = {}) {
   await page.clock.setFixedTime(date);
+  const ics = ['BEGIN:VCALENDAR','VERSION:2.0','BEGIN:VEVENT','UID:test-idee@ideessorties.be',
+    'DTSTART;VALUE=DATE:20261223','SUMMARY:Expo van ideeën','CATEGORIES:Exposition',
+    'LOCATION:Station, Mons, Belgique','URL:https://ideessorties.be/events/test-idee',
+    'END:VEVENT','END:VCALENDAR',''].join('\r\n');
+  await page.route('https://uwtaxdtecrngvmgzradk.supabase.co/functions/v1/calendar-feed?**', route => route.fulfill({
+    contentType: 'text/calendar', body: ics, headers: { 'Access-Control-Allow-Origin': '*' },
+  }));
+  for (const host of ['https://randonneurs.be/api/**', 'https://opendata.brussels.be/api/**', 'https://opendata.liege.be/api/**']) {
+    await page.route(host, route => route.fulfill({ json: { rides:[], results:[] }, headers: { 'Access-Control-Allow-Origin': '*' } }));
+  }
   await page.route('https://data.stad.gent/api/**', async (route) => {
     if (pauseGent) await pauseGent;
     await route.fulfill({ json: { results: [
@@ -57,6 +67,9 @@ try {
   assert.equal(await desktop.locator('#calendar-month').textContent(), 'december 2026');
   assert.match(await desktop.locator('#calendar-status').textContent(), /eerste resultaten/);
   assert.ok(await desktop.getByRole('link', { name: fixture.title }).isVisible());
+  const ideas = desktop.locator('.calendar-event[data-calendar-source=idees]');
+  await ideas.getByRole('link', {name:'Expo van ideeën'}).waitFor();
+  assert.equal(await ideas.getByRole('link', {name:'Idées de sorties'}).getAttribute('href'),'https://ideessorties.be/');
   assert.equal(await desktop.getByText('Verkeerde stad', { exact: true }).count(), 0);
   assert.equal(await desktop.getByText('Niet uitgewerkte herhaling', { exact: true }).count(), 0);
   assert.equal(await desktop.getByText('STAM', { exact: true }).count(), 0);
