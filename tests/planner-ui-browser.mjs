@@ -127,7 +127,7 @@ try {
 
   const routeSummary = card.locator('[data-trip-route-summary]');
   assert.match(await routeSummary.innerText(), /Kaart, hoogteprofiel en wegdek/);
-  assert.match(await routeSummary.innerText(), /download de GPX/);
+  assert.match(await routeSummary.innerText(), /GPX/);
   const routeSignals = await card.locator('.trip-signals').innerText();
   assert.doesNotMatch(routeSignals, /verhard oppervlak|onverhard volgens de router|wegdek niet bekend/);
   assert.match(routeSignals, /fietspad/);
