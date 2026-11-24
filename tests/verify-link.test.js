@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { readFile } from 'node:fs/promises';
 import { linkCheckHandler } from '../functions/api/verify-link.js';
 import { eligiblePublicLink } from '../functions/lib/link-check-policy.js';
 
@@ -117,4 +118,9 @@ test('deduplicates in-flight checks and cached checks; budget and timeouts give 
   assert.equal(await status(call(stalled)), 'unknown');
   assert.ok(performance.now()-before < 500);
   assert.equal(signaled,true);
+});
+
+test('Cloudflare publishes both explicit Functions invocation routes, not a wildcard', async () => {
+  const config = JSON.parse(await readFile(new URL('../site/_routes.json', import.meta.url)));
+  assert.deepEqual(config, { version: 1, include: ['/api/city-live', '/api/verify-link'], exclude: [] });
 });
