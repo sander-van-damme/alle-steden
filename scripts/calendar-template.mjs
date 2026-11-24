@@ -25,7 +25,7 @@ export function calendarMain({ cities, events }, now = new Date()) {
     </header>
     <section id="calendar-fallback" aria-labelledby="calendar-fallback-title">
       <h2 id="calendar-fallback-title">Binnenkort in de steden</h2>
-      <p>Een selectie uit de lokale catalogus. Schakel JavaScript in voor de maandweergave en live agenda’s.</p>
+      <p>Hier zie je een selectie van komende evenementen. De volledige maandkalender is in deze weergave niet beschikbaar.</p>
       ${fallback}
     </section>
     <div id="calendar-app" hidden>
@@ -62,12 +62,12 @@ export function calendarMain({ cities, events }, now = new Date()) {
           <button id="calendar-more" type="button" class="button secondary" aria-controls="calendar-events" hidden>Toon meer</button>
         </section>
       </div>
-      <details class="calendar-sources"><summary>Bronnen en dekking</summary>
-        <p>Deze kalender is niet volledig. De lokale catalogus wordt aangevuld met een beperkt aantal openbare agenda’s. Naast de stadsagenda’s gebruiken we Idées de sorties, Randonneurs Belgium, ADEPS en de open marktgegevens van Brussel en Luik. De nationale lijst van iMio blijft een steekproef; kies een stad voor gerichtere resultaten. Het ontbreken van een activiteit betekent niet dat er niets te doen is.</p>
-        <p>Alle dagen en tijden zijn Belgisch. Activiteiten met een onuitgewerkte herhaling of een periode van meer dan een jaar slaan we over. Bij een periode zonder daguren kun je de precieze planning bij de bron controleren. De herhalende markten zijn berekend uit de gewone uren van de stad; controleer verplaatsingen en uitzonderingen bij de bron.</p>
-        <ul id="calendar-sources"></ul>
+      <details class="calendar-sources"><summary>Over deze kalender</summary>
+        <p>Niet alle evenementen staan in deze kalender. Kies een stad om gerichter te zoeken en kijk ook in de agenda van de stad of organisator.</p>
+        <p>Alle tijden zijn Belgisch. Voor terugkerende markten tonen we de gewone uren. Controleer bij de organisator of de markt doorgaat en op dezelfde plek staat.</p>
+        <ul id="calendar-sources" hidden></ul>
       </details>
     </div>
-    <p id="calendar-load-error" class="calendar-load-error" role="status" hidden>De interactieve kalender kon niet laden. De gebeurtenissen uit de lokale catalogus staan hierboven.</p>
+    <p id="calendar-load-error" class="calendar-load-error" role="status" hidden>De interactieve kalender kon niet laden. Je vindt hierboven wel een selectie van komende evenementen.</p>
   </main>`;
 }

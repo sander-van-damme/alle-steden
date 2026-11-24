@@ -97,6 +97,9 @@ try {
   await page.locator('#planner-submit').click();
   await page.locator('.trip-card').first().waitFor({ timeout:48_000 });
   assert.deepEqual(await renderedDates(page), [weekend]);
+  assert.equal(await page.locator('.planner-run-meta').count(), 0);
+  assert.doesNotMatch(await page.locator('#planner-results').textContent(), /kandidaatcombinaties|agenda’s bevraagd/);
+  assert.match(await page.locator('#planner-results > .planner-limits').textContent(), /Ritvoorstellen zijn een selectie/i);
   const card = page.locator('.trip-card[data-trip-from=gent]').first();
   assert.match(await card.innerText(), /Gent/);
   await card.locator('[data-trip-route-summary]').click();

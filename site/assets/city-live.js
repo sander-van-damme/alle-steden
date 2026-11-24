@@ -1,9 +1,9 @@
 import {
-  sources, safeUrl, compact, dateValue, displayDate, getJson, regionalSource, walloonAgendaUrl,
+  sources, safeUrl, visitorUrl, compact, dateValue, displayDate, getJson, regionalSource, walloonAgendaUrl,
   getWikidata, getWallonia, getBrusselsPlaces, getFlemishHeritage, cityEventSources, getOsmHours,
   interleavePlaceSources, mergePlaces, upcomingEvents, dedupeEvents,
 } from './sources.js';
-import { livePlaceFragment, placeSnapshotTurtle } from './place-rdf.js';
+import { livePlaceFragment } from './place-rdf.js';
 import { enhanceVerifiedLinks, isLinkRecord } from './link-check.js';
 
 const root = document.querySelector('[data-city]');
@@ -26,11 +26,12 @@ const plainHeading = (card) => {
 
 function sourceLine(item) {
   const paragraph = el('p', '', 'entry-source');
-  const keys = [...new Set([item.source, ...(item.alternateSources ?? [])])].filter((key) => sources[key]);
+  const keys = [...new Set([item.source, ...(item.alternateSources ?? [])])].filter((key) => key !== 'wikidata' && sources[key]);
+  if (!keys.length) return null;
   keys.forEach((key, i) => {
     const source = sources[key];
     if (i) paragraph.append(' · ');
-    paragraph.append(link(source.label, source.href));
+    paragraph.append(link(source.label, source.visitorHref ?? source.href));
     if (source.license) {
       const license = source.license.includes('/by/4.0') ? 'CC BY 4.0'
         : source.license.includes('/zero/') ? 'CC0' : 'Gebruiksvoorwaarden';
@@ -46,7 +47,7 @@ function appendHours(card, item) {
   row.dataset.hours = '';
   row.append(el('strong', 'Openingsuren: '), item.hours);
   if (item.hoursSource === 'osm') {
-    row.append(' · ', link('Kaartgegeven', item.hoursUrl), ' · ',
+    row.append(' · ', link('Bekijk op de kaart', item.hoursUrl), ' · ',
       link('© OpenStreetMap-bijdragers (ODbL)', sources.osm.href));
   }
   card.append(row);
@@ -73,7 +74,7 @@ function buildCard(item) {
     card.append(alias);
   });
   const heading = el('h3');
-  const website = safeUrl(item.website);
+  const website = visitorUrl(item.website);
   if (website) {
     const headingLink = link(item.name, website);
     if (item.source === 'wallonia' && item.verificationHref === website && isLinkRecord(item.source, item.sourceId)) {
@@ -98,7 +99,8 @@ function buildCard(item) {
   if (where) card.append(el('p', where, 'entry-meta'));
   if (item.description) card.append(el('p', item.description, 'entry-description'));
   appendHours(card, item);
-  if (item.source) card.append(sourceLine(item));
+  const source = item.source && sourceLine(item);
+  if (source) card.append(source);
   return card;
 }
 
@@ -150,39 +152,20 @@ function placeSources(city) {
     { key: 'erfg', run: () => getFlemishHeritage(city) }];
 }
 
-function placeControls(section, list, city, onMore) {
+function placeControls(section, list, onMore) {
   const group = el('div', '', 'official-links');
   const more = el('button', 'Meer plaatsen', 'button secondary');
   more.type = 'button';
   list.id = 'live-places-results';
   more.setAttribute('aria-controls', list.id);
   more.addEventListener('click', onMore);
-  const exportButton = el('button', 'Download brondata als Turtle', 'button secondary');
-  exportButton.type = 'button';
-  let snapshot;
-  exportButton.addEventListener('click', () => {
-    if (!snapshot?.count) return;
-    const url = URL.createObjectURL(new Blob([snapshot.turtle], { type: 'text/turtle; charset=utf-8' }));
-    const anchor = link('', url);
-    anchor.download = city.slug + '-live-plaatsen.ttl';
-    document.body.append(anchor);
-    anchor.click();
-    anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 30_000);
-  });
-  group.append(more, exportButton);
+  group.append(more);
   section.querySelector('[data-status]').before(group);
-  group.hidden = more.hidden = exportButton.hidden = true;
+  group.hidden = true;
   return {
-    update(left, records) {
-      more.hidden = !left;
+    update(left) {
+      group.hidden = !left;
       more.textContent = 'Meer plaatsen (' + left + ')';
-      if (records) {
-        snapshot = placeSnapshotTurtle(city, records);
-        exportButton.hidden = !snapshot.count;
-        if (snapshot.count) exportButton.title = snapshot.count + ' rechtstreeks opgehaalde records met bronvermelding';
-      }
-      group.hidden = more.hidden && exportButton.hidden;
     },
   };
 }
@@ -198,7 +181,7 @@ function enhanceSection(section, city, type) {
   let activeRender = () => {};
   const requestedFragment = location.hash.slice(1);
   let fragmentReached = false;
-  const controls = type === 'places' ? placeControls(section, list, city, () => {
+  const controls = type === 'places' ? placeControls(section, list, () => {
     amount += batch;
     activeRender();
   }) : undefined;
@@ -209,12 +192,12 @@ function enhanceSection(section, city, type) {
     let mappedPlaces = [];
     let extraHours = new Map();
     amount = batch;
-    controls?.update(0, []);
+    controls?.update(0);
     let pending = configured.length;
     retry.hidden = true;
     retry.disabled = true;
 
-    function render(exportReady = false) {
+    function render(settled = false) {
       if (revision !== requestId) return [];
       const focused = list.contains(document.activeElement) ? document.activeElement?.getAttribute('href') : null;
       const groups = configured.map(({ key }) => results.get(key)?.items ?? []);
@@ -224,12 +207,12 @@ function enhanceSection(section, city, type) {
         const merged = mergePlaces([...stored.map(({ item, card }) => ({ ...item, card })), ...interleavePlaceSources(groups)], 112);
         mappedPlaces = merged;
         const added = merged.filter((item) => !item.card);
-        if (exportReady && requestedFragment.startsWith('bron-')) {
+        if (settled && requestedFragment.startsWith('bron-')) {
           const targetIndex = added.findIndex((item) => placeFragments(item).includes(requestedFragment));
           if (targetIndex >= 0) amount = Math.max(amount, Math.ceil((targetIndex + 1) / batch) * batch);
         }
         visible = added.slice(0, amount).map((item) => ({ ...item, ...extraHours.get(item.wikidata) }));
-        controls.update(added.length - visible.length, exportReady ? online : undefined);
+        controls.update(added.length - visible.length);
         // Enrich the curated card instead of rendering the same place a second time.
         merged.filter(({ card }) => card).forEach((item) => {
           ensurePlaceAnchors(item.card, item);
@@ -244,7 +227,7 @@ function enhanceSection(section, city, type) {
       list.replaceChildren(...visible.map(buildCard));
       if (focused) [...list.querySelectorAll('a')].find((a) => a.getAttribute('href') === focused)?.focus({ preventScroll: true });
       list.hidden = !visible.length;
-      if (exportReady && !fragmentReached && requestedFragment.startsWith('bron-')) {
+      if (settled && !fragmentReached && requestedFragment.startsWith('bron-')) {
         const target = document.getElementById(requestedFragment);
         if (target) {
           fragmentReached = true;
@@ -253,21 +236,19 @@ function enhanceSection(section, city, type) {
       }
       const failures = [...results.values()].filter((result) => result?.failed || result?.partial);
       const messages = [];
-      if (pending) messages.push('Actuele gegevens laden…');
+      if (pending) messages.push(type === 'places' ? 'Meer plekken zoeken…' : 'Evenementen zoeken…');
       else if (failures.length) messages.push('Niet alle bronnen zijn bereikbaar.');
       if (!pending && type === 'events' && (!configured.length || (results.size && [...results.values()].every(({ state }) => state === 'not-configured')))) {
-        messages.push('Voor deze stad is nog geen live agenda aangesloten.');
+        messages.push('Voor deze stad zijn hier geen actuele evenementen beschikbaar. Kijk ook in de lokale agenda.');
       } else if (!pending && !failures.length && !visible.length) {
-        messages.push(type === 'places' ? 'Geen extra plekken gevonden in de aangesloten bronnen.'
-          : 'Geen extra komende evenementen gevonden in de aangesloten bronnen. Andere lokale agenda’s kunnen meer tonen.');
+        messages.push(type === 'places' ? 'Geen extra plekken gevonden.'
+          : 'Hier staan geen extra komende evenementen. In de lokale agenda vind je misschien meer.');
       }
       if (!pending && type === 'events' && visible.length && results.get('uit')?.state === 'not-configured') {
-        messages.push('De UiTdatabank is niet aangesloten; deze lijst kan onvolledig zijn.');
+        messages.push('In de lokale agenda vind je misschien meer evenementen.');
       }
       if (!pending && type === 'places' && visible.length) {
-        const total = mappedPlaces.filter((item) => !item.card).length;
-        messages.push(`${visible.length} van ${total} opgehaalde plekken zichtbaar.`);
-        if (results.get('erfg')?.items?.length) messages.push('Een inventarisvermelding bevestigt geen toegang of openingsuren.');
+        if (results.get('erfg')?.items?.length) messages.push('Controleer vóór je bezoek de toegang en openingsuren.');
       }
       status.textContent = messages.join(' ');
       retry.hidden = Boolean(pending || !failures.length);

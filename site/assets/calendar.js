@@ -1,4 +1,4 @@
-import { addCalendarDays, compact, getJson, localToday, safeUrl, sources } from './sources.js';
+import { addCalendarDays, compact, getJson, localToday, visitorUrl, sources } from './sources.js';
 import { calendarEvent, calendarMonth, eventTime, eventsByDay, firstMonth, labelDay, labelMonth, lastMonth,
   mergeCalendarEvents, monthDays, moveMonth, scopeDates } from './calendar-core.js';
 import { fetchCalendarMonth, liveCalendarSpan } from './calendar-live.js';
@@ -40,7 +40,7 @@ function eventCard(item, cities, selectedDay) {
   const footer = node('p', 'calendar-event-footer');
   footer.append(node('span', 'calendar-category', item.category));
   const provider = Object.hasOwn(sources, item.source) ? sources[item.source] : null;
-  const sourceLink = provider?.href ?? safeUrl(item.source);
+  const sourceLink = provider?.visitorHref ?? provider?.href ?? visitorUrl(item.source);
   if (sourceLink) {
     const source = node('a', 'calendar-event-source', provider?.label ?? 'Bron bij de activiteit');
     source.href = sourceLink;
@@ -51,7 +51,7 @@ function eventCard(item, cities, selectedDay) {
       licence.href = provider.license;
       footer.append(licence);
     }
-  } else footer.append(node('span', 'calendar-event-source', 'Lokale catalogus'));
+  }
   body.append(footer);
   article.append(dateBadge, body);
   return article;
@@ -60,18 +60,16 @@ function eventCard(item, cities, selectedDay) {
 function statusText(coverage, liveSpan, count, pending, scope) {
   const quantity = count ? count + (count === 1 ? ' evenement opgenomen.' : ' evenementen opgenomen.')
     : 'Geen evenementen opgenomen voor deze selectie.';
-  if (pending) return quantity + ' Live agenda’s worden opgehaald…';
-  if (liveSpan.reason === 'past') return quantity + ' Alleen het lokale overzicht voor voorbije maanden.';
-  if (liveSpan.reason === 'future') return quantity + ' Deze maand ligt buiten de live zoekperiode van 120 dagen.';
-  if (!coverage?.length) return quantity + ' Voor deze selectie is geen live bron beschikbaar.';
+  if (pending) return quantity + ' We zoeken naar meer evenementen…';
+  if (liveSpan.reason === 'past') return quantity + ' Voor voorbije maanden zie je alleen een selectie.';
+  if (liveSpan.reason === 'future') return quantity + ' Extra evenementen worden tot 120 dagen vooruit getoond.';
+  if (!coverage?.length) return quantity + ' Voor deze selectie zijn geen extra evenementen beschikbaar.';
   const failed = coverage.filter(({ state }) => state === 'failed').map(({ source }) => sources[source]?.label).filter(Boolean);
-  const unconfigured = coverage.some(({ state }) => state === 'not-configured' || state === 'unconfigured');
   const limited = coverage.some(({ state }) => state === 'limited');
   return quantity + (failed.length ? ' Niet bereikbaar: ' + failed.join(', ') + '.' : '') +
-    (unconfigured ? ' UiTdatabank is niet ingesteld.' : '') +
-    (limited ? ' De regionale agenda toont de eerste resultaten. Kies een stad om gerichter te zoeken.' : '') +
-    (liveSpan.limited ? ' Live resultaten zijn alleen voor dagen binnen de zoekperiode.' : '') +
-    (!limited && !scope.city ? ' Niet alle steden publiceren hier een live agenda.' : '');
+    (limited ? ' Dit is een selectie. Kies een stad om gerichter te zoeken.' : '') +
+    (liveSpan.limited ? ' Voor enkele dagen in deze maand zie je alleen een selectie.' : '') +
+    (!limited && !scope.city ? ' Niet alle evenementen staan in deze kalender.' : '');
 }
 
 async function start() {
@@ -199,21 +197,19 @@ async function start() {
     more.hidden = selection.length <= agendaLimit;
     more.textContent = `Toon meer (${Math.max(0, selection.length - agendaLimit)})`;
     const sourceList = find('calendar-sources');
-    const providerStates = { ok: 'geladen', empty: 'geen resultaten binnen deze periode', failed: 'niet bereikbaar',
-      limited: 'eerste resultaten', unconfigured: 'niet ingesteld', 'not-configured': 'niet ingesteld' };
-    const sourceItems = [node('li', '', 'Lokale catalogus · altijd inbegrepen')];
-    for (const { source, state, count } of live.coverage) {
-      if (!Object.hasOwn(sources, source)) continue;
+    const sourceItems = [];
+    for (const { source, count } of live.coverage) {
+      if (!(count > 0) || !Object.hasOwn(sources, source)) continue;
+      const { label, href, visitorHref, attribution } = sources[source];
       const item = node('li');
-      const link = node('a', '', sources[source].label);
-      link.href = sources[source].href;
-      item.append(link, ' · ' + (providerStates[state] ?? 'beschikbaar'));
-      if (Number.isSafeInteger(count) && count > 0) item.append(` · ${count} ${count === 1 ? 'vermelding' : 'vermeldingen'}`);
-      const { attribution } = sources[source];
+      const link = node('a', '', label);
+      link.href = visitorHref ?? href;
+      item.append(link);
       if (attribution) item.append(' · ' + attribution);
       sourceItems.push(item);
     }
     sourceList.replaceChildren(...sourceItems);
+    sourceList.hidden = !sourceItems.length;
   }
 
   async function loadLive() {

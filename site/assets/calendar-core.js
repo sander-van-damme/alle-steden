@@ -1,4 +1,4 @@
-import { addCalendarDays, compact, dateOnly, dateValue, localToday, safeUrl } from './sources.js';
+import { addCalendarDays, compact, dateOnly, dateValue, localToday, visitorUrl } from './sources.js';
 
 const monthName = new Intl.DateTimeFormat('nl-BE', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 const dayName = new Intl.DateTimeFormat('nl-BE', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
@@ -66,7 +66,7 @@ export function calendarEvent(item, city) {
   return {
     city, id: compact(item.id, 350), name: compact(item.name), category: compact(item.category, 60) || categoryOther,
     description: compact(item.description, 300), venue: compact(item.venue, 140),
-    url: safeUrl(item.website) ?? safeUrl(item.url), source: sourceName(item.source),
+    url: visitorUrl(item.website) ?? visitorUrl(item.url), source: sourceName(item.source),
     start, ...(end && { end }), day, last, allDay: item.allDay === true,
     scheduleBased: item.scheduleBased === true,
   };

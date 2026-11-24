@@ -22,7 +22,7 @@ test('city HTML keeps existing content usable without JavaScript and exposes the
   assert.match(page, /data-item-id="http:\/\/www.wikidata.org\/entity\/Q999"/);
   assert.match(page, /A &lt; B/);
   assert.match(page, /<time datetime="2026-12-10">/);
-  assert.match(page, /\/data\/gent\.ttl/);
+  assert.doesNotMatch(page, /href="[^"]*\.ttl|Stadsdata|NIS-code|GitHub/);
   assert.match(page, /<noscript>/);
 });
 

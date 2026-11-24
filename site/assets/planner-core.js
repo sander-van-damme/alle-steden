@@ -639,7 +639,7 @@ export async function planTrips(cities, options, { fetchRoute, signal, now = new
     countCandidates: pairs.length,
     checkedRoutes, failedRoutes,
     notes: [
-      'Geen volledige rangschikking: ' + candidates.length + ' van ' + pairs.length + ' combinaties met passende bezoekmomenten kregen voorrang voor een echte routecheck.',
+      'De ritvoorstellen zijn een selectie. Er kunnen ook andere combinaties passen.',
       ...(options.city ? [`‘In de buurt van’ zoekt vertrekpunten tot ${departureRadius(options.maxKm, options.roundtrip)} km hemelsbreed rond de gekozen stad. De opgegeven maximale fietsafstand geldt voor de route zelf.`] : []),
       options.scheduledOnly
         ? 'Deze zoekopdracht gebruikt alleen bezoeken met gepubliceerde uren. Feest- en uitzonderingsdagen kunnen afwijken.'

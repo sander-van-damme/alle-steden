@@ -1,7 +1,7 @@
 import { calendarMain, calendarHead } from './calendar-template.mjs';
 import { cityDirectoryMap } from './city-directory-map.mjs';
 
-const repository = 'https://github.com/sander-van-damme/alle-steden';
+import { visitorUrl } from '../site/assets/sources.js';
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 })[char]);
@@ -23,13 +23,12 @@ export function layout({ title, main, script = '', active = '' }) {
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span>Alle Steden</a>
-      <nav aria-label="Hoofdnavigatie"><a href="/#steden"${active === 'cities' ? ' aria-current="page"' : ''}>Steden</a><a href="/kalender/"${active === 'calendar' ? ' aria-current="page"' : ''}>Kalender</a><a href="/planner/"${active === 'planner' ? ' aria-current="page"' : ''}>Planner</a><a href="${repository}">GitHub ${arrow}</a></nav>
+      <nav aria-label="Hoofdnavigatie"><a href="/#steden"${active === 'cities' ? ' aria-current="page"' : ''}>Steden</a><a href="/kalender/"${active === 'calendar' ? ' aria-current="page"' : ''}>Kalender</a><a href="/planner/"${active === 'planner' ? ' aria-current="page"' : ''}>Planner</a></nav>
     </div>
   </header>
   ${main}
   <footer class="wrap footer">
     <a class="brand" href="/">Alle Steden</a>
-    <a href="${repository}#bronnen">Databronnen ${arrow}</a>
   </footer>
 </body>
 </html>`;
@@ -98,7 +97,7 @@ export function plannerPage(cities) {
               <button type="button" class="button secondary" id="planner-upcoming" disabled>Bekijk komende weekenden</button>
             </span>
           </div>
-          <noscript><p>Schakel JavaScript in om de planner te gebruiken. De <a href="/#steden">stedenlijst</a> blijft beschikbaar.</p></noscript>
+          <noscript><p>De planner is hier niet beschikbaar. Je kunt wel de <a href="/#steden">stedenlijst</a> bekijken.</p></noscript>
         </form>
         <figure class="planner-panel planner-map-panel" data-mode-place hidden>
           <div class="planner-map-heading"><h2>Kies op de kaart</h2><span id="planner-map-selection" aria-live="polite"></span></div>
@@ -191,7 +190,7 @@ function verifyAttributes(url, linkIds) {
 function entrySource(source, linkIds) {
   try {
     const url = new URL(typeof source === 'string' ? source : source?.url);
-    if (!/^https?:$/.test(url.protocol) || url.username || url.password) return '';
+    if (!visitorUrl(url.href)) return '';
     const label = typeof source === 'object' ? source?.label : null;
     return `<a class="entry-source" href="${escapeHtml(url.href)}"${verifyAttributes(typeof source === 'string' ? source : source?.url, linkIds)}>Bron: ${escapeHtml(label || url.hostname.replace(/^www\./, ''))}</a>`;
   } catch {
@@ -202,9 +201,10 @@ function entrySource(source, linkIds) {
 function entryList(title, intro, kind, items, linkIds) {
   const liveNotice = kind === 'places' ? 'bezienswaardigheden' : 'evenementen';
   const cards = items.map(({ id, name, description, url, start, end, openingHours, exterior, source }) => {
+    const website = visitorUrl(url);
     const hours = (Array.isArray(openingHours) ? openingHours : [openingHours]).filter(Boolean).join(' · ');
     return `<li${id ? ` data-item-id="${escapeHtml(id)}"` : ''}>
-      <h3>${url ? `<a href="${escapeHtml(url)}"${verifyAttributes(url, linkIds)}>${escapeHtml(name)} ${arrow}</a>` : escapeHtml(name)}</h3>
+      <h3>${website ? `<a href="${escapeHtml(website)}"${verifyAttributes(url, linkIds)}>${escapeHtml(name)} ${arrow}</a>` : escapeHtml(name)}</h3>
       ${entryDate(start, end)}
       ${exterior === true ? '<span class="entry-badge" data-exterior>Vanop de openbare weg te bekijken</span>' : ''}
       ${hours ? `<p class="entry-meta"><strong>Openingsuren:</strong> ${escapeHtml(hours)}</p>` : ''}
@@ -220,7 +220,7 @@ function entryList(title, intro, kind, items, linkIds) {
     <p class="source-status" data-status role="status" aria-live="polite"></p>
     <button type="button" class="button secondary retry" data-retry hidden>Opnieuw proberen</button>
     <div class="official-links" data-official-links hidden></div>
-    <noscript><p class="source-status">Schakel JavaScript in om extra ${liveNotice} uit externe bronnen te laden.</p></noscript>
+    <noscript><p class="source-status">Je ziet hier een selectie van ${liveNotice}.</p></noscript>
   </section>`;
 }
 
@@ -264,21 +264,13 @@ export function cityPage(city, linkIds) {
         ${cityDecoration}
       </header>
       <nav class="city-nav" aria-label="Op deze pagina">
-        <a href="#places">Bezienswaardigheden</a><a href="#events">Evenementen</a><a href="#stadsdata">Stadsdata</a>
+        <a href="#places">Bezienswaardigheden</a><a href="#events">Evenementen</a>
       </nav>
       <div class="visit-grid">
         ${entryList('Bezienswaardigheden', 'Plekken om te ontdekken. Openingsuren staan erbij als de bron ze meegeeft. Bij buitenstops is toegang tot gebouwen niet bevestigd.', 'places', places, linkIds)}
         ${entryList('Evenementen', 'Activiteiten en terugkerende evenementen, met datums wanneer bekend.', 'events', events, linkIds)}
       </div>
       <p class="calendar-city-link"><a class="button secondary" href="/kalender/?stad=${encodeURIComponent(slug)}">Bekijk de kalender voor ${escapeHtml(name)} ${arrow}</a></p>
-      <details id="stadsdata" class="city-data">
-        <summary>Stadsdata</summary>
-        <p class="code">NIS-code ${escapeHtml(code)}</p>
-        <div class="city-links">
-          <a class="button secondary" href="${escapeHtml(cityUrl)}">Wikidata ${arrow}</a>
-          <a class="button secondary" href="/data/${escapeHtml(slug)}.ttl" download>Download Turtle <span aria-hidden="true">↓</span></a>
-        </div>
-      </details>
     </main>`,
   });
 }

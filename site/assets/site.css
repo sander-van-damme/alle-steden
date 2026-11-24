@@ -161,7 +161,7 @@ input, select { width: 100%; padding: 0.72rem 0.8rem; background: var(--white); 
   pointer-events: none;
 }
 .city-decoration svg { display: block; width: 100%; height: 100%; }
-.location, .aliases, .code { color: var(--muted); }
+.location, .aliases { color: var(--muted); }
 .location { margin: 0 0 0.85rem; font-size: 0.82rem; font-weight: 720; letter-spacing: 0.055em; }
 .aliases { margin: 0.68rem 0 0; overflow-wrap: anywhere; }
 .city-description { max-width: 43rem; margin: 1rem 0 0; }
@@ -185,7 +185,7 @@ input, select { width: 100%; padding: 0.72rem 0.8rem; background: var(--white); 
   align-items: start;
   gap: clamp(1rem, 4vw, 3.2rem);
 }
-.entries, .city-data { scroll-margin-top: 1rem; }
+.entries { scroll-margin-top: 1rem; }
 .entries-heading { padding-bottom: 0.85rem; border-bottom: 1px solid var(--line); }
 .entries h2 { margin: 0; font-size: clamp(1.8rem, 3.9vw, 3rem); line-height: 1.09; overflow-wrap: anywhere; }
 .entries-heading p { margin: 0.55rem 0 0; color: var(--muted); max-width: 36rem; }
@@ -246,15 +246,6 @@ button:focus-visible, summary:focus-visible {
 }
 .official-links { display: flex; flex-wrap: wrap; gap: 0.45rem 1rem; margin-top: 0.75rem; font-size: 0.88rem; }
 .official-links p { margin: 0; }
-.city-data {
-  margin-top: clamp(1.6rem, 4.5vw, 3.15rem);
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-.city-data summary { padding-block: 0.92rem; font-weight: 650; cursor: pointer; }
-.city-data[open] { padding-bottom: 1rem; }
-.city-data .city-links { margin-top: 0.72rem; }
-.code { margin: 0.1rem 0 0; font-size: 0.86rem; }
 @media (max-width: 48rem) {
   .visit-grid { grid-template-columns: minmax(0, 1fr); gap: 1.8rem; }
   .city-decoration { opacity: 0.4; }

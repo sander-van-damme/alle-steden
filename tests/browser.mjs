@@ -53,6 +53,8 @@ try {
   desktop.on('pageerror', (error) => errors.push(error.message));
   await fixture(desktop);
   await desktop.goto(base);
+  assert.deepEqual(await desktop.locator('.top nav a').allTextContents(), ['Steden', 'Kalender', 'Planner']);
+  assert.equal(await desktop.locator('footer a[href*="github.com"]').count(), 0);
   await desktop.keyboard.press('Tab');
   assert.equal(await desktop.locator(':focus').innerText(), 'Naar de inhoud');
   const query = desktop.locator('#query');
@@ -72,9 +74,15 @@ try {
   await desktop.getByRole('heading', { name: 'Volgend stadsevenement' }).waitFor();
   assert.equal(await desktop.getByText('Verlopen evenement').count(), 0);
   assert.equal(await desktop.getByRole('heading', { name: 'Gravensteen' }).count(), 1);
-  assert.match(await desktop.locator('[data-live-events] [data-status]').innerText(), /niet aangesloten/);
-  await desktop.locator('summary').click();
-  assert.ok(await desktop.getByRole('link', { name: /Download Turtle/ }).isVisible());
+  await desktop.getByText('In de lokale agenda vind je misschien meer evenementen.', { exact: false }).waitFor();
+  assert.equal(await desktop.locator('a[href$=".ttl"], a[href*="wikidata.org"], #stadsdata').count(), 0);
+  assert.equal(await desktop.getByRole('button', { name: /Turtle/ }).count(), 0);
+  assert.ok(await desktop.getByRole('link', { name: /Bekijk de kalender voor Gent/ }).isVisible());
+  assert.equal(await desktop.getByRole('link', { name: 'Live proefmuseum' }).getAttribute('href'), 'https://example.com/museum');
+  const rdf = await desktop.request.get(base + '/data/gent.ttl');
+  assert.equal(rdf.status(), 200);
+  assert.match(rdf.headers()['content-type'], /text\/turtle/);
+  assert.match(await rdf.text(), /schema:City/);
   assert.deepEqual(errors, []);
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, deviceScaleFactor: 2, hasTouch: true });
@@ -101,7 +109,7 @@ try {
   pages.push(fallback);
   await fallback.goto(base + city);
   assert.ok(await fallback.getByRole('heading', { name: 'Gravensteen' }).isVisible());
-  assert.ok(await fallback.getByText(/Schakel JavaScript in om extra bezienswaardigheden/).isVisible());
+  assert.ok(await fallback.getByText(/Je ziet hier een selectie van bezienswaardigheden/).isVisible());
   console.log('Chromium: toetsenbord, zoekfilters, navigatie, live inhoud, openingstijden, datums, mobiel, opnieuw proberen en zonder JavaScript geslaagd (voorspelbare bronantwoorden).');
 
   if (process.env.LIVE_BROWSER === '1') {

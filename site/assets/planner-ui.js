@@ -1,3 +1,4 @@
+import { visitorUrl } from './sources.js';
 import { regions } from './planner-regions.js';
 
 const collator = new Intl.Collator('nl-BE');
@@ -25,8 +26,8 @@ function svgElement(tag, attributes = {}) {
 function urlFor(value) {
   if (!value) return null;
   try {
-    const url = new URL(value, location.origin);
-    return /^https?:$/.test(url.protocol) && !url.username && !url.password ? url : null;
+    const safe = visitorUrl(new URL(value, location.origin).href);
+    return safe ? new URL(safe) : null;
   } catch {
     return null;
   }
@@ -247,6 +248,7 @@ function sourceLabel(source) {
 }
 
 function sourceLink(source, className) {
+  if (source?.label === 'Wikidata') return null;
   const label = sourceLabel(source);
   return label ? link(label, typeof source === 'string' && /^https?:\/\//.test(source) ? source : source?.url, className) : null;
 }
@@ -627,14 +629,7 @@ export function renderPlannerResults(container, results, { mode = 'date', schedu
   const tripCard = (trip) => renderTrip(trip, openRoutes.has(String(trip.id)));
   const limitsOpen = container.querySelector(':scope > .planner-limits')?.open;
   const main = document.createDocumentFragment();
-  const { trips = [], countCandidates, checkedRoutes, failedRoutes, notes = [] } = results;
-  if (Number.isFinite(countCandidates) || Number.isFinite(checkedRoutes)) {
-    const facts = [];
-    if (Number.isFinite(countCandidates)) facts.push(countCandidates === 1 ? '1 kandidaatcombinatie' : `${countCandidates} kandidaatcombinaties`);
-    if (Number.isFinite(checkedRoutes)) facts.push(checkedRoutes === 1 ? '1 fietsroute gecontroleerd' : `${checkedRoutes} fietsroutes gecontroleerd`);
-    if (failedRoutes > 0) facts.push(failedRoutes === 1 ? '1 route niet opgehaald' : `${failedRoutes} routes niet opgehaald`);
-    main.append(element('p', 'planner-hint planner-run-meta', facts.join(' · ')));
-  }
+  const { trips = [], notes = [] } = results;
   if (notes.length) {
     const limits = element('details', 'planner-limits');
     limits.open = Boolean(limitsOpen);

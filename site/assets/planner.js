@@ -284,14 +284,11 @@ async function startSearch(withUpcoming = false) {
     const now = new Date();
     const days = datesFor(filters, now);
     const agendas = await openCalendars(cities, filters, days, current.signal);
-    const result = await planTrips(agendas.catalog, filters, {
-      fetchRoute, signal: current.signal, now,
-      onProgress: ({ checkedRoutes, failedRoutes, countCandidates }) => {
-        if (job === current) setPlannerStatus(statusEl, 'Fietsroutes controleren: ' + (checkedRoutes + failedRoutes) + ' van ' + countCandidates + '…', 'loading');
-      },
-    });
     if (job !== current) return;
-    if (agendas.count) result.notes.push('Actuele agenda’s bevraagd voor ' + agendas.count + ' steden in deze zoekronde. Alleen evenementen met een exact begin én einde tellen mee.');
+    setPlannerStatus(statusEl, 'Passende fietsroutes zoeken…', 'loading');
+    const result = await planTrips(agendas.catalog, filters, { fetchRoute, signal: current.signal, now });
+    if (job !== current) return;
+    if (agendas.count) result.notes.push('We plannen alleen evenementen in met een duidelijk begin- en einduur.');
     if (agendas.failed) result.notes.push('Niet alle agenda’s waren bereikbaar.');
     shown = result;
     activeMode = filters.mode;

@@ -168,7 +168,6 @@
 }
 .planner-status:empty { margin: 0; padding: 0; }
 .planner-status[data-state="error"], .planner-status[data-state="warning"] { background: #f4e7dc; color: #73391d; }
-.planner-run-meta { margin: 0.42rem 0; }
 .planner-limits { color: var(--muted); font-size: 0.86rem; margin: 0.5rem 0 1rem; }
 .planner-limits summary { display: list-item; width: fit-content; color: var(--accent); cursor: pointer; font-weight: 645; }
 .planner-limits ul { padding-left: 1.15rem; }

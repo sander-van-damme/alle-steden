@@ -17,7 +17,7 @@ export const sources = {
   liegeMarkets: { label: 'Ville de Liège · marchés', href: 'https://opendata.liege.be/explore/dataset/marches/information/',
     license: ccby, attribution: 'Ville de Liège' },
   wikidata: { label: 'Wikidata', href: 'https://www.wikidata.org/wiki/Wikidata:Data_access', license: 'https://creativecommons.org/publicdomain/zero/1.0/' },
-  flanders: { label: 'Toerisme Vlaanderen', href: portal },
+  flanders: { label: 'Toerisme Vlaanderen', href: portal, visitorHref: 'https://toerismevlaanderen.be/nl' },
   wallonia: { label: 'Tourisme Wallonie', href: 'https://geoportail.wallonie.be/catalogue/91721175-5f01-410c-8c78-37c1d1893ba2.html', license: ccby },
   brussels: { label: 'Stad Brussel', href: brussels + '/explore/assets/bruxelles_musees/', license: 'https://creativecommons.org/publicdomain/zero/1.0/' },
   brusselsGrandPlace: { label: 'Stad Brussel · Grote Markt', href: brussels + '/explore/assets/description-des-batiments-de-la-grand-place/',
@@ -62,6 +62,14 @@ export const safeUrl = (value) => {
     return /^https?:$/.test(url.protocol) && !url.username && !url.password ? url.href : undefined;
   } catch { return undefined; }
 };
+
+// Machine identifiers remain available to adapters and exports, but an entity
+// record alone is not a useful visitor destination.
+export function visitorUrl(value) {
+  const url = safeUrl(value);
+  if (url && !/(?:^|\.)wikidata\.org$/i.test(new URL(url).hostname)) return url;
+  return undefined;
+}
 
 // Corrections require a verified target for the same record (see
 // docs/walloon-link-audit.md). Match both the provider identity and the precise

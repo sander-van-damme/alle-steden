@@ -47,7 +47,7 @@ async function install(page, { fails = false, pauseGent = null } = {}) {
 }
 const loaded = (page) => page.waitForFunction(() => {
   const el = document.getElementById('calendar-status');
-  return el?.textContent && !el.textContent.includes('worden opgehaald');
+  return el?.textContent && !el.textContent.includes('We zoeken naar meer evenementen');
 });
 try {
   await Promise.race([once(server.stdout, 'data'), once(server, 'exit').then(code => assert.fail('Preview exited: ' + code))]);
@@ -65,7 +65,12 @@ try {
   await loaded(desktop);
   assert.equal(await desktop.locator('nav [aria-current="page"]').innerText(), 'Kalender');
   assert.equal(await desktop.locator('#calendar-month').textContent(), 'december 2026');
-  assert.match(await desktop.locator('#calendar-status').textContent(), /eerste resultaten/);
+  await desktop.locator('.calendar-sources summary').click();
+  assert.equal(await desktop.locator('.calendar-sources summary').textContent(), 'Over deze kalender');
+  assert.doesNotMatch(await desktop.locator('.calendar-sources').innerText(), /geladen|vermeldingen|niet ingesteld/);
+  assert.match(await desktop.locator('.calendar-sources').innerText(), /Niet alle evenementen/);
+  assert.ok(await desktop.locator('#calendar-sources a').count() > 0);
+  assert.match(await desktop.locator('#calendar-status').textContent(), /Dit is een selectie/);
   assert.ok(await desktop.getByRole('link', { name: fixture.title }).isVisible());
   const ideas = desktop.locator('.calendar-event[data-calendar-source=idees]');
   await ideas.getByRole('link', {name:'Expo van ideeën'}).waitFor();
@@ -102,7 +107,7 @@ try {
   const pauseGent = new Promise((resolve) => { releaseGent = resolve; });
   await install(race, { pauseGent });
   await race.goto(origin + '/kalender/?maand=2026-12');
-  await race.getByText('Live agenda’s worden opgehaald', { exact: false }).waitFor();
+  await race.getByText('We zoeken naar meer evenementen', { exact: false }).waitFor();
   await race.locator('#calendar-region').selectOption('Wallonië');
   await loaded(race);
   releaseGent();
@@ -123,7 +128,7 @@ try {
   assert.equal(await phone.evaluate(() => document.documentElement.scrollWidth), 390);
   await phone.goto(origin + '/kalender/?maand=2027-05');
   await loaded(phone);
-  assert.match(await phone.locator('#calendar-status').innerText(), /buiten de live zoekperiode/);
+  assert.match(await phone.locator('#calendar-status').innerText(), /tot 120 dagen vooruit/);
   assert.ok(await phone.getByRole('link', { name: 'Heilig Bloedprocessie 2027' }).isVisible());
 
   const offline = await browser.newPage({ javaScriptEnabled: false });
