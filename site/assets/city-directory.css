@@ -1,0 +1,35 @@
+.directory-workspace { display: grid; grid-template-columns: 1.04fr minmax(0, .96fr); gap: clamp(.85rem, 2.6vw, 2.4rem); align-items: start; }
+.directory-workspace .city-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.directory-map { --map-highlight: #943f31; position: sticky; top: .7rem; min-width: 0; padding: clamp(.65rem, 2.3vw, 1.55rem); border: 1px solid #cdd6c8; border-radius: .75rem; background: #eff1e9; }
+.directory-map-heading { display: flex; justify-content: space-between; gap: .5rem; align-items: start; }
+.directory-map-heading .eyebrow { margin: 0; color: #52635b; font-size: .68rem; }
+.directory-map-heading h3 { margin: .12rem 0 .45rem; font: 500 clamp(1.55rem, 3vw, 2.2rem)/1.08 var(--display); letter-spacing: -.04em; }
+.directory-map-count { flex: none; color: #315246; font-size: .74rem; font-weight: 700; background: #dfe7d9; border-radius: 2rem; padding: .18rem .52rem; }
+.directory-map-svg { display: block; overflow: visible; width: 100%; }
+.directory-land { fill: #d8e3d3; stroke: #f2f4ee; stroke-width: 1.9px; }
+.directory-land[data-map-region="Wallonië"] { fill: #e5dfca; }
+.directory-land[data-map-region="Brussels Hoofdstedelijk Gewest"] { fill: #c1d7cd; }
+.directory-pin { touch-action: manipulation; cursor: pointer; }
+.directory-pin-hit { fill: transparent; }
+.directory-pin-dot { fill: #34594b; stroke: #f9faf4; stroke-width: 1.15px; pointer-events: none; }
+.directory-pin.is-active .directory-pin-dot { r: 7.1; fill: var(--map-highlight); stroke: #fff; stroke-width: 1.8px; }
+.directory-pin:focus-visible { outline: 0; }
+.directory-pin:focus-visible .directory-pin-dot { stroke: #602217; stroke-width: 2.4px; }
+.city-card.is-active a { border-color: #a75c4d; background: #f4e8e0; }
+.city-card.is-active .city-arrow { color: #943f31; }
+.directory-map-focus { display: flex; flex-wrap: wrap; gap: .1rem .65rem; justify-content: space-between; align-items: baseline; min-height: 2.3rem; padding: .55rem .68rem; color: #41584b; background: #f9faf4; border-radius: .35rem; font-size: .82rem; }
+.directory-map-focus p { margin: 0; font-weight: 650; }
+.directory-map-focus a { font-weight: 650; }
+.directory-map figcaption { margin: .45rem 0 0; font-size: .70rem; color: #52635b; }
+@media (max-width: 46rem) {
+  .directory-workspace { grid-template-columns: minmax(0,1fr); }
+  .directory-map { grid-row: 1; position: static; }
+}
+@media (max-width: 29rem) {
+  .directory-workspace .city-card a { padding: .65rem; }
+}
+.directory-pin-highlight { r: 7.2; fill: var(--map-highlight); stroke: #fff; stroke-width: 1.8px; }
+.directory-map-svg:focus-within .directory-pin-highlight { stroke: #5e2b1d; stroke-width: 2.1px; }
+
+.directory-list { min-width: 0; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

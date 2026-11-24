@@ -54,6 +54,36 @@ export const safeUrl = (value) => {
     return /^https?:$/.test(url.protocol) && !url.username && !url.password ? url.href : undefined;
   } catch { return undefined; }
 };
+
+// Corrections require a verified target for the same record (see
+// docs/walloon-link-audit.md). Match both the provider identity and the precise
+// outdated URL so later upstream corrections and unrelated links stay intact.
+const auditedPlaceLinks = new Map([
+  ['wallonia:LOD-A0-001U-0385', new Map([
+    ['https://www.chevaux-de-sport.be/', 'https://chevaux-de-sport.be/'],
+  ])],
+  ['wallonia:ALD-13-024F-0001', new Map([
+    ['http://www.latruitestavelot.be/', 'https://www.latruitestavelotmalmedy.be/'],
+  ])],
+  ['wallonia:ALD-01-08H4-2GP6', new Map([
+    ['http://www.bodystylingclub.be/', 'https://www.bodystylingclub.com/'],
+  ])],
+  ['wallonia:ALD-01-08H4-2GG8', new Map([
+    ['http://www.bovomoulin.be/', null],
+  ])],
+  ['wikidata:Q137408167', new Map([
+    ['https://www.bouillonmedievalexperience.be/fr', 'https://www.bouillonmedievalexperience.be/'],
+  ])],
+]);
+
+export function verifiedPlaceWebsite(source, id, value) {
+  const original = safeUrl(value);
+  const corrections = auditedPlaceLinks.get(source + ':' + id);
+  return corrections?.has(original) ? corrections.get(original) ?? undefined : original;
+}
+
+export const walloonAgendaUrl = 'https://visitwallonia.be/fr-be/3/que-faire/agenda-des-evenements';
+
 export const compact = (value, limit = 220) => typeof value === 'string'
   ? value.replace(/\s+/g, ' ').trim().slice(0, limit)
   : '';
@@ -148,7 +178,8 @@ const fromBindings = (doc, source) => bindings(doc).flatMap((row) => {
   const point = /^Point\((-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\)$/i.exec(val(row, 'point') ?? '');
   return [{
     id, name, source,
-    website: safeUrl(val(row, 'site')) ?? id.replace(/^http:\/\/(www.wikidata.org|linked.toerismevlaanderen.be)\//, 'https://$1/'),
+    website: verifiedPlaceWebsite(source, id.split('/').at(-1), val(row, 'site')) ??
+      id.replace(/^http:\/\/(www.wikidata.org|linked.toerismevlaanderen.be)\//, 'https://$1/'),
     address: [compact(val(row, 'street')), compact(val(row, 'postcode'))].filter(Boolean).join(' · '),
     hours: compact(val(row, 'hours')), category: compact(val(row, 'kind')),
     coordinates: point ? coordinatesInBelgium(Number(point[2]), Number(point[1])) : undefined,
@@ -261,7 +292,8 @@ export async function getWallonia(city, options) {
       const street = [compact(row.RUE), compact(row.NUMERO)].filter(Boolean).join(' ');
       const locality = compact(row.COMMUNE);
       return [{ name, labels: { fr: name }, id: sourceId ? 'pivot:' + sourceId : undefined, sourceId, sourceRecord,
-        source: 'wallonia', website: safeUrl(row.SITE_WEB), street, locality, postalCode: compact(row.CODE_POSTAL),
+        source: 'wallonia', website: verifiedPlaceWebsite('wallonia', sourceId, row.SITE_WEB),
+        street, locality, postalCode: compact(row.CODE_POSTAL),
         address: [street, locality].filter(Boolean).join(' · '),
         coordinates: coordinatesInBelgium(geometry?.y, geometry?.x),
         category: layer === 10 ? 'Loisirs et découvertes' : 'Point d’intérêt' }];
@@ -280,7 +312,7 @@ export async function getNamur(today = localToday(), options) {
   if (!dateOnly(dateValue(today))) throw new Error('Ongeldige datum');
   const result = await getJson(parameters(namur + '/api/explore/v2.1/catalog/datasets/namur-agenda-des-evenements/records', {
     select: 'title,name,datedebut,datefin,link',
-    where: `(datefin >= date'${today}' OR (datefin is null AND datedebut >= date'${today}'))` + optionalUpperBound('datedebut', options?.through),
+    where: `(datefin >= date'${today}' OR (datefin is null AND datedebut >= date'${today}'))` + optionalUpperBound('datedebut', options?.through) + optionalLowerBound('datedebut', options?.minimumStart),
     order_by: 'datedebut asc', limit: 24,
   }), options);
   return rows(result, 'results').map((row) => ({ name: compact(row.title), venue: compact(row.name), source: 'namur',
@@ -379,7 +411,7 @@ export async function getGent(today = localToday(), options) {
   if (!dateOnly(dateValue(today))) throw new Error('Ongeldige datum');
   const result = await getJson(parameters(gent + '/api/explore/v2.1/catalog/datasets/toeristische-evenementen-visit-gent/records', {
     select: 'event,name_nl,date_start,date_end,url,ctcname_nl',
-    where: `(date_end >= date'${today}' OR (date_end is null AND date_start >= date'${today}'))` + optionalUpperBound('date_start', options?.through),
+    where: `(date_end >= date'${today}' OR (date_end is null AND date_start >= date'${today}'))` + optionalUpperBound('date_start', options?.through) + optionalLowerBound('date_start', options?.minimumStart),
     order_by: 'date_start asc', limit: 24,
   }), options);
   return rows(result, 'results').map((row) => ({ id: safeUrl(row.event), name: compact(row.name_nl),
@@ -466,6 +498,10 @@ function optionalUpperBound(field, through) {
   return through ? ` AND ${field} <= date'${validateDay(through)}'` : '';
 }
 
+function optionalLowerBound(field, day) {
+  return day ? ` AND ${field} >= date'${validateDay(day)}'` : '';
+}
+
 function eventSpan({ from = localToday(), through = addCalendarDays(from, 83) } = {}) {
   validateDay(from);
   validateDay(through);
@@ -476,21 +512,21 @@ function eventSpan({ from = localToday(), through = addCalendarDays(from, 83) } 
 const imioSelect = 'id,start_datetime,end_datetime,recurrence,whole_day,open_end,title,category,coordinates,address_street_name,address_house_number,address_postal_code,address_city,owner_name,event_url';
 const odsqlLiterals = (values) => values.map((value) => "'" + value.replaceAll("'", "''") + "'").join(', ');
 
-export function walloonAgendaQuery(city, span) {
+export function walloonAgendaQuery(city, span, { regional = false } = {}) {
   const { from, through } = eventSpan(span);
-  const names = odsqlLiterals(cityNames(city));
-  if (!names) throw new Error('Ontbrekende stadsnaam');
+  const names = regional ? '' : odsqlLiterals(cityNames(city));
+  if (!regional && !names) throw new Error('Ontbrekende stadsnaam');
+  const locality = regional ? '' : `owner_name in (${names}) AND address_city in (${names}) AND `;
   // The API stores datetimes in UTC. Fetch a one-day margin at each end,
   // then filter exactly by Belgian calendar day after normalization.
   const lower = addCalendarDays(from, -1);
   const upper = addCalendarDays(through, 1);
   return parameters(namur + '/api/explore/v2.1/catalog/datasets/' + imioDataset + '/records', {
     select: imioSelect,
-    where: `owner_name in (${names}) AND address_city in (${names}) AND
-      (end_datetime >= date'${lower}' OR (end_datetime is null AND start_datetime >= date'${lower}')) AND
+    where: `${locality}(end_datetime >= date'${lower}' OR (end_datetime is null AND start_datetime >= date'${lower}')) AND
       start_datetime < date'${upper}' AND category in (${odsqlLiterals(Object.keys(imioTypes))}) AND
       (recurrence is null OR recurrence = '')`.replace(/\s*\n\s*/g, ' '),
-    order_by: 'start_datetime asc', limit: 40,
+    order_by: 'start_datetime asc', limit: regional ? 100 : 40,
   });
 }
 
@@ -505,7 +541,7 @@ function sameWholeDayEnd(first, end) {
     ? addCalendarDays(last, -1) : last;
 }
 
-export function walloonAgendaItems(doc, city, span) {
+export function walloonAgendaItems(doc, city, span, { calendar = false } = {}) {
   const names = new Set(cityNames(city).map(nameKey));
   const { from, through } = eventSpan(span);
   return rows(doc, 'results').flatMap((row) => {
@@ -522,7 +558,8 @@ export function walloonAgendaItems(doc, city, span) {
     const openEnd = Number(row.open_end) === 1;
     // A timestamp on either end of a multi-day exhibition is not a daily
     // opening schedule. Retain the dates, never invent an intervening time.
-    const timed = !allDay && !openEnd && end && firstDay === lastDay && !dateOnly(start) && !dateOnly(end);
+    const overnight = calendar && end && !dateOnly(end) && Date.parse(end) - Date.parse(start) <= 18 * 60 * 60 * 1000;
+    const timed = !allDay && !openEnd && end && (firstDay === lastDay || overnight) && !dateOnly(start) && !dateOnly(end);
     const visibleEnd = timed ? end : openEnd ? undefined :
       allDay && end && !dateOnly(end) ? sameWholeDayEnd(firstDay, end) : lastDay;
     if ((calendarDay(visibleEnd) ?? firstDay) < from || firstDay > through) return [];
@@ -534,7 +571,7 @@ export function walloonAgendaItems(doc, city, span) {
     const lon = row.coordinates?.lon;
     return [{
       id: id ? 'imio:' + id : undefined,
-      name, source: 'imio', start: timed ? start : firstDay, end: visibleEnd,
+      name, source: 'imio', start: timed ? start : firstDay, end: visibleEnd, allDay,
       address, venue: address, category: imioTypes[row.category],
       website: safeUrl(row.event_url) ?? (id ? sourceRecord.href : sources.imio.href),
       coordinates: Number.isFinite(lat) && Number.isFinite(lon) && lat >= 49 && lat <= 52 && lon >= 2 && lon <= 7
@@ -546,12 +583,15 @@ export function walloonAgendaItems(doc, city, span) {
 export async function getWalloonEvents(city, options = {}) {
   const span = eventSpan(options);
   const result = await getJson(walloonAgendaQuery(city, span), options);
-  return walloonAgendaItems(result, city, span);
+  return walloonAgendaItems(result, city, span, options);
 }
 
 export function cityEventSources(city, options = {}) {
   const { from, through } = eventSpan(options);
-  const sourceOptions = { through, ...(options.fetcher && { fetcher: options.fetcher }) };
+  const sourceOptions = {
+    through, ...(options.fetcher && { fetcher: options.fetcher }),
+    ...(options.calendar && { calendar: true, minimumStart: options.minimumStart }),
+  };
   const available = [];
   if (city.slug === 'gent') available.push({ key: 'gent', run: () => getGent(from, sourceOptions).then((items) => ({ items })) });
   if (city.slug === 'namen') available.push({ key: 'namur', run: () => getNamur(from, sourceOptions).then((items) => ({ items })) });

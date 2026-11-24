@@ -7,6 +7,7 @@ const dateFormat = new Intl.DateTimeFormat('nl-BE', {
 });
 const svgNS = 'http://www.w3.org/2000/svg';
 const exteriorLabel = 'Vanop de openbare weg te bekijken';
+const routeDetailsState = new WeakMap();
 
 function element(tag, className, content) {
   const node = document.createElement(tag);
@@ -47,11 +48,17 @@ function coordPair(pair) {
 }
 
 function projection(coordinates, width, height, padding) {
-  const coords = coordinates.filter(coordPair);
-  const x = coords.map(([lon]) => Number(lon) * 0.636); // Longitude scaling near 50.5° N.
-  const y = coords.map(([, lat]) => Number(lat));
-  const x0 = Math.min(...x), x1 = Math.max(...x);
-  const y0 = Math.min(...y), y1 = Math.max(...y);
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const point of coordinates) {
+    if (!coordPair(point)) continue;
+    const x = Number(point[0]) * 0.636; // Longitude scaling near 50.5° N.
+    const y = Number(point[1]);
+    x0 = Math.min(x0, x);
+    x1 = Math.max(x1, x);
+    y0 = Math.min(y0, y);
+    y1 = Math.max(y1, y);
+  }
+  if (!Number.isFinite(x0)) return () => [width / 2, height / 2];
   const scale = Math.min((width - 2 * padding) / Math.max(x1 - x0, 0.001),
     (height - 2 * padding) / Math.max(y1 - y0, 0.001));
   return ([lon, lat]) => [
@@ -71,7 +78,17 @@ function labelSvg(group, name) {
 }
 
 function cityCoords(city) {
-  return [city.lon, city.lat];
+  return [city?.lon, city?.lat];
+}
+
+export function bindPlannerDistance(form) {
+  const slider = form.elements.maxKm;
+  const output = form.querySelector('#planner-distance-output');
+  if (!slider || !output) return;
+  const sync = () => { output.textContent = fmtNumber(Number(slider.value)) + ' km'; };
+  slider.addEventListener('input', sync);
+  slider.addEventListener('change', sync);
+  sync();
 }
 
 export function renderCityMap(container, cities, { onCity, onRegion, city, region } = {}) {
@@ -160,14 +177,18 @@ function formatWeekend(saturday) {
   return `${formatDate(saturday)} en ${formatDate(parsed.toISOString().slice(0, 10))}`;
 }
 
-function renderRouteMap({ route, returnRoute, cities, pois }) {
-  const out = route?.coordinates?.filter(coordPair) ?? [];
-  const back = returnRoute?.coordinates?.filter(coordPair) ?? [];
-  if (out.length < 2) return null;
+function renderRouteMap({ route, returnRoute, cities, pois, visits, edited }) {
+  const segmentsFor = (leg) => (Array.isArray(leg?.legs) ? leg.legs : [leg])
+    .map((segment) => segment?.coordinates?.filter(coordPair) ?? []).filter((segment) => segment.length >= 2);
+  const out = segmentsFor(route);
+  const back = segmentsFor(returnRoute);
+  if (!out.length) return null;
   const width = 520, height = 235;
   const mappedPois = (pois?.items ?? []).map((item, index) => ({ item, index }))
     .filter(({ item }) => coordPair(cityCoords(item)));
-  const project = projection([...out, ...back, ...cities.map(cityCoords),
+  const realVisits = (visits ?? []).filter((item) => coordPair(cityCoords(item)));
+  const stops = realVisits.length || edited ? realVisits : cities;
+  const project = projection([...out.flat(), ...back.flat(), ...stops.map(cityCoords),
     ...mappedPois.map(({ item }) => cityCoords(item))], width, height, 32);
   const figure = element('figure', 'trip-map');
   const map = svgElement('svg', {
@@ -175,8 +196,8 @@ function renderRouteMap({ route, returnRoute, cities, pois }) {
     role: 'img',
     'aria-label': `Berekende fietsroute van ${cities.map(({ name }) => name).join(' naar ')}${back.length ? ' en terug' : ''}`,
   });
-  map.append(svgElement('polyline', { points: coordsPath(out, project), class: 'trip-line trip-line-out' }));
-  if (back.length >= 2) map.append(svgElement('polyline', { points: coordsPath(back, project), class: 'trip-line trip-line-back' }));
+  for (const segment of out) map.append(svgElement('polyline', { points: coordsPath(segment, project), class: 'trip-line trip-line-out' }));
+  for (const segment of back) map.append(svgElement('polyline', { points: coordsPath(segment, project), class: 'trip-line trip-line-back' }));
   for (const { item, index } of mappedPois) {
     const [x, y] = project(cityCoords(item));
     const marker = svgElement('g', { class: 'trip-map-poi', transform: `translate(${x}, ${y})` });
@@ -186,7 +207,7 @@ function renderRouteMap({ route, returnRoute, cities, pois }) {
     marker.append(svgElement('circle', { r: 8.5 }), number);
     map.append(marker);
   }
-  cities.forEach((city, i) => {
+  stops.forEach((city, i) => {
     if (!coordPair(cityCoords(city))) return;
     const [x, y] = project(cityCoords(city));
     const stop = svgElement('g', { class: 'trip-map-stop', transform: `translate(${x}, ${y})` });
@@ -197,7 +218,7 @@ function renderRouteMap({ route, returnRoute, cities, pois }) {
     map.append(stop);
   });
   const caption = element('figcaption', 'trip-map-caption');
-  const sequence = cities.map(({ name }, index) => `${index + 1} ${name}`).join(' · ');
+  const sequence = stops.map(({ name }, index) => `${index + 1} ${name}`).join(' · ');
   caption.append(element('span', '', sequence),
     element('span', 'trip-map-legend', back.length ? 'Vol: heen · gestreept: terug' : 'Heenrit'),
     element('span', 'trip-map-legend', 'Schematisch, niet voor navigatie'));
@@ -335,43 +356,256 @@ function renderPois(trip) {
   return section;
 }
 
-function renderTrip(trip) {
+function button(label, field, value = '') {
+  const control = element('button', 'button secondary', label);
+  control.type = 'button';
+  control.dataset[field] = value;
+  return control;
+}
+
+function renderTripDate(trip) {
+  const alternatives = [...(trip.alternatives ?? [])].sort((a, b) => a.date.localeCompare(b.date));
+  if (alternatives.length < 2) {
+    const date = element('time', 'trip-date', formatDate(trip.date));
+    date.dateTime = trip.date;
+    return date;
+  }
+  const label = element('label', 'trip-date-select');
+  label.append(element('span', '', 'Kies een dag'));
+  const select = element('select');
+  select.dataset.tripDate = '';
+  const selected = String(trip.selectedTripId ?? trip.selectedAlternativeId
+    ?? alternatives.find(({ date }) => date === trip.date)?.id ?? alternatives[0].id);
+  for (const alternative of alternatives) {
+    const option = element('option', '', formatDate(alternative.date));
+    option.value = alternative.id;
+    option.selected = String(alternative.id) === selected;
+    select.append(option);
+  }
+  label.append(select);
+  return label;
+}
+
+function editorLabel(option) {
+  const city = option.cityName ? ` · ${option.cityName}` : '';
+  const type = option.kind === 'exterior' ? ' · Buitenstop' : option.kind === 'event' ? ' · Evenement' : '';
+  const time = option.kind !== 'exterior' && Number.isFinite(option.earliest) && Number.isFinite(option.latest)
+    ? ' · ' + formatWindow(option.earliest, option.latest) : '';
+  return option.name + city + type + time + (option.unroutable ? ' · Geen precieze locatie' : '');
+}
+
+function renderEditor(trip) {
+  const section = element('section', 'trip-editor');
+  const editor = trip.editor;
+  const edit = button('Bezoeken aanpassen', 'tripEdit', trip.id);
+  edit.hidden = Boolean(editor);
+  section.append(edit);
+  if (!editor) return section;
+
+  const title = element('h4', '', 'Bezoeken aanpassen');
+  title.tabIndex = -1;
+  title.dataset.tripEditorTitle = '';
+  section.append(title, element('p', 'planner-hint',
+    'Kies, voeg toe of verwijder. Daarna berekent de planner opnieuw de route en dagindeling voor deze datum.'));
+  const slots = editor.slots ?? [];
+  const options = editor.options ?? [];
+  const busy = editor.state === 'saving' || editor.state === 'loading';
+  if (busy) section.setAttribute('aria-busy', 'true');
+  if (editor.error) {
+    const error = element('p', 'planner-status', editor.error);
+    error.dataset.state = 'error';
+    error.setAttribute('role', 'alert');
+    section.append(error);
+  }
+  const list = element('ol', 'trip-edit-slots');
+  for (const [index, key] of slots.entries()) {
+    const row = element('li');
+    const label = element('label');
+    label.append(element('span', '', `Bezoek ${index + 1}`));
+    const select = element('select');
+    select.dataset.tripVisit = index;
+    select.disabled = busy;
+    for (const item of options) {
+      if (item.key !== key && (slots.includes(item.key) || item.unroutable)) continue;
+      const option = element('option', '', editorLabel(item));
+      option.value = item.key;
+      option.selected = item.key === key;
+      select.append(option);
+    }
+    const remove = button('Verwijder', 'tripRemove', index);
+    remove.setAttribute('aria-label', `Verwijder bezoek ${index + 1}`);
+    remove.disabled = busy || slots.length <= 1 || editor.canRemove === false;
+    label.append(select);
+    row.append(label, remove);
+    list.append(row);
+  }
+  section.append(list);
+
+  const available = options.filter((option) => !option.unroutable && !slots.includes(option.key));
+  if (available.length && slots.length < 5 && editor.canAdd !== false) {
+    const row = element('div', 'trip-add-row');
+    const label = element('label');
+    label.append(element('span', '', 'Nog een bezoek'));
+    const select = element('select');
+    select.dataset.tripAddChoice = '';
+    select.disabled = busy;
+    for (const item of available) {
+      const option = element('option', '', editorLabel(item));
+      option.value = item.key;
+      select.append(option);
+    }
+    const add = button('Voeg toe', 'tripAdd', available[0].key);
+    select.addEventListener('change', () => { add.dataset.tripAdd = select.value; });
+    add.disabled = busy;
+    label.append(select);
+    row.append(label, add);
+    section.append(row);
+  }
+
+  const actions = element('div', 'trip-edit-actions');
+  const save = button(busy ? 'Rit wordt berekend…' : 'Bereken aangepaste rit', 'tripSave');
+  save.className = 'button primary';
+  save.disabled = busy || editor.canSave === false || !slots.length || options.some((item) => slots.includes(item.key) && item.unroutable);
+  const cancel = button('Annuleer', 'tripCancel');
+  const live = element('p', 'planner-hint', busy ? 'De route en bezoektijden worden gecontroleerd.' : '');
+  live.setAttribute('role', 'status');
+  actions.append(save, cancel);
+  section.append(actions, live);
+  return section;
+}
+
+function renderRouteDetails(trip, open) {
+  const view = element('details', 'trip-route-detail');
+  view.dataset.tripRoute = '';
+  const summary = element('summary', '', 'Bekijk route op kaart');
+  summary.dataset.tripRouteSummary = '';
+  const status = element('p', 'planner-hint');
+  status.setAttribute('role', 'status');
+  const target = element('div', 'trip-route-mount');
+  target.dataset.routeDetail = trip.id ?? '';
+  const map = renderRouteMap(trip);
+  view.append(summary, status, target, map ?? element('p', 'planner-hint', 'Routegeometrie niet beschikbaar.'));
+
+  const clean = () => {
+    const state = routeDetailsState.get(view);
+    state?.controller.abort();
+    state?.dispose?.();
+    routeDetailsState.delete(view);
+    target.replaceChildren();
+    if (map) map.hidden = false;
+  };
+  const show = async () => {
+    if (!view.isConnected || !view.open || routeDetailsState.has(view)) return;
+    const state = { controller: new AbortController(), dispose: null };
+    routeDetailsState.set(view, state);
+    status.textContent = 'Routekaart wordt geladen…';
+    try {
+      const { renderRouteView } = await import('./planner-route-view.js');
+      if (state.controller.signal.aborted || !view.isConnected || !view.open) return;
+      const routeView = renderRouteView(trip);
+      const dispose = routeView?.dismissRouteView ? () => routeView.dismissRouteView() : null;
+      if (state.controller.signal.aborted || !view.isConnected || !view.open) {
+        dispose?.();
+        return;
+      }
+      state.dispose = dispose;
+      if (routeView) {
+        target.replaceChildren(routeView);
+        status.textContent = '';
+        if (map) map.hidden = true;
+      } else {
+        status.textContent = 'De uitgebreide kaart is niet beschikbaar. De routegegevens staan hieronder.';
+      }
+    } catch {
+      if (!state.controller.signal.aborted && view.isConnected && view.open) {
+        status.textContent = 'De uitgebreide kaart is niet beschikbaar. Hieronder staat de schematische route.';
+      }
+    }
+  };
+  view.addEventListener('toggle', () => {
+    if (view.open) show();
+    else clean();
+  });
+  view.open = open;
+  if (open) queueMicrotask(show);
+  return view;
+}
+
+function renderTrip(trip, openRoute = false) {
   const section = element('article', 'trip-card');
   section.dataset.tripKey = trip.id ?? '';
+  section.dataset.tripFrom = trip.cities[0]?.slug ?? '';
+  section.dataset.tripTo = trip.cities.at(-1)?.slug ?? '';
+  section.dataset.selectedDate = trip.date ?? '';
   const heading = element('header', 'trip-heading');
   const title = element('h3');
   trip.cities.forEach((city, index) => {
     if (index) title.append(element('span', 'trip-arrow', ' → '));
     title.append(link(city.name, city.slug && `/steden/${encodeURIComponent(city.slug)}/`));
   });
-  const date = element('time', 'trip-date', formatDate(trip.date));
-  date.dateTime = trip.date;
+  const date = renderTripDate(trip);
   heading.append(date, title);
   const metrics = element('ul', 'trip-metrics');
   if (Number.isFinite(trip.km)) metrics.append(element('li', '', `${fmtNumber(trip.km)} km fietsen`));
   if (Number.isFinite(trip.bikeMinutes)) metrics.append(element('li', '', `Circa ${formatDuration(trip.bikeMinutes)} fietstijd`));
   if (Number.isFinite(trip.finish)) metrics.append(element('li', '', `Geschat klaar om ${formatTime(trip.finish)}`));
-  metrics.append(element('li', '', trip.returnRoute ? 'Heen en terug' : 'Enkele rit'));
+  const loopLabel = trip.loop === true || trip.routeType === 'loop'
+    ? 'Lusrondrit' : trip.returnRoute ? 'Heen en terug · grotendeels dezelfde route' : trip.roundtrip ? 'Heen en terug' : 'Enkele rit';
+  metrics.append(element('li', '', loopLabel));
   const exteriorCount = (trip.visits ?? []).filter((visit) => visit.kind === 'exterior').length;
   if (exteriorCount) metrics.append(element('li', 'trip-exterior-metric', exteriorCount === 1 ? '1 buitenstop' : `${exteriorCount} buitenstops`));
-  const map = renderRouteMap(trip);
   const core = element('div', 'trip-core');
   const panels = element('div', 'trip-panels');
-  if (map) {
-    const routePane = element('div');
-    routePane.append(map, renderSignals(trip));
-    panels.append(routePane);
-  } else {
-    core.append(element('p', 'planner-hint', 'Routegeometrie niet beschikbaar.'), renderSignals(trip));
-  }
-  panels.append(renderTimeline(trip));
-  core.append(metrics, panels, renderPois(trip));
+  panels.append(renderSignals(trip), renderTimeline(trip));
+  core.append(metrics, renderRouteDetails(trip, openRoute), panels, renderEditor(trip), renderPois(trip));
   section.append(heading, core);
   return section;
 }
 
+const focusFields = {
+  tripDate: 'data-trip-date', tripEdit: 'data-trip-edit', tripVisit: 'data-trip-visit',
+  tripRemove: 'data-trip-remove', tripAddChoice: 'data-trip-add-choice', tripAdd: 'data-trip-add',
+  tripSave: 'data-trip-save', tripCancel: 'data-trip-cancel', tripPois: 'data-trip-pois',
+  tripRouteSummary: 'data-trip-route-summary', tripEditorTitle: 'data-trip-editor-title',
+};
+
+function focusBeforeRender(container) {
+  const active = document.activeElement;
+  if (!container.contains(active)) return null;
+  const key = active.closest('[data-trip-key]')?.dataset.tripKey;
+  const field = Object.keys(focusFields).find((candidate) => candidate in active.dataset);
+  return key == null || !field ? null : { key, field, value: active.dataset[field] };
+}
+
+function restoreFocus(container, saved) {
+  if (!saved) return;
+  const card = [...container.querySelectorAll('[data-trip-key]')].find(({ dataset }) => dataset.tripKey === saved.key);
+  if (!card) return;
+  const controls = [...card.querySelectorAll(`[${focusFields[saved.field]}]`)]
+    .filter((node) => !node.hidden && !node.disabled);
+  const equivalent = controls.find(({ dataset }) => dataset[saved.field] === saved.value) ?? controls[0];
+  const fallback = saved.field === 'tripPois' ? card.querySelector('.trip-pois h4')
+    : card.querySelector('[data-trip-editor-title]') ?? card.querySelector('[data-trip-edit]');
+  const next = equivalent ?? fallback;
+  if (!next || next.hidden) return;
+  if (next.tagName === 'H4') next.tabIndex = -1;
+  next.focus({ preventScroll: true });
+}
+
+export function disposePlannerResults(container) {
+  for (const view of container.querySelectorAll('[data-trip-route]')) {
+    const state = routeDetailsState.get(view);
+    state?.controller.abort();
+    state?.dispose?.();
+    routeDetailsState.delete(view);
+  }
+}
+
 export function renderPlannerResults(container, results, { mode = 'date', scheduledOnly = false } = {}) {
-  const focusKey = container.contains(document.activeElement) ? document.activeElement.dataset.tripPois : null;
+  const savedFocus = focusBeforeRender(container);
+  const openRoutes = new Set([...container.querySelectorAll('[data-trip-route][open]')]
+    .map((view) => view.closest('[data-trip-key]').dataset.tripKey));
+  const tripCard = (trip) => renderTrip(trip, openRoutes.has(String(trip.id)));
   const limitsOpen = container.querySelector('.planner-limits')?.open;
   const main = document.createDocumentFragment();
   const { trips = [], countCandidates, checkedRoutes, failedRoutes, notes = [] } = results;
@@ -395,6 +629,13 @@ export function renderPlannerResults(container, results, { mode = 'date', schedu
     const hint = scheduledOnly ? 'Laat ook buitenstops toe of probeer een andere datum.'
       : 'Probeer een ruimere fietsafstand of een andere datum of vertrekplek.';
     main.append(element('p', 'planner-empty', `Met de beschikbare gegevens kon de planner geen passende rit samenstellen. ${hint} Niet alle steden hebben evenveel bezoekgegevens.`));
+  } else if (trips.some((trip) => Array.isArray(trip.alternatives))) {
+    const section = element('section', 'planner-result-group');
+    const groupLabel = mode === 'calendar' ? 'Ritten voor de komende weekenden' : 'Ritten per route';
+    section.setAttribute('aria-label', groupLabel);
+    section.append(element('p', 'planner-group-date', groupLabel));
+    for (const trip of trips) section.append(tripCard(trip));
+    main.append(section);
   } else if (mode === 'calendar' || mode === 'place') {
     const groups = new Map();
     for (const trip of trips) {
@@ -407,25 +648,15 @@ export function renderPlannerResults(container, results, { mode = 'date', schedu
       const groupLabel = mode === 'calendar' && options[0].weekend ? formatWeekend(date) : formatDate(date);
       group.setAttribute('aria-label', groupLabel);
       group.append(element('p', 'planner-group-date', groupLabel));
-      for (const trip of options) group.append(renderTrip(trip));
+      for (const trip of options) group.append(tripCard(trip));
       main.append(group);
     }
   } else {
-    for (const trip of trips) main.append(renderTrip(trip));
+    for (const trip of trips) main.append(tripCard(trip));
   }
+  disposePlannerResults(container);
   container.replaceChildren(main);
-  if (focusKey != null) {
-    const button = [...container.querySelectorAll('[data-trip-pois]')].find((node) => node.dataset.tripPois === focusKey);
-    if (button) button.focus({ preventScroll: true });
-    else {
-      const trip = [...container.querySelectorAll('[data-trip-key]')].find((node) => node.dataset.tripKey === focusKey);
-      const heading = trip?.querySelector('.trip-pois h4');
-      if (heading) {
-        heading.tabIndex = -1;
-        heading.focus({ preventScroll: true });
-      }
-    }
-  }
+  restoreFocus(container, savedFocus);
 }
 
 export function setPlannerStatus(status, text, kind) {

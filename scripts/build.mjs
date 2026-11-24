@@ -3,7 +3,8 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { Parser, Store } from 'n3';
-import { cityPage, indexPage, layout, plannerPage } from './pages.mjs';
+import { eligiblePublicLink } from '../functions/lib/link-check-policy.js';
+import { calendarPage, cityPage, indexPage, layout, plannerPage } from './pages.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const source = resolve(root, 'cities');
@@ -12,6 +13,15 @@ const schema = 'https://schema.org/';
 const rdfType = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 const nisCode = 'http://www.wikidata.org/prop/direct/P1567';
 const sourcePredicate = 'http://purl.org/dc/terms/source';
+// Recognised Schema.org Event types; an undated EventSeries is display-only on its city page.
+const eventKinds = new Map(Object.entries({
+  Event: undefined, BusinessEvent: 'Zakelijk', ChildrensEvent: 'Kinderen', ComedyEvent: 'Comedy',
+  DanceEvent: 'Dans', EducationEvent: 'Educatie', CourseInstance: 'Educatie',
+  ExhibitionEvent: 'Tentoonstelling', Festival: 'Festival', FoodEvent: 'Eten en drinken',
+  LiteraryEvent: 'Literatuur', MusicEvent: 'Muziek', SaleEvent: 'Markt', ScreeningEvent: 'Film',
+  SocialEvent: 'Ontmoeting', SportsEvent: 'Sport', TheaterEvent: 'Theater', VisualArtsEvent: 'Kunst',
+}).map(([type, label]) => [schema + type, label]));
+const eventSeries = schema + 'EventSeries';
 const exteriorFeatureName = 'Vanop de openbare weg te bekijken';
 const xsdBoolean = 'http://www.w3.org/2001/XMLSchema#boolean';
 const wikidata = 'http://www.wikidata.org/entity/';
@@ -76,10 +86,15 @@ function readCity(filename, turtle) {
     coordinates = { latitude, longitude };
   }
 
+  const kinds = (entity) => graph.getObjects(entity, rdfType, null).map(({ value }) => value);
+  const isEdition = (entity) => kinds(entity).some((type) => eventKinds.has(type));
+  const isEvent = (entity) => isEdition(entity) || kinds(entity).includes(eventSeries);
   const localPlaces = graph.getSubjects(schema + 'containedInPlace', city, null)
-    .filter((entity) => entity.value !== city.value);
+    .filter((entity) => entity.value !== city.value && !isEvent(entity));
   const locations = [city, ...localPlaces];
-  const eventSubjects = locations.flatMap((place) => graph.getSubjects(schema + 'location', place, null));
+  const eventSubjects = [...locations.flatMap((place) => graph.getSubjects(schema + 'location', place, null)),
+    ...graph.getSubjects(schema + 'containedInPlace', city, null)]
+    .filter(isEvent);
 
   function entryGeo(entity) {
     const candidate = objects(entity, 'geo')[0] ?? objects(entity, 'location').flatMap((location) => objects(location, 'geo'))[0];
@@ -108,6 +123,8 @@ function readCity(filename, turtle) {
         name: text(entity, 'name'),
         point: entryGeo(entity),
         description: text(entity, 'description'),
+        category: text(entity, 'genre') ?? text(entity, 'category') ?? kinds(entity).map((type) => eventKinds.get(type)).find(Boolean),
+        edition: isEdition(entity),
         start: text(entity, 'startDate'),
         end: text(entity, 'endDate'),
         openingHours: labels(entity, 'openingHours').map((term) => term.value),
@@ -184,9 +201,18 @@ const plannerCities = cities.filter(({ coordinates }) => coordinates).map(({ slu
   lat: Number(coordinates.latitude), lon: Number(coordinates.longitude),
   places: places.filter(({ openingHours, specialHours, exterior }) => openingHours.length || specialHours.length || exterior)
     .map(({ id, name, openingHours, specialHours, url, source, point, exterior }) => ({ id, name, openingHours, specialHours, url, source, exterior, ...point })),
-  events: events.filter(({ start, end }) => start?.includes('T') && end?.includes('T'))
-    .map(({ name, start, end, url, source, point }) => ({ name, start, end, url, source, ...point })),
+  events: events.filter(({ edition, start, end }) => edition && start?.includes('T') && end?.includes('T'))
+    .map(({ id, name, start, end, url, source, point }) => ({ id, name, start, end, url, source, ...point })),
 }));
+
+const calendarCatalog = {
+  cities: cities.map(({ slug, name, names, code, region, cityUrl, coordinates }) => ({
+    slug, name, names, code, region, qid: cityUrl.split('/').at(-1),
+    ...(coordinates && { lat: Number(coordinates.latitude), lon: Number(coordinates.longitude) }),
+  })),
+  events: cities.flatMap(({ slug, events }) => events.filter(({ edition, start }) => edition && /^\d{4}-\d{2}-\d{2}(?:T.+)?$/.test(start ?? ''))
+    .map(({ id, name, description, category, start, end, url, source }) => ({ city: slug, id, name, description, category, start, end, url, source }))),
+};
 
 const catalogCoverage = {
   totalCities: plannerCities.length,
@@ -201,10 +227,28 @@ const catalogCoverage = {
   missingExteriorCities: plannerCities.filter(({ places }) => !places.some(({ exterior }) => exterior)).map(({ slug }) => slug),
 };
 
+const linkCatalog = Object.create(null);
+const linkIds = new Map();
+for (const city of cities) {
+  for (const entry of [...city.places, ...city.events]) {
+    for (const raw of [entry.url, entry.source]) {
+      const url = eligiblePublicLink(raw);
+      if (!url) continue;
+      const id = createHash('sha256').update(url).digest('hex').slice(0, 24);
+      if (linkCatalog[id] && linkCatalog[id] !== url) throw new Error('Duplicate link-check identifier.');
+      linkCatalog[id] = url;
+      linkIds.set(raw, id);
+    }
+  }
+}
+
 await Promise.all([
   cp(source, resolve(output, 'data'), { recursive: true, filter: (path) => path === source || path.endsWith('.ttl') }),
   writePage('.', indexPage(cities)),
   writePage('planner', plannerPage(plannerCities)),
+  writePage('kalender', calendarPage(calendarCatalog)),
+  writeFile(resolve(output, 'calendar-data.json'), JSON.stringify(calendarCatalog)),
+  writeFile(resolve(output, 'link-check-data.json'), JSON.stringify(linkCatalog)),
   writeFile(resolve(output, 'planner-data.json'), JSON.stringify(plannerCities)),
   writeFile(resolve(output, 'coverage.json'), JSON.stringify(catalogCoverage, null, 2) + '\n'),
   writeFile(resolve(output, 'data', 'cities.json'), JSON.stringify(Object.fromEntries(cities.map(({ slug, name, names, region, cityUrl }) =>
@@ -213,7 +257,7 @@ await Promise.all([
     title: 'Pagina niet gevonden · Alle Steden',
     main: '<main id="inhoud" class="wrap detail"><h1>Pagina niet gevonden</h1><p><a href="/">Terug naar de stedenlijst</a></p></main>',
   }))),
-  ...cities.map((city) => writePage(`steden/${city.slug}`, cityPage(city))),
+  ...cities.map((city) => writePage(`steden/${city.slug}`, cityPage(city, linkIds))),
 ]);
 
 console.log(`${cities.length} steden gebouwd in dist/. ${catalogCoverage.exteriorCities} steden hebben een gedocumenteerde buitenstop.`);

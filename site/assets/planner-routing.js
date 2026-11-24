@@ -187,6 +187,10 @@ export function normalizeBRouter(data, via = []) {
   }
   const coordinates = points.map(readCoordinate);
   if (coordinates.some((c) => !c)) throw new Error('De fietsrouter gaf coördinaten buiten de geldige regio.');
+  // BRouter GeoJSON's optional third ordinate is modelled elevation in metres.
+  // Keep it index-aligned without changing consumers of [lon, lat].
+  const elevationM = points.map((point) => typeof point?.[2] === 'number'
+    && Number.isFinite(point[2]) && point[2] >= -500 && point[2] <= 9000 ? point[2] : null);
   const first = coordinates[0];
   const last = coordinates.at(-1);
   const endpointSnapMetres = via.length ? [distanceKm(first, via[0]), distanceKm(last, via.at(-1))].map((km) => Math.round(km * 1000)) : [];
@@ -199,18 +203,22 @@ export function normalizeBRouter(data, via = []) {
   }
   const km = metres / 1000;
   return {
-    km, minutes: seconds / 60, coordinates, waypoints: via,
+    km, minutes: seconds / 60, coordinates, elevationM, waypoints: via,
     viaSnapMetres, endpointSnapMetres,
     source: routeSource, signals: routeSignals(p.messages, km, validMeasure(p['filtered ascend'], 8000)),
   };
 }
 
-export async function fetchRoute(waypoints, { signal, fetcher = defaultFetch } = {}) {
+export async function fetchRoute(waypoints, { signal, fetcher = defaultFetch, alternativeIndex = 0 } = {}) {
+  if (!Number.isInteger(alternativeIndex) || alternativeIndex < 0 || alternativeIndex > 1) {
+    throw new RangeError('Vraag de hoofdroute of de eerste alternatieve route op.');
+  }
   const points = normalizedWaypoints(waypoints);
   signal?.throwIfAborted();
   const url = new URL(brouterUrl);
-  const key = points.map((p) => p.join(',')).join('|');
-  url.search = new URLSearchParams({ lonlats: key, profile: 'trekking', alternativeidx: '0', format: 'geojson' });
+  const lonlats = points.map((p) => p.join(',')).join('|');
+  const key = lonlats + '|' + alternativeIndex;
+  url.search = new URLSearchParams({ lonlats, profile: 'trekking', alternativeidx: String(alternativeIndex), format: 'geojson' });
   const run = async (queue) => {
     const cached = fetcher === defaultFetch && memoGet(routeCache, key);
     if (cached) return cached;

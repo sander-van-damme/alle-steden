@@ -1,9 +1,10 @@
 import {
-  sources, safeUrl, compact, dateValue, displayDate, getJson, regionalSource,
+  sources, safeUrl, compact, dateValue, displayDate, getJson, regionalSource, walloonAgendaUrl,
   getWikidata, getWallonia, getBrusselsPlaces, getFlemishHeritage, cityEventSources, getOsmHours,
   interleavePlaceSources, mergePlaces, upcomingEvents, dedupeEvents,
 } from './sources.js';
 import { livePlaceFragment, placeSnapshotTurtle } from './place-rdf.js';
+import { enhanceVerifiedLinks, isLinkRecord } from './link-check.js';
 
 const root = document.querySelector('[data-city]');
 const el = (tag, text, classname) => {
@@ -73,7 +74,16 @@ function buildCard(item) {
   });
   const heading = el('h3');
   const website = safeUrl(item.website);
-  heading.append(website ? link(item.name, website) : document.createTextNode(item.name));
+  if (website) {
+    const headingLink = link(item.name, website);
+    if (item.source === 'wallonia' && item.verificationHref === website && isLinkRecord(item.source, item.sourceId)) {
+      headingLink.dataset.linkSource = item.source;
+      headingLink.dataset.linkId = item.sourceId;
+    }
+    heading.append(headingLink);
+  } else {
+    heading.append(document.createTextNode(item.name));
+  }
   card.append(heading);
   if (item.start) {
     const date = el('p', '', 'entry-meta');
@@ -99,7 +109,7 @@ function officialLinks(section, city, type) {
     : city.slug === 'namen' ? [['Agenda van Namen', 'https://www.namur.be/fr/agenda/agenda']]
     : city.slug === 'brussel' ? [['Agenda Visit Brussels', 'https://www.visit.brussels/nl/bezoekers/agenda']]
     : city.region === 'Vlaanderen' ? [['UiT in Vlaanderen', 'https://www.uitinvlaanderen.be/']]
-    : [['Agenda VisitWallonia', 'https://visitwallonia.be/fr-be/3/agenda']];
+    : [['Agenda VisitWallonia', walloonAgendaUrl]];
   node.replaceChildren(...links.map(([label, href]) => link(label + ' ↗', href)));
   node.hidden = false;
 }
@@ -130,7 +140,12 @@ function placeSources(city) {
       key, run: () => getBrusselsPlaces(key).then((items) => ({ items })),
     })),
   ];
-  if (region === 'wallonia') return [wikidata, { key: region, run: () => getWallonia(city) }];
+  if (region === 'wallonia') return [wikidata, { key: region, run: async () => {
+    const result = await getWallonia(city);
+    // Tie verification to the same provider's exact outgoing href. A merged
+    // card may otherwise inherit a website from a different data source.
+    return { ...result, items: result.items.map((item) => ({ ...item, verificationHref: safeUrl(item.website) })) };
+  } }];
   return [wikidata, { key: 'flanders', run: () => readProxy(city, 'flanders') },
     { key: 'erfg', run: () => getFlemishHeritage(city) }];
 }
@@ -283,6 +298,7 @@ function enhanceSection(section, city, type) {
 }
 
 if (root) {
+  enhanceVerifiedLinks(root);
   let names = [];
   try { names = JSON.parse(root.dataset.aliases ?? '[]'); } catch { /* The primary name is sufficient. */ }
   const city = { slug: root.dataset.city, region: root.dataset.region, qid: root.dataset.qid,
