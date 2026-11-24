@@ -239,7 +239,7 @@ function enhanceSection(section, city, type) {
       if (pending) messages.push(type === 'places' ? 'Meer plekken zoeken…' : 'Evenementen zoeken…');
       else if (failures.length) messages.push('Niet alle bronnen zijn bereikbaar.');
       if (!pending && type === 'events' && (!configured.length || (results.size && [...results.values()].every(({ state }) => state === 'not-configured')))) {
-        messages.push('Voor deze stad zijn hier geen actuele evenementen beschikbaar. Kijk ook in de lokale agenda.');
+        messages.push('Hier zijn geen extra evenementen gevonden. Kijk ook in de lokale agenda.');
       } else if (!pending && !failures.length && !visible.length) {
         messages.push(type === 'places' ? 'Geen extra plekken gevonden.'
           : 'Hier staan geen extra komende evenementen. In de lokale agenda vind je misschien meer.');

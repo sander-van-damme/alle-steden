@@ -105,6 +105,12 @@ try {
   await retry.click();
   await mobile.getByRole('heading', { name: 'Na opnieuw laden' }).waitFor();
 
+  await desktop.clock.setFixedTime(new Date('2026-11-24T11:00:00+01:00'));
+  await desktop.route('https://opendata.brussels.be/api/**', (route) => json(route, { results: [] }));
+  await desktop.goto(base + '/steden/brussel/');
+  await desktop.getByText('Hier zijn geen extra evenementen gevonden.', { exact: false }).waitFor();
+  assert.ok(await desktop.getByRole('heading', { name: 'Winterpret en kerstmarkt 2026' }).isVisible());
+
   const fallback = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   pages.push(fallback);
   await fallback.goto(base + city);
