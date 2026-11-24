@@ -2,6 +2,7 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <> a schema:Dataset ;
     schema:about wd:Q13122 ;
@@ -15,3 +16,29 @@ wd:Q13122 a schema:City ;
         schema:latitude 51.03123 ;
         schema:longitude 4.0981
     ] .
+
+wd:Q30739116 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadsmuseum Vleeshuis"@nl, "Musée municipal du Vleeshuis"@fr ;
+    schema:description "Gratis museum op de Grote Markt. Ook op bepaalde weekdagen open van maart tot oktober. Gesloten in december en de kerstvakantie."@nl ;
+    schema:containedInPlace wd:Q13122 ;
+    schema:openingHours "Sa-Su 13:00-18:00" ;
+    schema:specialOpeningHoursSpecification [ a schema:OpeningHoursSpecification ; schema:validFrom "2026-12-01"^^xsd:date ; schema:validThrough "2027-01-03"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-12-01"^^xsd:date ; schema:validThrough "2027-12-31"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ] ;
+    schema:url <https://visit.dendermonde.be/zien-doen/musea/stadsmuseum/openingsuren-en-tarieven-stadsmuseum> ;
+    dcterms:source <https://visit.dendermonde.be/zien-doen/musea/stadsmuseum/openingsuren-en-tarieven-stadsmuseum> .
+
+<#kerstconcert-2026> a schema:MusicEvent ;
+    schema:name "Kerstconcert in Sint-Gillis"@nl ;
+    schema:location wd:Q13122 ;
+    schema:startDate "2026-12-20T16:00:00+01:00"^^xsd:dateTime ;
+    schema:endDate "2026-12-20T17:30:00+01:00"^^xsd:dateTime ;
+    schema:url <https://www.dendermonde.be/activiteiten/detail/4044/kerstconcert> ;
+    dcterms:source <https://www.dendermonde.be/activiteiten/detail/4044/kerstconcert> .
+
+<#winter-kerstmarkt-2026> a schema:SaleEvent ;
+    schema:name "Winter in Dendermonde – Kerstmarkt"@nl ;
+    schema:location wd:Q13122 ;
+    schema:startDate "2026-12-10"^^xsd:date ;
+    schema:endDate "2026-12-27"^^xsd:date ;
+    schema:url <https://www.dendermonde.be/activiteiten/detail/3899/winter-in-dendermonde-kerstmarkt> ;
+    dcterms:source <https://www.dendermonde.be/activiteiten/detail/3899/winter-in-dendermonde-kerstmarkt> .

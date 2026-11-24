@@ -1,6 +1,6 @@
 import {
   sources, safeUrl, compact, dateValue, displayDate, getJson, regionalSource,
-  getWikidata, getWallonia, getBrussels, getGent, getNamur, getOsmHours,
+  getWikidata, getWallonia, getBrussels, cityEventSources, getOsmHours,
   mergePlaces, upcomingEvents, dedupeEvents,
 } from './sources.js';
 
@@ -108,20 +108,12 @@ function placeSources(city) {
   ];
 }
 
-function eventSources(city) {
-  const available = [];
-  if (city.slug === 'gent') available.push({ key: 'gent', run: () => getGent().then((items) => ({ items })) });
-  if (city.slug === 'namen') available.push({ key: 'namur', run: () => getNamur().then((items) => ({ items })) });
-  if (city.region === 'Vlaanderen' || city.slug === 'brussel') available.push({ key: 'uit', run: () => readProxy(city, 'uit') });
-  return available;
-}
-
 function enhanceSection(section, city, type) {
   const list = section.querySelector('[data-results]');
   const status = section.querySelector('[data-status]');
   const retry = section.querySelector('[data-retry]');
   const stored = fromStatic(section);
-  const configured = type === 'places' ? placeSources(city) : eventSources(city);
+  const configured = type === 'places' ? placeSources(city) : cityEventSources(city);
   let requestId = 0;
   const load = async () => {
     const revision = ++requestId;
@@ -156,7 +148,8 @@ function enhanceSection(section, city, type) {
       if (!pending && type === 'events' && (!configured.length || (results.size && [...results.values()].every(({ state }) => state === 'not-configured')))) {
         messages.push('Voor deze stad is nog geen live agenda aangesloten.');
       } else if (!pending && !failures.length && !visible.length) {
-        messages.push(type === 'places' ? 'Geen extra plekken gevonden in de aangesloten bronnen.' : 'Geen extra komende evenementen gevonden in de aangesloten bronnen.');
+        messages.push(type === 'places' ? 'Geen extra plekken gevonden in de aangesloten bronnen.'
+          : 'Geen extra komende evenementen gevonden in de aangesloten bronnen. Andere lokale agenda’s kunnen meer tonen.');
       }
       if (!pending && type === 'events' && visible.length && results.get('uit')?.state === 'not-configured') {
         messages.push('De UiTdatabank is niet aangesloten; deze lijst kan onvolledig zijn.');
