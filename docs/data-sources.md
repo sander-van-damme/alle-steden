@@ -48,6 +48,19 @@ Interne werklijst voor de agenda, stadsfiches en fietsplanner. Niet gelinkt vanu
 - Markten: **9 gemeentelijke reeksen + 18 Antwerpse regels**. Het gewone rooster gaf voor 24–30 november **28 berekende sessies** (9 + 19). Dit zijn geen apart bevestigde edities; bij tegenstrijdigheden of bekende uitzonderingen wordt de stad geraadpleegd of de sessie weggelaten.
 - Fietsvoorzieningen: steekproef met het werkelijke traject Gent–Eeklo (21,3 km) leverde 6 toiletten en 2 fietsservicepunten binnen de kaartafstand. Dit meet de uitkomst op één route, geen populatiedekking of toegangscontrole.
 
+## Gedateerde organisatorvermeldingen · 24 november 2026
+
+Vijf agendavermeldingen in vier stadsbestanden. Alleen gepubliceerde feiten, in eigen woorden, met verwijzing naar de organisatie; geen gekopieerd beeld of programmabeschrijving.
+
+| Stad | Bevestigde dagen | Bronnen en tijdstip |
+|---|---|---|
+| Bergen | 27–31 januari en 12–13 februari 2027 | [Officiële festivaleditie](https://monsenlumieres.be/edition-2027/), met per avond verschillende openingsuren; [Château d’Havré](https://monsenlumieres.be/mons-en-lumieres-au-chateau-dhavre/) is een aparte locatie en datumreeks. Geen doorlopend tijdvenster. |
+| Malmedy | 6–9 februari 2027 | [Toerisme Oost-België](https://www.ostbelgien.eu/en/events/fiche/2027-02-06/walloon-carnival-cwarme) bevestigt de vier datums, [RSI Malmedy](https://www.malmedy-tourisme.be/que-faire/cwarme-carnaval-de-malmedy-programme/) geeft het programma. Geen verondersteld gemeenschappelijk bezoekuur. |
+| Stavelot | 6–8 maart 2027 | [Comité des fêtes](https://www.laetare-stavelot.be/) noemt 6–8 maart in het programma. De kalenderkaart bevat de gepubliceerde starturen van twee optochten; geen einduur aangenomen. |
+| La Louvière | 21 augustus 2027 | [Bois-du-Luc/MMDD](https://www.boisdulucmmdd.be/fr/activites/agenda-2027-1) noemt de twee alternatieve fietsroutes en de minimumleeftijd, geen uur. Augustus is selecteerbaar; de 120-dagengrens geldt alleen voor live agenda-import. |
+
+Niet opnemen als bevestigde plannerbezoeken: de vermelding gaat over meerdaagse festivalperiodes, alleen een startuur van een deelactiviteit of een tocht zonder bezoekvenster. Controleer op overlap als een live publicatie later binnen het importvenster komt.
+
 ## Onderhoud en meting
 
 1. Zet een bron eerst als kandidaat in dit bestand. Noteer laatst gecontroleerde datum, officiële dataset/publisher, werkelijk endpoint en licentie voor de dataset (niet alleen catalogus), vereiste bronvermelding en geografie.

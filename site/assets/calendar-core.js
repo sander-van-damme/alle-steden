@@ -119,7 +119,7 @@ export function eventTime(item) {
       return labelDay(item.day) + ' ' + time(item.start) + ' – ' + labelDay(item.last) + ' ' + time(item.end);
     }
     const spans = labelDay(item.day) + ' t/m ' + labelDay(item.last);
-    return spans + ' · daguren niet vermeld';
+    return spans;
   }
   if (timedStart && timedEnd) return time(item.start) + '–' + time(item.end);
   if (timedStart) return 'Vanaf ' + time(item.start);

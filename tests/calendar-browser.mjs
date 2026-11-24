@@ -131,6 +131,47 @@ try {
   assert.match(await phone.locator('#calendar-status').innerText(), /tot 120 dagen vooruit/);
   assert.ok(await phone.getByRole('link', { name: 'Heilig Bloedprocessie 2027' }).isVisible());
 
+  // Organizer-confirmed dates live in the built catalogue, including a month
+  // outside the live provider range. A date alone must never become a visit slot.
+  for (const [city, month, last, after, name, note] of [
+    ['bergen', '2027-01', '2027-01-31', null, 'Mons en Lumières', /18.00–23.00/u],
+    ['bergen', '2027-02', '2027-02-13', '2027-02-14', 'Mons en Lumières au Château d’Havré', /18.30 tot 00.00/u],
+    ['malmedy', '2027-02', '2027-02-09', '2027-02-10', 'Cwarmê de Malmedy', /Waals carnaval/u],
+    ['stavelot', '2027-03', '2027-03-08', '2027-03-09', 'Laetare de Stavelot', /20.30 uur/u],
+  ]) {
+    await desktop.goto(origin + '/kalender/?stad=' + city + '&maand=' + month);
+    await loaded(desktop);
+    const match = desktop.getByRole('link', { name, exact: true });
+    assert.equal(await match.count(), 1);
+    assert.match(await desktop.locator('.calendar-event').filter({ has: match }).innerText(), note);
+    assert.doesNotMatch(await desktop.locator('.calendar-event').filter({ has: match }).innerText(), /Hele dag|daguren niet vermeld/u);
+    await desktop.locator('[data-day="' + last + '"]').click();
+    assert.equal(await match.count(), 1);
+    if (after) {
+      await desktop.locator('[data-day="' + after + '"]').click();
+      assert.equal(await match.count(), 0);
+    }
+  }
+  await phone.goto(origin + '/kalender/?stad=la-louviere&maand=2027-08');
+  await loaded(phone);
+  assert.match(await phone.locator('#calendar-status').innerText(), /tot 120 dagen vooruit/);
+  const rideName = 'UNESCO Express: fietsen langs werelderfgoed';
+  const ride = phone.getByRole('link', { name: rideName, exact: true });
+  assert.equal(await ride.count(), 1);
+  assert.equal(await ride.getAttribute('href'), 'https://www.boisdulucmmdd.be/fr/activites/agenda-2027-1');
+  await phone.locator('#calendar-category').selectOption('Sport');
+  const rideRow = phone.locator('.calendar-event').filter({ has: ride });
+  assert.match(await rideRow.innerText(), /Uur niet vermeld/u);
+  assert.match(await rideRow.innerText(), /Strépy-Thieu.*Binche/u);
+  await phone.locator('[data-day="2027-08-21"]').tap();
+  assert.equal(await ride.count(), 1);
+  await phone.locator('[data-day="2027-08-22"]').tap();
+  assert.equal(await ride.count(), 0);
+  assert.equal(await phone.evaluate(() => document.documentElement.scrollWidth), 390);
+  const plannerCatalogue = await (await desktop.request.get(origin + '/planner-data.json')).json();
+  assert.equal(plannerCatalogue.flatMap(({ events }) => events)
+    .filter(({ id }) => /mons-en-lumieres-2027|unesco-express-2027|laetare-2027|cwarme-2027/u.test(id)).length, 0);
+
   const offline = await browser.newPage({ javaScriptEnabled: false });
   await offline.goto(origin + '/kalender/');
   assert.equal(await offline.locator('#calendar-fallback').isVisible(), true);
