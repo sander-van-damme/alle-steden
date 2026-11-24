@@ -15,3 +15,20 @@ wd:Q326771 a schema:City ;
         schema:latitude 50.0519 ;
         schema:longitude 4.4961
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/93014-CLT-0012-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Chapelles de la rue des Calvaires"@fr ;
+    schema:description "Twee geklasseerde kapellen en het omringende pleintje aan de Rue des Calvaires."@nl ;
+    schema:containedInPlace wd:Q326771 ;
+    schema:identifier "93014-CLT-0012-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.050266 ;
+        schema:longitude 4.501801
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/93014-CLT-0012-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/93014-CLT-0012-01> .

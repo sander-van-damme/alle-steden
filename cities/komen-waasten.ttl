@@ -15,3 +15,20 @@ wd:Q665761 a schema:City ;
         schema:latitude 50.766666666 ;
         schema:longitude 3.0
     ] .
+
+# Erfgoed aan de openbare weg
+<https://inventairepatrimoine.wallonie.be/fr/inventaire-regional-du-patrimoine/fiche/54010-INV-0010-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Hôtel de ville de Comines"@fr, "Stadhuis van Komen"@nl ;
+    schema:description "Het historische stadhuis aan de Place Sainte-Anne."@nl ;
+    schema:containedInPlace wd:Q665761 ;
+    schema:identifier "54010-INV-0010-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.768418 ;
+        schema:longitude 2.999334
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://inventairepatrimoine.wallonie.be/fr/inventaire-regional-du-patrimoine/fiche/54010-INV-0010-01> ;
+    dcterms:source <https://inventairepatrimoine.wallonie.be/fr/inventaire-regional-du-patrimoine/fiche/54010-INV-0010-01> .

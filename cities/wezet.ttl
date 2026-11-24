@@ -15,3 +15,20 @@ wd:Q49743 a schema:City ;
         schema:latitude 50.733333333 ;
         schema:longitude 5.683333333
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/62108-CLT-0001-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Hôtel de ville de Visé"@fr, "Stadhuis van Wezet"@nl ;
+    schema:description "Het geklasseerde stadhuis aan de Rue des Récollets."@nl ;
+    schema:containedInPlace wd:Q49743 ;
+    schema:identifier "62108-CLT-0001-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.735047 ;
+        schema:longitude 5.693543
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/62108-CLT-0001-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/62108-CLT-0001-01> .

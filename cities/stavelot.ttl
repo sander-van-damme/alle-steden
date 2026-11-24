@@ -15,3 +15,20 @@ wd:Q468920 a schema:City ;
         schema:latitude 50.394444444 ;
         schema:longitude 5.931111111
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/63073-CLT-0001-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Fontaine du Perron"@fr ;
+    schema:description "De monumentale Perronfontein op de Place Saint-Remacle."@nl ;
+    schema:containedInPlace wd:Q468920 ;
+    schema:identifier "63073-CLT-0001-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.394843 ;
+        schema:longitude 5.929924
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/63073-CLT-0001-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/63073-CLT-0001-01> .

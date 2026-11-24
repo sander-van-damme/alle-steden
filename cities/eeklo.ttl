@@ -15,3 +15,15 @@ wd:Q12440 a schema:City ;
         schema:latitude 51.1858 ;
         schema:longitude 3.5639
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+<https://id.erfgoed.net/erfgoedobjecten/50823> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadhuis Eeklo"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Markt."@nl ;
+    schema:containedInPlace wd:Q12440 ;
+    schema:address "Markt 34 (Eeklo)"@nl ;
+    wdt:P1764 "50823" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.18465 ; schema:longitude 3.56631 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/50823> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/50823> .

@@ -15,3 +15,15 @@ wd:Q211037 a schema:City ;
         schema:latitude 50.944722222 ;
         schema:longitude 3.123333333
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+<https://id.erfgoed.net/erfgoedobjecten/23848> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadhuis Roeselare met belfort"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Grote Markt."@nl ;
+    schema:containedInPlace wd:Q211037 ;
+    schema:address "Grote Markt 2 (Roeselare)"@nl ;
+    wdt:P1764 "23848" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.94451 ; schema:longitude 3.12473 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/23848> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/23848> .

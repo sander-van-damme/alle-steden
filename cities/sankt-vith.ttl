@@ -16,3 +16,19 @@ wd:Q152748 a schema:City ;
         schema:latitude 50.283333333 ;
         schema:longitude 6.133333333
     ] .
+
+# Erfgoed aan de openbare weg
+wd:Q57352839 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Büchelturm"@de ;
+    schema:description "De middeleeuwse stadstoren in het stadspark. Voor toegang tot de toren zelf is een sleutel nodig."@nl ;
+    schema:containedInPlace wd:Q152748 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.279611 ;
+        schema:longitude 6.124826
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://www.ostbelgien.eu/de/fiche/virtualtour/b-chelturm> ;
+    dcterms:source <https://www.ostbelgien.eu/de/fiche/virtualtour/b-chelturm>, <https://www.ostbelgien.eu/de/fiche/soundcircuit/lauschtour-02-st-vith-amel>, <https://territoire.wallonie.be/fr/liendoc/BC_PAT/63067-CLT-0010-02> .

@@ -15,3 +15,20 @@ wd:Q314922 a schema:City ;
         schema:latitude 50.483333333 ;
         schema:longitude 4.533333333
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/52021-CLT-0002-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Chapelle Saint-Roch de Fleurus"@fr ;
+    schema:description "De beschermde Sint-Rochuskapel aan de gelijknamige straat."@nl ;
+    schema:containedInPlace wd:Q314922 ;
+    schema:identifier "52021-CLT-0002-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.483553 ;
+        schema:longitude 4.541653
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/52021-CLT-0002-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/52021-CLT-0002-01> .

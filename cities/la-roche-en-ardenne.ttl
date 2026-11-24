@@ -15,3 +15,20 @@ wd:Q159974 a schema:City ;
         schema:latitude 50.181666666 ;
         schema:longitude 5.575
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/83031-CLT-0003-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Château féodal de La Roche-en-Ardenne"@fr ;
+    schema:description "De geklasseerde ruïne die boven het stadscentrum aan de Ourthe uitsteekt. Het domein zelf valt buiten deze tip."@nl ;
+    schema:containedInPlace wd:Q159974 ;
+    schema:identifier "83031-CLT-0003-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.182088 ;
+        schema:longitude 5.576592
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/83031-CLT-0003-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/83031-CLT-0003-01>, <https://www.la-roche-tourisme.com/en/the-feudal-castle-of-la-roche-en-ardenne/> .

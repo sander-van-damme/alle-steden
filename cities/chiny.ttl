@@ -15,3 +15,20 @@ wd:Q713170 a schema:City ;
         schema:latitude 49.738333333 ;
         schema:longitude 5.343333333
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/85007-CLT-0013-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Ancien lavoir d’Izel"@fr ;
+    schema:description "De oude wasplaats aan het kruispunt in Izel, opgenomen in de erfgoedwandeling van de gemeente Chiny."@nl ;
+    schema:containedInPlace wd:Q713170 ;
+    schema:identifier "85007-CLT-0013-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 49.693807 ;
+        schema:longitude 5.375749
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/85007-CLT-0013-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/85007-CLT-0013-01>, <https://www.chiny.be/images/tourisme/WEB_bulletin_tourisme_2025_FR.pdf>, <https://archives.wallonie.be/search/results?keyword=Izel+%28Luxembourg%2C+Virton%2C+Chiny+%29&mode=list&resultsPerPage=40&sort=referencecode_dsc&target=controlledAccessGeographicName> .

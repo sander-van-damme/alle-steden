@@ -15,3 +15,20 @@ wd:Q711474 a schema:City ;
         schema:latitude 50.7 ;
         schema:longitude 5.25
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/64074-CLT-0001-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Tumulus romain de Waremme"@fr ;
+    schema:description "De beschermde Romeinse grafheuvel aan de Rue du Tumulus. Blijf op de openbare weg."@nl ;
+    schema:containedInPlace wd:Q711474 ;
+    schema:identifier "64074-CLT-0001-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.688158 ;
+        schema:longitude 5.257525
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/64074-CLT-0001-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/64074-CLT-0001-01> .

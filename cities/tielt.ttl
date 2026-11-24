@@ -15,3 +15,15 @@ wd:Q651811 a schema:City ;
         schema:latitude 50.9989 ;
         schema:longitude 3.3258
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q2340680 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Hallen en belfort van Tielt"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Markt."@nl ;
+    schema:containedInPlace wd:Q651811 ;
+    schema:address "Markt (Tielt)"@nl ;
+    wdt:P1764 "86767" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.00038 ; schema:longitude 3.32705 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/86767> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/86767> .

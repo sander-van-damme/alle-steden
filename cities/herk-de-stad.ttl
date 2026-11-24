@@ -15,3 +15,15 @@ wd:Q696585 a schema:City ;
         schema:latitude 50.9406 ;
         schema:longitude 5.1672
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q21088615 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Parochiekerk Sint-Martinus"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Markt."@nl ;
+    schema:containedInPlace wd:Q696585 ;
+    schema:address "Markt (Herk-de-Stad)"@nl ;
+    wdt:P1764 "22409" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.94063 ; schema:longitude 5.16683 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/22409> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/22409> .

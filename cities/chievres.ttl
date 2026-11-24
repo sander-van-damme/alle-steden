@@ -15,3 +15,20 @@ wd:Q95318 a schema:City ;
         schema:latitude 50.583333333 ;
         schema:longitude 3.8
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/51014-CLT-0003-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Église Saint-Martin de Chièvres"@fr ;
+    schema:description "De beschermde Sint-Martinuskerk, aan de Rue Notre-Dame in het historische hart van Chièvres."@nl ;
+    schema:containedInPlace wd:Q95318 ;
+    schema:identifier "51014-CLT-0003-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.588448 ;
+        schema:longitude 3.806596
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/51014-CLT-0003-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/51014-CLT-0003-01>, <https://www.chievres.be/ma-commune/vie-politique/pv-des-conseils-communaux/pv-des-conseils-communaux/2022/Pv-19-01-22.pdf> .

@@ -15,3 +15,20 @@ wd:Q194037 a schema:City ;
         schema:latitude 50.5986 ;
         schema:longitude 5.5122
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/62096-CLT-0016-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Hôtel de ville de Seraing"@fr ;
+    schema:description "De geklasseerde gevel van het stadhuis aan het gemeenteplein."@nl ;
+    schema:containedInPlace wd:Q194037 ;
+    schema:identifier "62096-CLT-0016-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.614946 ;
+        schema:longitude 5.509182
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/62096-CLT-0016-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/62096-CLT-0016-01> .

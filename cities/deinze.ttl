@@ -29,3 +29,15 @@ wd:Q2215500 a schema:Museum ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.981297 ; schema:longitude 3.525561 ] ;
     schema:url <https://www.mudel.be/contact/24/museum-van-deinze-en-de-leiestreek> ;
     dcterms:source <https://www.mudel.be/contact/24/museum-van-deinze-en-de-leiestreek> .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+<https://id.erfgoed.net/erfgoedobjecten/38016> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadhuis Deinze"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Markt."@nl ;
+    schema:containedInPlace wd:Q499313 ;
+    schema:address "Markt 21 (Deinze)"@nl ;
+    wdt:P1764 "38016" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.98427 ; schema:longitude 3.52747 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/38016> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/38016> .

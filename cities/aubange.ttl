@@ -15,3 +15,20 @@ wd:Q713088 a schema:City ;
         schema:latitude 49.566666666 ;
         schema:longitude 5.805
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/81004-CLT-0009-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Calvaire de la rue de Messancy"@fr ;
+    schema:description "De beschermde calvarie aan de Rue de Messancy, tegenover nummer 12."@nl ;
+    schema:containedInPlace wd:Q713088 ;
+    schema:identifier "81004-CLT-0009-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 49.571354 ;
+        schema:longitude 5.803693
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/81004-CLT-0009-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/81004-CLT-0009-01> .

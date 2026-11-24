@@ -15,3 +15,15 @@ wd:Q724638 a schema:City ;
         schema:latitude 51.400833333 ;
         schema:longitude 4.761111111
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q109249280 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadhuis Hoogstraten"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Vrijheid."@nl ;
+    schema:containedInPlace wd:Q724638 ;
+    schema:address "Vrijheid 149 (Hoogstraten)"@nl ;
+    wdt:P1764 "46576" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.40125 ; schema:longitude 4.76212 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/46576> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/46576> .

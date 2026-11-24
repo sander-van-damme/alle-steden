@@ -15,3 +15,20 @@ wd:Q667790 a schema:City ;
         schema:latitude 50.7117 ;
         schema:longitude 3.83
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/55023-CLT-0001-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Hôpital Notre-Dame à la Rose"@fr ;
+    schema:description "Het oude Onze-Lieve-Vrouwehospitaal vanaf het plein. Voor het museum gelden aparte bezoekvoorwaarden."@nl ;
+    schema:containedInPlace wd:Q667790 ;
+    schema:identifier "55023-CLT-0001-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.712855 ;
+        schema:longitude 3.831385
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/55023-CLT-0001-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/55023-CLT-0001-01> .

@@ -202,6 +202,20 @@ input, select { width: 100%; padding: 0.72rem 0.8rem; background: var(--white); 
 .entry-list h3 { margin: 0; font-size: 1.04rem; line-height: 1.36; }
 .entry-list p { margin: 0.38rem 0 0; color: var(--muted); font-size: 0.92rem; }
 .entry-list .entry-meta { color: var(--accent); }
+.entry-badge {
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0.32rem 0.32rem 0.12rem 0;
+  padding: 0.1rem 0.48rem;
+  border: 1px solid #d8c4a9;
+  border-radius: 0.43rem;
+  background: #f7eddd;
+  color: #634624;
+  font-size: 0.77rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
 .entry-source { display: inline-block; margin-top: 0.32rem; color: var(--muted); font-size: 0.8rem; }
 .source-status {
   color: var(--muted);

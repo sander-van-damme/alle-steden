@@ -52,3 +52,15 @@ wd:Q23900566 a schema:Museum ;
     schema:superEvent wd:Q2710193 ;
     schema:url <https://aalst.be/nieuws/schrijf-je-in-als-losse-groep-voor-aalst-carnaval-2027> ;
     dcterms:source <https://aalst.be/nieuws/schrijf-je-in-als-losse-groep-voor-aalst-carnaval-2027> .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+<https://id.erfgoed.net/erfgoedobjecten/44> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Schepenhuis, belfort en Gebiedshuisje"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Grote Markt."@nl ;
+    schema:containedInPlace wd:Q13121 ;
+    schema:address "Grote Markt 30 (Aalst)"@nl ;
+    wdt:P1764 "44" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.93863 ; schema:longitude 4.03854 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/44> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/44> .

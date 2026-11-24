@@ -15,3 +15,15 @@ wd:Q743236 a schema:City ;
         schema:latitude 50.9847 ;
         schema:longitude 5.0514
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q27603035 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadhuis Diest"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Grote Markt."@nl ;
+    schema:containedInPlace wd:Q743236 ;
+    schema:address "Grote Markt 1 (Diest)"@nl ;
+    wdt:P1764 "41642" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.98470 ; schema:longitude 5.05012 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/41642> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/41642> .

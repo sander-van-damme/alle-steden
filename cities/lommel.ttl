@@ -15,3 +15,15 @@ wd:Q194366 a schema:City ;
         schema:latitude 51.233333333 ;
         schema:longitude 5.316666666
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q2803482 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Decanale kerk Sint-Pietersbanden"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Kerkplein."@nl ;
+    schema:containedInPlace wd:Q194366 ;
+    schema:address "Kerkplein 1 (Lommel)"@nl ;
+    wdt:P1764 "80152" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.22854 ; schema:longitude 5.31495 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/80152> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/80152> .

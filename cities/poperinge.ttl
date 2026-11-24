@@ -15,3 +15,15 @@ wd:Q499588 a schema:City ;
         schema:latitude 50.8547 ;
         schema:longitude 2.7256
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+<https://id.erfgoed.net/erfgoedobjecten/31050> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadhuis van Poperinge"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Grote Markt."@nl ;
+    schema:containedInPlace wd:Q499588 ;
+    schema:address "Grote Markt 1 (Poperinge)"@nl ;
+    wdt:P1764 "31050" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.85538 ; schema:longitude 2.72778 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/31050> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/31050> .

@@ -42,3 +42,15 @@ wd:Q30739116 a schema:LandmarksOrHistoricalBuildings ;
     schema:endDate "2026-12-27"^^xsd:date ;
     schema:url <https://www.dendermonde.be/activiteiten/detail/3899/winter-in-dendermonde-kerstmarkt> ;
     dcterms:source <https://www.dendermonde.be/activiteiten/detail/3899/winter-in-dendermonde-kerstmarkt> .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q13437151 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Lakenhal en stadhuis van Dendermonde"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Grote Markt."@nl ;
+    schema:containedInPlace wd:Q13122 ;
+    schema:address "Grote Markt 1 (Dendermonde)"@nl ;
+    wdt:P1764 "49012" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.03103 ; schema:longitude 4.09884 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/49012> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/49012> .

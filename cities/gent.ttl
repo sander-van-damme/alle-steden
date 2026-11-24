@@ -60,3 +60,15 @@ wd:Q980285 a schema:Museum ;
     schema:endDate "2027-01-03"^^xsd:date ;
     schema:url <https://gentsewinterfeesten.be/faq> ;
     dcterms:source <https://gentsewinterfeesten.be/faq> .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q815443 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Belfort van Gent"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Sint-Baafsplein."@nl ;
+    schema:containedInPlace wd:Q1296 ;
+    schema:address "Sint-Baafsplein (Gent)"@nl ;
+    wdt:P1764 "24555" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.05366 ; schema:longitude 3.72479 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/24555> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/24555> .

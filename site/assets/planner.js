@@ -24,6 +24,7 @@ let cities = [];
 let job = null;
 let shown;
 let activeMode;
+let activeScheduledOnly = false;
 
 const options = () => ({
   mode: formEl.elements.mode.value,
@@ -33,6 +34,7 @@ const options = () => ({
   region: regionField.value,
   maxKm: Number(formEl.elements.maxKm.value),
   roundtrip: formEl.elements.roundtrip.checked,
+  scheduledOnly: formEl.elements.scheduledOnly?.checked ?? false,
 });
 
 function refreshMap() {
@@ -143,7 +145,7 @@ async function stopsFor(trip, signal) {
 async function loadStops(trip, current) {
   if (!trip || trip.pois?.state === 'loading' || trip.pois?.state === 'ok' || job !== current) return;
   trip.pois = { state: 'loading', items: [] };
-  renderPlannerResults(resultEl, shown, { mode: activeMode });
+  renderPlannerResults(resultEl, shown, { mode: activeMode, scheduledOnly: activeScheduledOnly });
   try {
     const items = await stopsFor(trip, current.signal);
     if (job !== current) return;
@@ -152,7 +154,7 @@ async function loadStops(trip, current) {
     if (job !== current) return;
     trip.pois = { state: 'unavailable', items: [] };
   }
-  renderPlannerResults(resultEl, shown, { mode: activeMode });
+  renderPlannerResults(resultEl, shown, { mode: activeMode, scheduledOnly: activeScheduledOnly });
 }
 
 formEl.addEventListener('change', (event) => {
@@ -193,13 +195,15 @@ formEl.addEventListener('submit', async (event) => {
     if (agendas.failed) result.notes.push('Niet alle agenda’s waren bereikbaar.');
     shown = result;
     activeMode = filters.mode;
+    activeScheduledOnly = filters.scheduledOnly;
     const anchor = agendas.catalog.find(({ slug }) => slug === filters.city);
-    const message = result.trips.length ? result.trips.length + (result.trips.length === 1 ? ' rit past' : ' ritten passen') + ' binnen de gecontroleerde tijden.'
+    const message = result.trips.length ? result.trips.length + (result.trips.length === 1 ? ' rit past' : ' ritten passen') + ' binnen de getoonde dagplanning.'
       : result.failedRoutes ? 'Geen passende rit kunnen bevestigen. Niet alle routes waren bereikbaar.'
-        : anchor && !anchor.places.length && !anchor.events.length ? 'Te weinig gepubliceerde bezoekuren voor ' + anchor.name + '. Kies een andere vertrekstad of het hele gewest.'
-          : 'Geen passende rit met bekende bezoekuren gevonden.';
+        : filters.scheduledOnly ? 'Geen passende rit met gepubliceerde bezoekuren gevonden. Laat buitenstops toe om meer te zien.'
+          : anchor && !anchor.places.length && !anchor.events.length ? 'Te weinig gedocumenteerde plekken voor ' + anchor.name + '. Kies een andere vertrekstad of het hele gewest.'
+            : 'Geen passende rit voor deze instellingen gevonden.';
     setPlannerStatus(statusEl, message, 'ready');
-    renderPlannerResults(resultEl, shown, { mode: activeMode });
+    renderPlannerResults(resultEl, shown, { mode: activeMode, scheduledOnly: activeScheduledOnly });
   } catch (error) {
     if (job === current && !current.signal.aborted) setPlannerStatus(statusEl,
       error?.message === 'Kies een datum vanaf vandaag tot één jaar vooruit.' ? error.message : 'Zoeken lukt momenteel niet. Probeer opnieuw.', 'error');

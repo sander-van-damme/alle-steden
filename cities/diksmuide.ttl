@@ -15,3 +15,15 @@ wd:Q215244 a schema:City ;
         schema:latitude 51.033333333 ;
         schema:longitude 2.865
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+<https://id.erfgoed.net/erfgoedobjecten/78010> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadhuis, belfort en politiecommissariaat van Diksmuide"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Grote Markt."@nl ;
+    schema:containedInPlace wd:Q215244 ;
+    schema:address "Grote Markt 6 (Diksmuide)"@nl ;
+    wdt:P1764 "78010" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.03366 ; schema:longitude 2.86454 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/78010> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/78010> .

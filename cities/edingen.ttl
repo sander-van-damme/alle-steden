@@ -15,3 +15,20 @@ wd:Q666238 a schema:City ;
         schema:latitude 50.695555555 ;
         schema:longitude 4.041111111
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/55010-CLT-0002-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Église Saint-Nicolas d’Enghien"@fr ;
+    schema:description "De Sint-Niklaaskerk aan de Grote Markt."@nl ;
+    schema:containedInPlace wd:Q666238 ;
+    schema:identifier "55010-CLT-0002-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.693119 ;
+        schema:longitude 4.039164
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/55010-CLT-0002-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/55010-CLT-0002-01> .

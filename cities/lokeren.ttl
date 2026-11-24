@@ -29,3 +29,15 @@ wd:Q106557015 a schema:Museum ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.103924 ; schema:longitude 3.991689 ] ;
     schema:url <https://stadsmuseum.lokeren.be/praktisch> ;
     dcterms:source <https://stadsmuseum.lokeren.be/praktisch> .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q2426850 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Parochiekerk Sint-Laurentius"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Markt."@nl ;
+    schema:containedInPlace wd:Q12910 ;
+    schema:address "Markt 46 (Lokeren)"@nl ;
+    wdt:P1764 "17929" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.10420 ; schema:longitude 3.99187 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/17929> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/17929> .

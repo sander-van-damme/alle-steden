@@ -15,3 +15,20 @@ wd:Q95129 a schema:City ;
         schema:latitude 50.609722222 ;
         schema:longitude 4.136111111
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/55004-CLT-0005-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Ancien hôtel de ville, dit Hôtel d’Arenberg"@fr ;
+    schema:description "De geklasseerde voorgevel van het voormalige stadhuis aan de Grote Markt."@nl ;
+    schema:containedInPlace wd:Q95129 ;
+    schema:identifier "55004-CLT-0005-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.610608 ;
+        schema:longitude 4.136668
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/55004-CLT-0005-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/55004-CLT-0005-01> .

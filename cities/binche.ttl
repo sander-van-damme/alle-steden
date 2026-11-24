@@ -15,3 +15,20 @@ wd:Q95121 a schema:City ;
         schema:latitude 50.4103004 ;
         schema:longitude 4.165163
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/56011-CLT-0007-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Hôtel de ville et beffroi de Binche"@fr, "Stadhuis en belfort van Binche"@nl ;
+    schema:description "Het stadhuis met zijn belfort aan de Grote Markt."@nl ;
+    schema:containedInPlace wd:Q95121 ;
+    schema:identifier "56011-CLT-0007-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.410657 ;
+        schema:longitude 4.165581
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/56011-CLT-0007-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/56011-CLT-0007-01>, <https://whc.unesco.org/fr/list/0943/cartes/> .

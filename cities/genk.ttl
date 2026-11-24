@@ -15,3 +15,15 @@ wd:Q189692 a schema:City ;
         schema:latitude 50.966249172 ;
         schema:longitude 5.502096313
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+<https://id.erfgoed.net/erfgoedobjecten/21620> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Gemeentehuis van Genk"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Oude Markt."@nl ;
+    schema:containedInPlace wd:Q189692 ;
+    schema:address "Oude Markt 2 (Genk)"@nl ;
+    wdt:P1764 "21620" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.96333 ; schema:longitude 5.49869 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/21620> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/21620> .

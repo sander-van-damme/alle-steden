@@ -15,3 +15,20 @@ wd:Q333466 a schema:City ;
         schema:latitude 50.483333333 ;
         schema:longitude 5.1
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/92003-CLT-0001-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Collégiale Sainte-Begge"@fr ;
+    schema:description "De collegiale kerk aan het kapittelplein."@nl ;
+    schema:containedInPlace wd:Q333466 ;
+    schema:identifier "92003-CLT-0001-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.486864 ;
+        schema:longitude 5.100867
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/92003-CLT-0001-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/92003-CLT-0001-01> .

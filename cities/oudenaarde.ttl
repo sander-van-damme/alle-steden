@@ -28,3 +28,15 @@ wd:Q1812082 a schema:Museum ;
         [ a schema:OpeningHoursSpecification ; schema:validFrom "2028-01-01"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ] ;
     schema:url <https://www.crvv.be/contact-openingsuren> ;
     dcterms:source <https://www.crvv.be/contact-openingsuren> .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q2752664 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadhuis Oudenaarde en Lakenhal"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Markt."@nl ;
+    schema:containedInPlace wd:Q12992 ;
+    schema:address "Markt 1 (Oudenaarde)"@nl ;
+    wdt:P1764 "27225" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.84393 ; schema:longitude 3.60370 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/27225> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/27225> .

@@ -87,6 +87,9 @@
 .planner-controls select, .planner-controls input:not([type="checkbox"]) { min-height: 2.75rem; min-width: 0; }
 .planner-check { display: flex; gap: 0.45rem; min-height: 2.75rem; align-items: center; cursor: pointer; }
 .planner-check input { width: 1.15rem; height: 1.15rem; flex: 0 0 auto; padding: 0; accent-color: var(--accent); margin: 0; }
+.planner-visit-options { margin-top: 0.85rem; padding-top: 0.45rem; border-top: 1px solid var(--line); }
+.planner-visit-options .planner-check { font-size: 0.86rem; font-weight: 650; }
+.planner-visit-options .planner-hint { margin: 0 0 0 1.6rem; }
 .planner-hint { color: var(--muted); margin: 0.55rem 0 0; font-size: 0.86rem; }
 .planner-hint:empty { margin: 0; }
 .planner-panel .button { min-height: 2.75rem; margin-top: 1rem; }
@@ -172,6 +175,7 @@
   font-size: 0.84rem;
   font-weight: 650;
 }
+.trip-metrics .trip-exterior-metric { border-color: #d8c4a9; background: #f7eddd; color: #634624; }
 .trip-panels { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: clamp(1rem, 4.2vw, 3rem); align-items: start; }
 .trip-map { background: var(--map-water); border: 1px solid #dfe6dc; border-radius: 0.6rem; overflow: hidden; }
 .trip-map svg { background: repeating-linear-gradient(0deg, transparent 0 22px, #dfebdf 22px 23px), repeating-linear-gradient(90deg, transparent 0 22px, #dfebdf 22px 23px); }
@@ -198,6 +202,7 @@
 .trip-timeline-list li[data-kind="bike"], .trip-timeline-list li[data-kind="return"] { color: var(--muted); }
 .trip-time { color: var(--accent); font-weight: 680; font-variant-numeric: tabular-nums; font-size: 0.89rem; }
 .trip-timeline-name { font-size: 0.9rem; font-weight: 650; overflow-wrap: anywhere; }
+.trip-exterior-badge { display: table; }
 .trip-timeline-list small, .trip-visit-source, .trip-poi-source { display: block; color: var(--muted); font-size: 0.78rem; }
 .trip-poi-source .trip-poi-source { display: inline; }
 .trip-pois { margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--line); }

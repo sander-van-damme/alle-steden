@@ -15,3 +15,15 @@ wd:Q271783 a schema:City ;
         schema:latitude 51.316666666 ;
         schema:longitude 4.933333333
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q2560731 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadhuis van Turnhout"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Grote Markt."@nl ;
+    schema:containedInPlace wd:Q271783 ;
+    schema:address "Grote Markt 1 (Turnhout)"@nl ;
+    wdt:P1764 "12006" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.32317 ; schema:longitude 4.94694 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/12006> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/12006> .

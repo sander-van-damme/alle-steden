@@ -15,3 +15,20 @@ wd:Q269908 a schema:City ;
         schema:latitude 50.2275 ;
         schema:longitude 5.344444444
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/83034-CLT-0001-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Église Saint-Remacle de Marche"@fr ;
+    schema:description "De geklasseerde Sint-Remacluskerk in het stadscentrum."@nl ;
+    schema:containedInPlace wd:Q269908 ;
+    schema:identifier "83034-CLT-0001-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.228014 ;
+        schema:longitude 5.344047
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/83034-CLT-0001-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/83034-CLT-0001-01> .

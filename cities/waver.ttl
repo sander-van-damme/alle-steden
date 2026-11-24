@@ -15,3 +15,20 @@ wd:Q181314 a schema:City ;
         schema:latitude 50.716666666 ;
         schema:longitude 4.6
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/25112-CLT-0002-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Église Saint-Jean-Baptiste de Wavre"@fr, "Sint-Jan-de-Doperkerk van Waver"@nl ;
+    schema:description "De beschermde Sint-Jan-de-Doperkerk aan de Place de la Cure."@nl ;
+    schema:containedInPlace wd:Q181314 ;
+    schema:identifier "25112-CLT-0002-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.717120 ;
+        schema:longitude 4.610944
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/25112-CLT-0002-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/25112-CLT-0002-01> .

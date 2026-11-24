@@ -15,3 +15,20 @@ wd:Q666696 a schema:City ;
         schema:latitude 50.416666666 ;
         schema:longitude 4.316666666
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/52022-CLT-0013-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Tour de l’église Saint-Vaast"@fr ;
+    schema:description "De geklasseerde kerktoren aan de Rue Joseph Parée."@nl ;
+    schema:containedInPlace wd:Q666696 ;
+    schema:identifier "52022-CLT-0013-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.409621 ;
+        schema:longitude 4.324528
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/52022-CLT-0013-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/52022-CLT-0013-01> .

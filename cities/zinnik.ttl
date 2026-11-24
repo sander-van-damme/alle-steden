@@ -15,3 +15,20 @@ wd:Q462985 a schema:City ;
         schema:latitude 50.566666666 ;
         schema:longitude 4.066666666
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/55040-CLT-0003-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Collégiale Saint-Vincent de Soignies"@fr, "Sint-Vincentiuskerk van Zinnik"@nl ;
+    schema:description "De romaanse collegiale Sint-Vincentiuskerk aan de Grote Markt."@nl ;
+    schema:containedInPlace wd:Q462985 ;
+    schema:identifier "55040-CLT-0003-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.579365 ;
+        schema:longitude 4.070450
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/55040-CLT-0003-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/55040-CLT-0003-01> .

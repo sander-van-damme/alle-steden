@@ -15,3 +15,20 @@ wd:Q95380 a schema:City ;
         schema:latitude 50.0479266 ;
         schema:longitude 4.3173338
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/56016-CLT-0004-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Collégiale Saints-Pierre-et-Paul"@fr ;
+    schema:description "De collegiale kerk aan de Grote Markt."@nl ;
+    schema:containedInPlace wd:Q95380 ;
+    schema:identifier "56016-CLT-0004-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.049394 ;
+        schema:longitude 4.315718
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/56016-CLT-0004-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/56016-CLT-0004-01> .

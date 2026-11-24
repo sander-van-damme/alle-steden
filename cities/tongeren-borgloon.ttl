@@ -28,3 +28,15 @@ wd:Q18655304 a schema:TouristAttraction ;
     schema:alternateName "Doorkijkkerk"@nl ;
     schema:description "Openluchtkunstwerk van Gijs Van Vaerenbergh bij Borgloon, in de vorm van een kerk."@nl ;
     schema:containedInPlace wd:Q125378487 .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q1990644 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadhuis Tongeren"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Stadhuisplein."@nl ;
+    schema:containedInPlace wd:Q125378487 ;
+    schema:address "Stadhuisplein 9 (Tongeren-Borgloon)"@nl ;
+    wdt:P1764 "37396" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.78038 ; schema:longitude 5.46420 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/37396> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/37396> .
