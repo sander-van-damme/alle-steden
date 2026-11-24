@@ -15,3 +15,20 @@ wd:Q683141 a schema:City ;
         schema:latitude 50.67247 ;
         schema:longitude 5.078
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/64034-CLT-0003-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Église Saint-Christophe de Hannut"@fr ;
+    schema:description "De beschermde koorpartij en toren van de Sint-Christoffelkerk."@nl ;
+    schema:containedInPlace wd:Q683141 ;
+    schema:identifier "64034-CLT-0003-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.671001 ;
+        schema:longitude 5.078007
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/64034-CLT-0003-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/64034-CLT-0003-01>, <https://openchurches.eu/fr-eu/edifices/saint-christophe-hannut> .

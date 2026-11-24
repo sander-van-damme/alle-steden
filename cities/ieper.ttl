@@ -15,3 +15,15 @@ wd:Q102728 a schema:City ;
         schema:latitude 50.850833333 ;
         schema:longitude 2.885
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+<https://id.erfgoed.net/erfgoedobjecten/30236> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Lakenhallen en belfort van Ieper"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Grote Markt."@nl ;
+    schema:containedInPlace wd:Q102728 ;
+    schema:address "Grote Markt 34, Sint-Maartensplein 1-3 (Ieper)"@nl ;
+    wdt:P1764 "30236" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.85119 ; schema:longitude 2.88531 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/30236> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/30236> .

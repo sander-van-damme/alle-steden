@@ -15,3 +15,20 @@ wd:Q3992 a schema:City ;
         schema:latitude 50.639722222 ;
         schema:longitude 5.570555555
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/62063-CLT-0003-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Collégiale Saint-Denis"@fr ;
+    schema:description "De historische collegiale kerk tussen de Place Saint-Denis en de Rue de la Cathédrale."@nl ;
+    schema:containedInPlace wd:Q3992 ;
+    schema:identifier "62063-CLT-0003-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.642925 ;
+        schema:longitude 5.574550
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/62063-CLT-0003-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/62063-CLT-0003-01> .

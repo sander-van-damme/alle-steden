@@ -15,3 +15,20 @@ wd:Q675960 a schema:City ;
         schema:latitude 49.683611111 ;
         schema:longitude 5.816666666
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/81001-CLT-0002-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Palais provincial d’Arlon"@fr, "Provinciehuis van Aarlen"@nl ;
+    schema:description "De geklasseerde gevels van het provinciehuis aan de Place Léopold."@nl ;
+    schema:containedInPlace wd:Q675960 ;
+    schema:identifier "81001-CLT-0002-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 49.682824 ;
+        schema:longitude 5.812676
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/81001-CLT-0002-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/81001-CLT-0002-01> .

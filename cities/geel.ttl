@@ -15,3 +15,15 @@ wd:Q464454 a schema:City ;
         schema:latitude 51.161111111 ;
         schema:longitude 4.990277777
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q2249565 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Parochiekerk Sint-Amandus"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Markt."@nl ;
+    schema:containedInPlace wd:Q464454 ;
+    schema:address "Markt 40 (Geel)"@nl ;
+    wdt:P1764 "52309" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.16204 ; schema:longitude 4.99046 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/52309> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/52309> .

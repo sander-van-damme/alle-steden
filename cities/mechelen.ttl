@@ -29,3 +29,15 @@ wd:Q2123638 a schema:Museum ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.0341 ; schema:longitude 4.4785 ] ;
     schema:url <https://kazernedossin.eu/praktisch/> ;
     dcterms:source <https://kazernedossin.eu/praktisch/> .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q2202410 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadhuis van Mechelen met Lakenhal"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Grote Markt."@nl ;
+    schema:containedInPlace wd:Q162022 ;
+    schema:address "Grote Markt 20-21, 22 (Mechelen)"@nl ;
+    wdt:P1764 "3717" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.02794 ; schema:longitude 4.48161 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/3717> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/3717> .

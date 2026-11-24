@@ -15,3 +15,15 @@ wd:Q932020 a schema:City ;
         schema:latitude 50.9802 ;
         schema:longitude 4.974
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+<https://id.erfgoed.net/erfgoedobjecten/42751> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Oud Stadhuis van Zichem"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Markt."@nl ;
+    schema:containedInPlace wd:Q932020 ;
+    schema:address "Markt 16 (Scherpenheuvel-Zichem)"@nl ;
+    wdt:P1764 "42751" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.00097 ; schema:longitude 4.98726 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/42751> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/42751> .

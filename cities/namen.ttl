@@ -34,3 +34,20 @@ wd:Q19697920 a schema:Museum ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.46301 ; schema:longitude 4.86259 ] ;
     schema:url <https://www.museerops.be/individuel> ;
     dcterms:source <https://www.museerops.be/individuel> .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/92094-CLT-0011-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Beffroi de Namur"@fr, "Belfort van Namen"@nl ;
+    schema:description "De historische stadstoren, nu belfort, zichtbaar vanaf de Rue du Beffroi bij de Place d’Armes."@nl ;
+    schema:containedInPlace wd:Q134121 ;
+    schema:identifier "92094-CLT-0011-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.463825 ;
+        schema:longitude 4.867079
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/92094-CLT-0011-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/92094-CLT-0011-01>, <https://whc.unesco.org/fr/list/0943/cartes/> .

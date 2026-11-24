@@ -15,3 +15,20 @@ wd:Q95011 a schema:City ;
         schema:latitude 50.5669 ;
         schema:longitude 3.4494
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/57003-CLT-0008-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Hôtel de ville d’Antoing"@fr ;
+    schema:description "De geklasseerde voorgevel aan de Place Bara."@nl ;
+    schema:containedInPlace wd:Q95011 ;
+    schema:identifier "57003-CLT-0008-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.565672 ;
+        schema:longitude 3.448868
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/57003-CLT-0008-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/57003-CLT-0008-01> .

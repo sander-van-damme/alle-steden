@@ -15,3 +15,20 @@ wd:Q668630 a schema:City ;
         schema:latitude 50.5117549 ;
         schema:longitude 3.5889334
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/57064-CLT-0004-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Église Saint-Quentin de Péruwelz"@fr ;
+    schema:description "De beschermde toren en het portaal van de Sint-Kwintenskerk in het stadscentrum."@nl ;
+    schema:containedInPlace wd:Q668630 ;
+    schema:identifier "57064-CLT-0004-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.507455 ;
+        schema:longitude 3.589487
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/57064-CLT-0004-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/57064-CLT-0004-01> .

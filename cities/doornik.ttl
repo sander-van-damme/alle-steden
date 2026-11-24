@@ -15,3 +15,20 @@ wd:Q173219 a schema:City ;
         schema:latitude 50.605555555 ;
         schema:longitude 3.388055555
     ] .
+
+# Erfgoed aan de openbare weg
+wd:Q2742228 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Beffroi de Tournai"@fr, "Belfort van Doornik"@nl ;
+    schema:description "Het belfort aan de Grote Markt, opgenomen op de Werelderfgoedlijst."@nl ;
+    schema:containedInPlace wd:Q173219 ;
+    schema:identifier "57081-CLT-0034-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.605757 ;
+        schema:longitude 3.388031
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/57081-CLT-0034-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/57081-CLT-0034-01>, <https://whc.unesco.org/fr/list/0943/cartes/> .

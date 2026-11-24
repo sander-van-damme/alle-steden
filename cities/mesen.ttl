@@ -15,3 +15,15 @@ wd:Q737077 a schema:City ;
         schema:latitude 50.766666666 ;
         schema:longitude 2.9
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+<https://id.erfgoed.net/erfgoedobjecten/32784> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadhuis van Mesen"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Markt."@nl ;
+    schema:containedInPlace wd:Q737077 ;
+    schema:address "Markt 1 (Mesen)"@nl ;
+    wdt:P1764 "32784" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.76564 ; schema:longitude 2.89764 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/32784> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/32784> .

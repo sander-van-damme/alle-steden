@@ -15,3 +15,15 @@ wd:Q242407 a schema:City ;
         schema:latitude 51.033333333 ;
         schema:longitude 5.216666666
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q2214669 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Parochiekerk Sint-Pieters-Banden"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Markt."@nl ;
+    schema:containedInPlace wd:Q242407 ;
+    schema:address "Markt 6 (Beringen)"@nl ;
+    wdt:P1764 "21415" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.04837 ; schema:longitude 5.22487 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/21415> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/21415> .

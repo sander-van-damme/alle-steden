@@ -68,11 +68,11 @@ export function plannerPage(cities) {
           </div>
           <p class="planner-hint" id="planner-mode-hint"></p>
           <div class="planner-controls">
-            <label>Gewest
+            <label>Vertrekgewest
               <select name="region" id="planner-region"><option value="">Heel België</option>${regionOptions}</select>
             </label>
-            <label>Stad
-              <select name="city" id="planner-city"><option value="">Geen vaste stad</option>${citiesByRegion}</select>
+            <label>Vertrekstad
+              <select name="city" id="planner-city"><option value="">Geen vaste vertrekstad</option>${citiesByRegion}</select>
             </label>
           </div>
           <div class="planner-controls planner-distance">
@@ -80,6 +80,10 @@ export function plannerPage(cities) {
             <label class="planner-check"><input type="checkbox" name="roundtrip"> Terug naar de eerste stad</label>
           </div>
           <p class="planner-hint">Zonder terugrit eindigt de rit in de tweede stad.</p>
+          <div class="planner-visit-options">
+            <label class="planner-check"><input type="checkbox" name="scheduledOnly" aria-describedby="planner-visit-hint"> Alleen met bevestigde bezoekuren of evenementen</label>
+            <p class="planner-hint" id="planner-visit-hint">Standaard tellen ook korte buitenstops mee. Dat is geen bevestiging dat je ergens naar binnen kunt.</p>
+          </div>
           <button type="submit" class="button primary" id="planner-submit" disabled>Zoek ritten <span aria-hidden="true">→</span></button>
           <noscript><p>Schakel JavaScript in om de planner te gebruiken. De <a href="/#steden">stedenlijst</a> blijft beschikbaar.</p></noscript>
         </form>
@@ -162,15 +166,28 @@ function entryDate(start, end) {
   return start ? `<p class="entry-meta">${time(start)}${end && end !== start ? ` tot ${time(end)}` : ''}</p>` : '';
 }
 
+function entrySource(source) {
+  try {
+    const url = new URL(typeof source === 'string' ? source : source?.url);
+    if (!/^https?:$/.test(url.protocol) || url.username || url.password) return '';
+    const label = typeof source === 'object' ? source?.label : null;
+    return `<a class="entry-source" href="${escapeHtml(url.href)}">Bron: ${escapeHtml(label || url.hostname.replace(/^www\./, ''))}</a>`;
+  } catch {
+    return '';
+  }
+}
+
 function entryList(title, intro, kind, items) {
   const liveNotice = kind === 'places' ? 'bezienswaardigheden' : 'evenementen';
-  const cards = items.map(({ id, name, description, url, start, end, openingHours }) => {
+  const cards = items.map(({ id, name, description, url, start, end, openingHours, exterior, source }) => {
     const hours = (Array.isArray(openingHours) ? openingHours : [openingHours]).filter(Boolean).join(' · ');
     return `<li${id ? ` data-item-id="${escapeHtml(id)}"` : ''}>
       <h3>${url ? `<a href="${escapeHtml(url)}">${escapeHtml(name)} ${arrow}</a>` : escapeHtml(name)}</h3>
       ${entryDate(start, end)}
+      ${exterior === true ? '<span class="entry-badge" data-exterior>Vanop de openbare weg te bekijken</span>' : ''}
       ${hours ? `<p class="entry-meta"><strong>Openingsuren:</strong> ${escapeHtml(hours)}</p>` : ''}
       ${description ? `<p class="entry-description">${escapeHtml(description)}</p>` : ''}
+      ${entrySource(source)}
     </li>`;
   }).join('');
 
@@ -217,7 +234,10 @@ export function cityPage(city) {
           <h1>${escapeHtml(name)}</h1>
           ${aliases.length ? `<p class="aliases">${escapeHtml(aliases.join(' · '))}</p>` : ''}
           ${description ? `<p class="city-description">${escapeHtml(description)}</p>` : ''}
-          ${mapUrl ? `<div class="city-links"><a class="button primary" href="${escapeHtml(mapUrl)}">Bekijk op de kaart ${arrow}</a></div>` : ''}
+          ${mapUrl ? `<div class="city-links">
+            <a class="button primary" href="/planner/?city=${encodeURIComponent(slug)}">Plan een rit vanuit ${escapeHtml(name)} <span aria-hidden="true">→</span></a>
+            <a class="button secondary" href="${escapeHtml(mapUrl)}">Bekijk op de kaart ${arrow}</a>
+          </div>` : ''}
         </div>
         ${cityDecoration}
       </header>
@@ -225,7 +245,7 @@ export function cityPage(city) {
         <a href="#places">Bezienswaardigheden</a><a href="#events">Evenementen</a><a href="#stadsdata">Stadsdata</a>
       </nav>
       <div class="visit-grid">
-        ${entryList('Bezienswaardigheden', 'Plekken om te ontdekken. Openingsuren staan erbij als de bron ze meegeeft.', 'places', places)}
+        ${entryList('Bezienswaardigheden', 'Plekken om te ontdekken. Openingsuren staan erbij als de bron ze meegeeft. Bij buitenstops is toegang tot gebouwen niet bevestigd.', 'places', places)}
         ${entryList('Evenementen', 'Activiteiten en terugkerende evenementen, met datums wanneer bekend.', 'events', events)}
       </div>
       <details id="stadsdata" class="city-data">

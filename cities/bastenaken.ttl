@@ -16,3 +16,20 @@ wd:Q34021 a schema:City ;
         schema:latitude 50.004166666 ;
         schema:longitude 5.72
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/82003-CLT-0001-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Porte de Trèves"@fr ;
+    schema:description "De middeleeuwse stadspoort aan het gelijknamige plein."@nl ;
+    schema:containedInPlace wd:Q34021 ;
+    schema:identifier "82003-CLT-0001-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.004950 ;
+        schema:longitude 5.722052
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/82003-CLT-0001-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/82003-CLT-0001-01> .

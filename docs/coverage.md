@@ -28,3 +28,17 @@ Voor steden zonder openbare feed zijn enkele bevestigde evenementen toegevoegd m
 - Het officiële [API-aanbod voor Agenda Brussels](https://api.brussels/store/apis/info?name=agenda.brussels&provider=admin&version=0.0.1) gaf zonder OAuth **401**. Het is niet aangesloten. De [openbare agenda van Visit Brussels](https://www.visit.brussels/nl/bezoekers/agenda) blijft een uitgaande link.
 - Voor Vlaanderen en Brussel is [UiTdatabank van publiq](https://www.publiq.be/nl/projecten/publiq-platform) optioneel, maar niet actief zonder geautoriseerde sleutel en overeenkomst. Huidige dekking is niet gelijk aan alle UiT-evenementen.
 - Gent en Namen behouden hun eigen publieke datasets. In andere regio’s kan de dekking van data, tijdsloten en uitzonderingen verschillen. Er is geen volledige Belgische weekagenda en er worden geen timing- of beschikbaarheidsgaranties geleverd.
+
+## Buitenkant als afzonderlijk bezoektype
+
+Voor elk van de **138 steden** is ten minste één duurzame, van openbaar terrein zichtbare plek gedocumenteerd: 65 in Vlaanderen, 72 in Wallonië en 1 in het Brussels Hoofdstedelijk Gewest. De markering verwijst naar een concreet buitenaanzicht (bijvoorbeeld de gevel vanaf een markt), niet naar opening van het gebouw, een binnenplaats of een privédomein. We houden bestaande Wikidata-identifiers waar de identiteit overeenstemt. Waar zo'n identificatie ontbreekt, blijft het stabiele lokale erfgoed-ID behouden.
+
+- [Vlaamse controle en bronnen](flanders-exterior-coverage.md), inclusief het oude stadhuis van Ninove.
+- [Waalse controle per stad](coverage-wallonia.md), met de openbare kijkplek en gedocumenteerde deelgemeenten.
+- Brussel: [Stad Brussel](https://www.brussel.be/grote-markt-van-brussel), [UNESCO’s beschrijving van het openbare plein](https://whc.unesco.org/en/decisions/2749/) en [Wikidata Q1255327](https://www.wikidata.org/wiki/Q1255327) voor het stadhuis.
+
+De catalogus telde op zaterdag 28 november 2026 voorheen 11 steden met een bruikbare vaste bezoektijd. Na deze aanvulling zijn 138 steden als bezoekanker bruikbaar als buitenstops aanstaan. Dit aantal zegt niets over het aantal ritten dat met een gegeven tijd, afstand of routebron haalbaar blijkt. De striktere filter houdt buitenstops buiten de berekening.
+
+Reproduceerbaar met `npm run build`, `node scripts/audit-coverage.mjs dist/planner-data.json 2026-11-28` en `npm test`. De build publiceert de auditcijfers ook op `/coverage.json`.
+
+Levende plaatsbronnen en de herbruikbare RDF-mapping van officiële JSON-records zijn beschreven in [Levende bronnen voor plaatsen](live-place-sources.md).

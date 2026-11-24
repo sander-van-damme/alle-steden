@@ -15,3 +15,15 @@ wd:Q385026 a schema:City ;
         schema:latitude 50.833333333 ;
         schema:longitude 4.016666666
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q135191006 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Oud stadhuis van Ninove"@nl ;
+    schema:description "Gevel en lantaarntoren van het oude stadhuis, te bekijken vanaf het Oudstrijdersplein."@nl ;
+    schema:containedInPlace wd:Q385026 ;
+    schema:address "Oudstrijdersplein 6 (Ninove)"@nl ;
+    wdt:P1764 "9278" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.83554 ; schema:longitude 4.02278 ] ;
+    schema:url <https://www.ninove.be/oud-stadhuis-huren> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/9278>, <https://www.ninove.be/in-de-voetsporen-van-eerste-wo-ninove-wandelgidspdf> .

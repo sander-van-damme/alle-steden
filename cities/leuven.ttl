@@ -34,3 +34,15 @@ wd:Q2362660 a schema:Museum ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.878889 ; schema:longitude 4.704444 ] ;
     schema:url <https://www.mleuven.be/plan-je-bezoek/openingsuren-sluitingsdagen> ;
     dcterms:source <https://www.mleuven.be/plan-je-bezoek/openingsuren-sluitingsdagen> .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q940882 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadhuis van Leuven"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Grote Markt."@nl ;
+    schema:containedInPlace wd:Q118958 ;
+    schema:address "Boekhandelstraat 2, Grote Markt 8-9, 8A, Naamsestraat 3 (Leuven)"@nl ;
+    wdt:P1764 "42150" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.87871 ; schema:longitude 4.70121 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/42150> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/42150> .

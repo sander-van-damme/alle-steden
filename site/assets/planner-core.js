@@ -129,12 +129,16 @@ function activityHours(item, date) {
   return hoursFor(item.openingHours ?? item.hours, date);
 }
 
-export function visitWindows(city, date) {
+export function visitWindows(city, date, { scheduledOnly = false } = {}) {
   const windows = [];
   for (const item of city.places ?? []) {
     const length = Number.isFinite(item.visitMinutes) ? Math.min(150, Math.max(20, item.visitMinutes)) : 80;
     for (const [start, end] of activityHours(item, date)) {
       windows.push({ ...item, city, kind: 'place', earliest: start, latest: end, duration: length, quality: 1 });
+    }
+    // Daytime planning convenience only; not the place's opening schedule or a promise of access.
+    if (!scheduledOnly && item.exterior === true && typeof item.source === 'string' && /^https?:\/\//.test(item.source)) {
+      windows.push({ ...item, city, kind: 'exterior', earliest: 10 * 60, latest: 16 * 60, duration: 25, quality: 0 });
     }
   }
   for (const item of city.events ?? []) {
@@ -166,12 +170,16 @@ function visitAt(window, arrival, dayEnd) {
   const start = Math.max(arrival, window.earliest), end = start + window.duration;
   if (end > Math.min(window.latest, dayEnd) || (window.kind === 'event' && start !== window.earliest)) return null;
   return { city: { slug: window.city.slug, name: window.city.name }, name: window.name, url: window.url ?? window.website,
-    start, end, windowLabel: window.kind === 'event' ? 'Gepubliceerd tijdstip' : 'Gepubliceerde openingsuren (80 min bezoek begroot)',
+    start, end, windowLabel: window.kind === 'event' ? 'Gepubliceerd tijdstip' : window.kind === 'exterior'
+      ? 'Vanop de openbare weg te bekijken · 25 min begroot; geen toegang tot het gebouw'
+      : 'Gepubliceerde openingsuren (80 min bezoek begroot)',
     source: window.source, kind: window.kind };
 }
 
 export function schedulePair(first, second, outbound, incoming, limits = tripLimits) {
-  let best;
+  let best, feasibleQuality = null;
+  const qualityOf = (windows) => windows.reduce((quality, window) => Math.max(quality, window.quality), 0);
+  const maximumQuality = limits.testOnly ? qualityOf(first) + qualityOf(second) : 0;
   const ride = Math.ceil(outbound) + limits.bikeBuffer;
   const rideBack = incoming == null ? 0 : Math.ceil(incoming) + limits.bikeBuffer;
   // City-to-city route is measured. Access to each activity from the city start is budgeted explicitly.
@@ -188,7 +196,7 @@ export function schedulePair(first, second, outbound, incoming, limits = tripLim
       const travel = ride + transferA + transferB;
       const finalBudget = incoming == null ? 0 : rideBack + transferB;
       const aLimit = Math.min(a.latest - a.duration, b.latest - b.duration - travel - a.duration, limits.end - finalBudget - a.duration - travel - b.duration);
-      if (a.kind === 'place' && aLimit < Math.max(limits.start + transferA, a.earliest)) continue;
+      if (a.kind !== 'event' && aLimit < Math.max(limits.start + transferA, a.earliest)) continue;
       const preferred = a.kind === 'event' ? a.earliest : Math.max(
         limits.start + transferA, a.earliest, Math.min(aLimit, b.earliest - travel - a.duration),
       );
@@ -197,6 +205,11 @@ export function schedulePair(first, second, outbound, incoming, limits = tripLim
       const arrives = firstVisit.end + travel;
       const secondVisit = visitAt(b, arrives, limits.end - finalBudget);
       if (!secondVisit) continue;
+      if (limits.testOnly) {
+        feasibleQuality = Math.max(feasibleQuality ?? 0, a.quality + b.quality);
+        if (feasibleQuality === maximumQuality) return feasibleQuality;
+        continue;
+      }
       const finish = secondVisit.end + finalBudget;
       const wait = secondVisit.start - arrives;
       const slack = wait + Math.max(0, Math.min(b.latest - secondVisit.end, limits.end - finish));
@@ -217,7 +230,7 @@ export function schedulePair(first, second, outbound, incoming, limits = tripLim
       }
     }
   }
-  return best ?? null;
+  return limits.testOnly ? feasibleQuality : best ?? null;
 }
 
 export function scenicEvidence(route, returnRoute) {
@@ -244,7 +257,7 @@ export function scenicEvidence(route, returnRoute) {
 }
 
 export function candidatePairs(cities, days, options) {
-  const byDate = new Map(days.map(({ date }) => [date, new Map(cities.map((city) => [city.slug, visitWindows(city, date)]))]));
+  const byDate = new Map(days.map(({ date }) => [date, new Map(cities.map((city) => [city.slug, visitWindows(city, date, options)]))]));
   const pairs = [];
   for (const from of cities) {
     if ((options.city && from.slug !== options.city) || (options.region && from.region !== options.region)) continue;
@@ -256,9 +269,10 @@ export function candidatePairs(cities, days, options) {
       const dates = [];
       for (const day of days) {
         const a = byDate.get(day.date).get(from.slug), b = byDate.get(day.date).get(to.slug);
-        if (schedulePair(a, b, optimistic, options.roundtrip ? optimistic : null, { ...tripLimits, start: day.dayStart ?? tripLimits.start })) dates.push({ ...day, a, b });
+        const quality = schedulePair(a, b, optimistic, options.roundtrip ? optimistic : null, { ...tripLimits, start: day.dayStart ?? tripLimits.start, testOnly: true });
+        if (quality !== null) dates.push({ ...day, a, b, quality });
       }
-      if (dates.length) pairs.push({ from, to, distance, dates });
+      if (dates.length) pairs.push({ from, to, distance, dates, quality: dates.reduce((best, day) => Math.max(best, day.quality), 0) });
     }
   }
   return pairs.sort((a, b) => a.distance - b.distance ||
@@ -267,21 +281,32 @@ export function candidatePairs(cities, days, options) {
 
 function chooseCandidates(pairs, options) {
   const selected = [], seen = new Set();
-  // Prefer trying distinct pairs first; reverse directions are still possible if enough budget remains.
-  for (const pair of pairs) {
-    if (selected.length === tripLimits.candidates) break;
+  const add = (pair) => {
+    if (!pair || selected.length >= tripLimits.candidates) return;
     const key = [pair.from.slug, pair.to.slug].sort().join(':');
-    if (seen.has(key)) continue;
-    seen.add(key);
-    selected.push(pair);
+    if (!seen.has(key)) { seen.add(key); selected.push(pair); }
+  };
+  // Keep real scheduled places in contention even after exteriors remove the old scarcity.
+  // A nationwide calendar also keeps at least one nearby origin per region in its small route budget.
+  if (options.mode === 'calendar' && !options.region && !options.city) {
+    for (const region of [...new Set(pairs.map(({ from }) => from.region))]) add(pairs.find(({ from }) => from.region === region));
+  }
+  const scheduled = pairs.filter(({ quality }) => quality > 0).sort((a, b) => b.quality - a.quality || a.distance - b.distance);
+  const highQualityTarget = Math.min(tripLimits.candidates - 2, selected.length + 3);
+  for (const pair of scheduled) {
+    if (selected.length >= highQualityTarget) break;
+    add(pair);
   }
   for (const pair of pairs) {
-    if (selected.length === tripLimits.candidates) break;
+    if (selected.length >= tripLimits.candidates) break;
+    add(pair);
+  }
+  for (const pair of pairs) {
+    if (selected.length >= tripLimits.candidates) break;
     if (!selected.includes(pair) && !options.city && !options.roundtrip) selected.push(pair);
   }
   return selected;
 }
-
 function tripSort(a, b) { return b.score - a.score || a.date.localeCompare(b.date) || a.bikeMinutes - b.bikeMinutes || a.id.localeCompare(b.id); }
 
 function resultSelection(trips, mode) {
@@ -340,8 +365,11 @@ export async function planTrips(cities, options, { fetchRoute, signal, now = new
       const schedule = schedulePair(day.a, day.b, route.minutes, returnRoute?.minutes ?? null, { ...tripLimits, start: day.dayStart ?? tripLimits.start });
       if (!schedule) continue;
       const score = schedule.grade + scenic.score - bikeMinutes * 0.18;
+      const outside = schedule.visits.filter(({ kind }) => kind === 'exterior').length;
       const scoreNotes = [
-        schedule.visits.some(({ kind }) => kind === 'event') ? 'Minstens één bezoek met een gepubliceerd tijdstip.' : 'Beide bezoeken passen binnen gepubliceerde openingsuren.',
+        outside === 2 ? 'Twee gedocumenteerde buitenstops, zonder afhankelijkheid van openingsuren.'
+          : outside === 1 ? 'Eén gedocumenteerde buitenstop; het andere bezoek past binnen gepubliceerde tijden.'
+            : schedule.visits.some(({ kind }) => kind === 'event') ? 'Minstens één bezoek met een gepubliceerd tijdstip.' : 'Beide bezoeken passen binnen gepubliceerde openingsuren.',
         'Rekent met minstens ' + tripLimits.cityTransfer + ' min per lokale verplaatsing en ' + tripLimits.bikeBuffer + ' min marge per fietsrit.',
         ...scenic.notes,
       ];
@@ -354,8 +382,11 @@ export async function planTrips(cities, options, { fetchRoute, signal, now = new
     countCandidates: pairs.length,
     checkedRoutes, failedRoutes,
     notes: [
-      'Geen volledige rangschikking: ' + candidates.length + ' van ' + pairs.length + ' combinaties met bekende bezoekuren kregen voorrang voor een echte routecheck.',
-      'Onbekende bezoekuren tellen niet mee. Feest- en uitzonderingsdagen kunnen afwijken; controleer vóór vertrek de bron.',
+      'Geen volledige rangschikking: ' + candidates.length + ' van ' + pairs.length + ' combinaties met passende bezoekmomenten kregen voorrang voor een echte routecheck.',
+      options.scheduledOnly
+        ? 'Deze zoekopdracht gebruikt alleen bezoeken met gepubliceerde uren. Feest- en uitzonderingsdagen kunnen afwijken.'
+        : 'Buitenstops gebruiken een voorzichtige planning tussen 10 en 16 uur, geen gepubliceerde openingstijden. Binnenbezoeken en evenementen vereisen gepubliceerde tijden.',
+      'Een buitenstop gaat over zicht vanaf de openbare weg. Werken of tijdelijke afsluitingen kunnen de route of het zicht veranderen.',
       'De router berekent de rit tussen de stadscentra; lokale verplaatsingen en bezoekduur zijn begroot, niet gemeten. Live evenementen zonder bruikbare locatie tellen niet mee.',
       ...(failedRoutes ? ['Niet elke kansrijke route kon worden berekend. De resultaten zijn onvolledig.'] : []),
     ],

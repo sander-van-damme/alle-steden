@@ -15,3 +15,20 @@ wd:Q670500 a schema:City ;
         schema:latitude 50.716666666 ;
         schema:longitude 4.866666666
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/25048-CLT-0001-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Église Saint-Médard"@fr ;
+    schema:description "De historische Sint-Medarduskerk."@nl ;
+    schema:containedInPlace wd:Q670500 ;
+    schema:identifier "25048-CLT-0001-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.721162 ;
+        schema:longitude 4.868924
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/25048-CLT-0001-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/25048-CLT-0001-01>, <https://openchurches.eu/fr-be/edifices/saint-medard-jodoigne> .

@@ -1,8 +1,9 @@
 import {
   sources, safeUrl, compact, dateValue, displayDate, getJson, regionalSource,
-  getWikidata, getWallonia, getBrussels, cityEventSources, getOsmHours,
-  mergePlaces, upcomingEvents, dedupeEvents,
+  getWikidata, getWallonia, getBrusselsPlaces, getFlemishHeritage, cityEventSources, getOsmHours,
+  interleavePlaceSources, mergePlaces, upcomingEvents, dedupeEvents,
 } from './sources.js';
+import { livePlaceFragment, placeSnapshotTurtle } from './place-rdf.js';
 
 const root = document.querySelector('[data-city]');
 const el = (tag, text, classname) => {
@@ -29,7 +30,11 @@ function sourceLine(item) {
     const source = sources[key];
     if (i) paragraph.append(' · ');
     paragraph.append(link(source.label, source.href));
-    if (key === 'wallonia' || key === 'namur') paragraph.append(' (', link('CC BY 4.0', source.license), ')');
+    if (source.license) {
+      const license = source.license.includes('/by/4.0') ? 'CC BY 4.0'
+        : source.license.includes('/zero/') ? 'CC0' : 'Gebruiksvoorwaarden';
+      paragraph.append(' (', link(license, source.license), ')');
+    }
   });
   return paragraph;
 }
@@ -46,8 +51,26 @@ function appendHours(card, item) {
   card.append(row);
 }
 
+const placeFragments = (item) => [...new Set([item, ...(item.recordReferences ?? [])].map(livePlaceFragment).filter(Boolean))];
+
+function ensurePlaceAnchors(card, item) {
+  for (const id of placeFragments(item)) {
+    if (card.id === id || document.getElementById(id)) continue;
+    const alias = el('span');
+    alias.id = id;
+    alias.setAttribute('aria-hidden', 'true');
+    card.prepend(alias);
+  }
+}
+
 function buildCard(item) {
   const card = el('li');
+  placeFragments(item).forEach((id) => {
+    const alias = el('span');
+    alias.id = id;
+    alias.setAttribute('aria-hidden', 'true');
+    card.append(alias);
+  });
   const heading = el('h3');
   const website = safeUrl(item.website);
   heading.append(website ? link(item.name, website) : document.createTextNode(item.name));
@@ -100,12 +123,53 @@ function fromStatic(section) {
 
 function placeSources(city) {
   const region = regionalSource(city);
-  const getRegional = region === 'brussels' ? () => getBrussels().then((items) => ({ items }))
-    : region === 'wallonia' ? () => getWallonia(city) : () => readProxy(city, 'flanders');
-  return [
-    { key: 'wikidata', run: () => getWikidata(city).then((items) => ({ items })) },
-    { key: region, run: getRegional },
+  const wikidata = { key: 'wikidata', run: () => getWikidata(city).then((items) => ({ items })) };
+  if (region === 'brussels') return [
+    wikidata,
+    ...['brussels', 'brusselsGrandPlace', 'brusselsCulture'].map((key) => ({
+      key, run: () => getBrusselsPlaces(key).then((items) => ({ items })),
+    })),
   ];
+  if (region === 'wallonia') return [wikidata, { key: region, run: () => getWallonia(city) }];
+  return [wikidata, { key: 'flanders', run: () => readProxy(city, 'flanders') },
+    { key: 'erfg', run: () => getFlemishHeritage(city) }];
+}
+
+function placeControls(section, list, city, onMore) {
+  const group = el('div', '', 'official-links');
+  const more = el('button', 'Meer plaatsen', 'button secondary');
+  more.type = 'button';
+  list.id = 'live-places-results';
+  more.setAttribute('aria-controls', list.id);
+  more.addEventListener('click', onMore);
+  const exportButton = el('button', 'Download brondata als Turtle', 'button secondary');
+  exportButton.type = 'button';
+  let snapshot;
+  exportButton.addEventListener('click', () => {
+    if (!snapshot?.count) return;
+    const url = URL.createObjectURL(new Blob([snapshot.turtle], { type: 'text/turtle; charset=utf-8' }));
+    const anchor = link('', url);
+    anchor.download = city.slug + '-live-plaatsen.ttl';
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+  });
+  group.append(more, exportButton);
+  section.querySelector('[data-status]').before(group);
+  group.hidden = more.hidden = exportButton.hidden = true;
+  return {
+    update(left, records) {
+      more.hidden = !left;
+      more.textContent = 'Meer plaatsen (' + left + ')';
+      if (records) {
+        snapshot = placeSnapshotTurtle(city, records);
+        exportButton.hidden = !snapshot.count;
+        if (snapshot.count) exportButton.title = snapshot.count + ' rechtstreeks opgehaalde records met bronvermelding';
+      }
+      group.hidden = more.hidden && exportButton.hidden;
+    },
+  };
 }
 
 function enhanceSection(section, city, type) {
@@ -114,24 +178,48 @@ function enhanceSection(section, city, type) {
   const retry = section.querySelector('[data-retry]');
   const stored = fromStatic(section);
   const configured = type === 'places' ? placeSources(city) : cityEventSources(city);
+  const batch = 18;
+  let amount = batch;
+  let activeRender = () => {};
+  const requestedFragment = location.hash.slice(1);
+  let fragmentReached = false;
+  const controls = type === 'places' ? placeControls(section, list, city, () => {
+    amount += batch;
+    activeRender();
+  }) : undefined;
   let requestId = 0;
   const load = async () => {
     const revision = ++requestId;
     const results = new Map();
+    let mappedPlaces = [];
+    let extraHours = new Map();
+    amount = batch;
+    controls?.update(0, []);
     let pending = configured.length;
     retry.hidden = true;
     retry.disabled = true;
 
-    function render() {
+    function render(exportReady = false) {
       if (revision !== requestId) return [];
       const focused = list.contains(document.activeElement) ? document.activeElement?.getAttribute('href') : null;
-      const online = configured.flatMap(({ key }) => results.get(key)?.items ?? []);
+      const groups = configured.map(({ key }) => results.get(key)?.items ?? []);
+      const online = groups.flat();
       let visible;
       if (type === 'places') {
-        const merged = mergePlaces([...stored.map(({ item, card }) => ({ ...item, card })), ...online], 18);
-        visible = merged.filter((item) => !item.card);
+        const merged = mergePlaces([...stored.map(({ item, card }) => ({ ...item, card })), ...interleavePlaceSources(groups)], 112);
+        mappedPlaces = merged;
+        const added = merged.filter((item) => !item.card);
+        if (exportReady && requestedFragment.startsWith('bron-')) {
+          const targetIndex = added.findIndex((item) => placeFragments(item).includes(requestedFragment));
+          if (targetIndex >= 0) amount = Math.max(amount, Math.ceil((targetIndex + 1) / batch) * batch);
+        }
+        visible = added.slice(0, amount).map((item) => ({ ...item, ...extraHours.get(item.wikidata) }));
+        controls.update(added.length - visible.length, exportReady ? online : undefined);
         // Enrich the curated card instead of rendering the same place a second time.
-        merged.filter(({ card, hours }) => card && hours).forEach((item) => appendHours(item.card, item));
+        merged.filter(({ card }) => card).forEach((item) => {
+          ensurePlaceAnchors(item.card, item);
+          appendHours(item.card, { ...item, ...extraHours.get(item.wikidata) });
+        });
       } else {
         const current = upcomingEvents(stored.filter(({ item }) => item.start).map(({ item, card }) => ({ ...item, card })));
         const keep = new Set(current.map(({ card }) => card));
@@ -141,6 +229,13 @@ function enhanceSection(section, city, type) {
       list.replaceChildren(...visible.map(buildCard));
       if (focused) [...list.querySelectorAll('a')].find((a) => a.getAttribute('href') === focused)?.focus({ preventScroll: true });
       list.hidden = !visible.length;
+      if (exportReady && !fragmentReached && requestedFragment.startsWith('bron-')) {
+        const target = document.getElementById(requestedFragment);
+        if (target) {
+          fragmentReached = true;
+          target.closest('li')?.scrollIntoView();
+        }
+      }
       const failures = [...results.values()].filter((result) => result?.failed || result?.partial);
       const messages = [];
       if (pending) messages.push('Actuele gegevens laden…');
@@ -154,12 +249,18 @@ function enhanceSection(section, city, type) {
       if (!pending && type === 'events' && visible.length && results.get('uit')?.state === 'not-configured') {
         messages.push('De UiTdatabank is niet aangesloten; deze lijst kan onvolledig zijn.');
       }
+      if (!pending && type === 'places' && visible.length) {
+        const total = mappedPlaces.filter((item) => !item.card).length;
+        messages.push(`${visible.length} van ${total} opgehaalde plekken zichtbaar.`);
+        if (results.get('erfg')?.items?.length) messages.push('Een inventarisvermelding bevestigt geen toegang of openingsuren.');
+      }
       status.textContent = messages.join(' ');
       retry.hidden = Boolean(pending || !failures.length);
       retry.disabled = Boolean(pending);
       return visible;
     }
 
+    activeRender = render;
     render();
     await Promise.all(configured.map(async ({ key, run }) => {
       let result;
@@ -171,17 +272,10 @@ function enhanceSection(section, city, type) {
       render();
     }));
     if (revision !== requestId || type !== 'places') return;
-    const visible = render();
-    const candidates = mergePlaces([...stored.map(({ item, card }) => ({ ...item, card })), ...configured.flatMap(({ key }) => results.get(key)?.items ?? [])], 18);
-    const hours = await getOsmHours(candidates);
-    if (revision !== requestId || !hours.size) return;
-    for (const item of candidates.filter(({ card }) => card)) {
-      if (hours.has(item.wikidata)) appendHours(item.card, { ...item, ...hours.get(item.wikidata) });
-    }
-    // Do not replace focused links while a visitor is using the list.
-    for (const [index, item] of visible.entries()) {
-      if (hours.has(item.wikidata) && list.children[index]) appendHours(list.children[index], { ...item, ...hours.get(item.wikidata) });
-    }
+    render(true);
+    extraHours = await getOsmHours(mappedPlaces);
+    if (revision !== requestId || !extraHours.size) return;
+    render();
   };
   retry.addEventListener('click', load);
   officialLinks(section, city, type);
@@ -192,7 +286,7 @@ if (root) {
   let names = [];
   try { names = JSON.parse(root.dataset.aliases ?? '[]'); } catch { /* The primary name is sufficient. */ }
   const city = { slug: root.dataset.city, region: root.dataset.region, qid: root.dataset.qid,
-    name: root.dataset.name, names };
+    name: root.dataset.name, code: root.dataset.code, names };
   for (const type of ['places', 'events']) {
     const section = root.querySelector('[data-live-' + type + ']');
     if (section) enhanceSection(section, city, type);

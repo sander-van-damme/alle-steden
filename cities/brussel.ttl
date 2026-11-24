@@ -25,3 +25,17 @@ wd:Q239 a schema:City ;
     schema:endDate "2027-01-03"^^xsd:date ;
     schema:url <https://www.brussel.be/winterpret-en-kerstmarkt> ;
     dcterms:source <https://www.brussel.be/winterpret-en-kerstmarkt> .
+
+wd:Q1255327 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Stadhuis van Brussel"@nl, "Hôtel de Ville de Bruxelles"@fr ;
+    schema:description "De gotische gevel en toren zijn te zien vanaf de openbare Grote Markt. Een binnenbezoek is afzonderlijk te regelen."@nl ;
+    schema:description "La façade gothique et la tour sont visibles depuis la Grand-Place, espace public. La visite intérieure se réserve séparément."@fr ;
+    schema:containedInPlace wd:Q239 ;
+    schema:address "Grote Markt, Brussel"@nl ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.846389 ; schema:longitude 4.351669 ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://www.brussel.be/grote-markt-van-brussel> ;
+    dcterms:source <https://www.brussel.be/grote-markt-van-brussel>, <https://whc.unesco.org/en/decisions/2749/>, <https://www.wikidata.org/wiki/Q1255327> .

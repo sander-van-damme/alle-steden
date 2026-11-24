@@ -15,3 +15,20 @@ wd:Q668861 a schema:City ;
         schema:latitude 50.5 ;
         schema:longitude 4.1
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/55035-CLT-0003-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Ancien Hospice Saint-Jacques"@fr ;
+    schema:description "De beschermde gevels van het voormalige Sint-Jacobsgasthuis aan de Faubourg de Binche."@nl ;
+    schema:containedInPlace wd:Q668861 ;
+    schema:identifier "55035-CLT-0003-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.499703 ;
+        schema:longitude 4.108839
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/55035-CLT-0003-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/55035-CLT-0003-01> .

@@ -15,3 +15,19 @@ wd:Q497764 a schema:City ;
         schema:latitude 50.159044 ;
         schema:longitude 5.22185
     ] .
+
+# Erfgoed aan de openbare weg
+<https://bibliotheca.rochefort.be/pppw/repos/9-4-les-kiosques/kiosque-du-square-crepin-a-rochefort-1> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Kiosque du Square Crépin"@fr, "Muziekkiosk op het Square Crépin"@nl ;
+    schema:description "De achthoekige muziekkiosk op het Square Crépin in het centrum van Rochefort, met een lier op het dak."@nl ;
+    schema:containedInPlace wd:Q497764 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.157571 ;
+        schema:longitude 5.220759
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://bibliotheca.rochefort.be/pppw/repos/9-4-les-kiosques/kiosque-du-square-crepin-a-rochefort-1> ;
+    dcterms:source <https://bibliotheca.rochefort.be/pppw/repos/9-4-les-kiosques/kiosque-du-square-crepin-a-rochefort-1> .

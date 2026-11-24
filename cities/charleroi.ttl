@@ -15,3 +15,20 @@ wd:Q81046 a schema:City ;
         schema:latitude 50.416666666 ;
         schema:longitude 4.444166666
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/52011-CLT-0070-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Hôtel de ville et beffroi de Charleroi"@fr, "Stadhuis en belfort van Charleroi"@nl ;
+    schema:description "Het stadhuis met zijn belfort aan de Place Vauban, vroeger Place Charles II."@nl ;
+    schema:containedInPlace wd:Q81046 ;
+    schema:identifier "52011-CLT-0070-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.411971 ;
+        schema:longitude 4.443724
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/52011-CLT-0070-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/52011-CLT-0070-01>, <https://whc.unesco.org/fr/list/0943/cartes/>, <https://www.charleroi.be/decouvrir/patrimoine/patrimoine-civil> .

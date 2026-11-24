@@ -15,3 +15,19 @@ wd:Q151831 a schema:City ;
         schema:latitude 50.633333333 ;
         schema:longitude 6.033333333
     ] .
+
+# Erfgoed aan de openbare weg
+<https://www.ostbelgien.eu/de/fiche/virtualtour/st-nikolaus-kirche> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "St.-Nikolaus-Kirche"@de, "Sint-Niklaaskerk van Eupen"@nl ;
+    schema:description "De Sint-Niklaaskerk met twee torens aan het Marktplein."@nl ;
+    schema:containedInPlace wd:Q151831 ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.630733 ;
+        schema:longitude 6.032576
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://www.ostbelgien.eu/de/fiche/virtualtour/st-nikolaus-kirche> ;
+    dcterms:source <https://www.ostbelgien.eu/de/fiche/virtualtour/st-nikolaus-kirche>, <https://www.eupen.be/leben-in-eupen/gesundheit-und-soziales/religion/>, <https://territoire.wallonie.be/fr/liendoc/BC_PAT/63023-CLT-0015-02> .

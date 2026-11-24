@@ -1,6 +1,7 @@
 import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import { Parser, Store } from 'n3';
 import { cityPage, indexPage, layout, plannerPage } from './pages.mjs';
 
@@ -11,6 +12,8 @@ const schema = 'https://schema.org/';
 const rdfType = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 const nisCode = 'http://www.wikidata.org/prop/direct/P1567';
 const sourcePredicate = 'http://purl.org/dc/terms/source';
+const exteriorFeatureName = 'Vanop de openbare weg te bekijken';
+const xsdBoolean = 'http://www.w3.org/2001/XMLSchema#boolean';
 const wikidata = 'http://www.wikidata.org/entity/';
 const regions = new Map([
   [wikidata + 'Q9337', 'Vlaanderen'],
@@ -87,6 +90,17 @@ function readCity(filename, turtle) {
     return { lat: Number(lat), lon: Number(lon) };
   }
 
+  function entrySource(entity) {
+    return graph.getObjects(entity, sourcePredicate, null).find((term) => term.termType === 'NamedNode' && /^https?:\/\//.test(term.value))?.value;
+  }
+
+  function exteriorView(entity) {
+    return objects(entity, 'amenityFeature').some((feature) =>
+      graph.countQuads(feature, rdfType, schema + 'LocationFeatureSpecification', null) > 0 &&
+      labels(feature, 'name').some(({ value, language }) => value === exteriorFeatureName && language === 'nl') &&
+      labels(feature, 'value').some(({ value, datatype }) => ['true', '1'].includes(value) && datatype?.value === xsdBoolean));
+  }
+
   function entries(subjects) {
     return [...new Map(subjects.map((entity) => [entity.value, entity])).values()]
       .map((entity) => ({
@@ -101,8 +115,9 @@ function readCity(filename, turtle) {
           from: text(spec, 'validFrom'), through: text(spec, 'validThrough'),
           opens: text(spec, 'opens'), closes: text(spec, 'closes'),
         })),
-        source: graph.getObjects(entity, sourcePredicate, null).find((term) => term.termType === 'NamedNode' &&
-          /^https?:\/\//.test(term.value))?.value,
+        source: entrySource(entity),
+        // This is an explicit sourced frontage observation. Missing opening hours alone never qualifies.
+        exterior: exteriorView(entity) && Boolean(entrySource(entity)),
         url: objects(entity, 'url').find((term) => term.termType === 'NamedNode' &&
           /^https?:\/\//.test(term.value))?.value ?? itemUrl(entity),
       }))
@@ -145,33 +160,60 @@ await rm(output, { recursive: true, force: true });
 await cp(resolve(root, 'site'), output, { recursive: true });
 await mkdir(resolve(output, 'data'), { recursive: true });
 
+// Cloudflare serves scripts with substantial freshness; put each built module graph and stylesheet
+// under a content-specific URI so an upgraded planner never imports the previous coverage logic.
+const assetSource = resolve(root, 'site', 'assets');
+const assetNames = (await readdir(assetSource)).filter((name) => /\.(?:m?js|css)$/.test(name)).sort();
+const assets = await Promise.all(assetNames.map(async (name) => [name, await readFile(resolve(assetSource, name))]));
+const assetHash = createHash('sha256');
+for (const [name, bytes] of assets) assetHash.update(name).update('\0').update(bytes).update('\0');
+const assetVersion = 'v-' + assetHash.digest('hex').slice(0, 16);
+await mkdir(resolve(output, 'assets', assetVersion), { recursive: true });
+await Promise.all(assets.map(([name, bytes]) => writeFile(resolve(output, 'assets', assetVersion, name), bytes)));
+const withAssets = (html) => html.replace(/((?:src|href)=")\/assets\/([a-z0-9._-]+\.(?:m?js|css))(?=")/gi,
+  (_, attribute, name) => attribute + '/assets/' + assetVersion + '/' + name);
+
 async function writePage(path, html) {
   const directory = resolve(output, path);
   await mkdir(directory, { recursive: true });
-  await writeFile(resolve(directory, 'index.html'), html);
+  await writeFile(resolve(directory, 'index.html'), withAssets(html));
 }
 
 const plannerCities = cities.filter(({ coordinates }) => coordinates).map(({ slug, name, names, region, cityUrl, coordinates, places, events }) => ({
   slug, name, names, region, qid: cityUrl.split('/').at(-1),
   lat: Number(coordinates.latitude), lon: Number(coordinates.longitude),
-  places: places.filter(({ openingHours, specialHours }) => openingHours.length || specialHours.length)
-    .map(({ name, openingHours, specialHours, url, source, point }) => ({ name, openingHours, specialHours, url, source, ...point })),
+  places: places.filter(({ openingHours, specialHours, exterior }) => openingHours.length || specialHours.length || exterior)
+    .map(({ id, name, openingHours, specialHours, url, source, point, exterior }) => ({ id, name, openingHours, specialHours, url, source, exterior, ...point })),
   events: events.filter(({ start, end }) => start?.includes('T') && end?.includes('T'))
     .map(({ name, start, end, url, source, point }) => ({ name, start, end, url, source, ...point })),
 }));
+
+const catalogCoverage = {
+  totalCities: plannerCities.length,
+  exteriorCities: plannerCities.filter(({ places }) => places.some(({ exterior }) => exterior)).length,
+  scheduledPlaceCities: plannerCities.filter(({ places }) => places.some(({ openingHours, specialHours }) => openingHours.length || specialHours.length)).length,
+  locallyTimedEventCities: plannerCities.filter(({ events }) => events.length).length,
+  exteriorPlaces: plannerCities.reduce((total, { places }) => total + places.filter(({ exterior }) => exterior).length, 0),
+  byRegion: Object.fromEntries([...new Set(plannerCities.map(({ region }) => region))].map((region) => {
+    const members = plannerCities.filter((city) => city.region === region);
+    return [region, { total: members.length, exterior: members.filter(({ places }) => places.some(({ exterior }) => exterior)).length }];
+  })),
+  missingExteriorCities: plannerCities.filter(({ places }) => !places.some(({ exterior }) => exterior)).map(({ slug }) => slug),
+};
 
 await Promise.all([
   cp(source, resolve(output, 'data'), { recursive: true, filter: (path) => path === source || path.endsWith('.ttl') }),
   writePage('.', indexPage(cities)),
   writePage('planner', plannerPage(plannerCities)),
   writeFile(resolve(output, 'planner-data.json'), JSON.stringify(plannerCities)),
+  writeFile(resolve(output, 'coverage.json'), JSON.stringify(catalogCoverage, null, 2) + '\n'),
   writeFile(resolve(output, 'data', 'cities.json'), JSON.stringify(Object.fromEntries(cities.map(({ slug, name, names, region, cityUrl }) =>
     [slug, { name, names, region, qid: cityUrl.split('/').at(-1) }])))),
-  writeFile(resolve(output, '404.html'), layout({
+  writeFile(resolve(output, '404.html'), withAssets(layout({
     title: 'Pagina niet gevonden · Alle Steden',
     main: '<main id="inhoud" class="wrap detail"><h1>Pagina niet gevonden</h1><p><a href="/">Terug naar de stedenlijst</a></p></main>',
-  })),
+  }))),
   ...cities.map((city) => writePage(`steden/${city.slug}`, cityPage(city))),
 ]);
 
-console.log(`${cities.length} steden gebouwd in dist/.`);
+console.log(`${cities.length} steden gebouwd in dist/. ${catalogCoverage.exteriorCities} steden hebben een gedocumenteerde buitenstop.`);

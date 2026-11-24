@@ -15,3 +15,20 @@ wd:Q650274 a schema:City ;
         schema:latitude 50.13202 ;
         schema:longitude 5.78936
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/82014-CLT-0001-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Église Sainte-Catherine"@fr ;
+    schema:description "De geklasseerde Sint-Catharinakerk in Houffalize."@nl ;
+    schema:containedInPlace wd:Q650274 ;
+    schema:identifier "82014-CLT-0001-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.133440 ;
+        schema:longitude 5.788967
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/82014-CLT-0001-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/82014-CLT-0001-01> .

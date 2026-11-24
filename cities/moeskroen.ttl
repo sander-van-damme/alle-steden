@@ -15,3 +15,20 @@ wd:Q220145 a schema:City ;
         schema:latitude 50.7444 ;
         schema:longitude 3.2156
     ] .
+
+# Erfgoed aan de openbare weg
+<https://inventairepatrimoine.wallonie.be/fr/inventaire-regional-du-patrimoine/fiche/54007-INV-0029-02> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Hôtel de ville de Mouscron"@fr, "Stadhuis van Moeskroen"@nl ;
+    schema:description "De gevel van het neogotische stadhuis aan de Grote Markt."@nl ;
+    schema:containedInPlace wd:Q220145 ;
+    schema:identifier "54007-INV-0029-02" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.743447 ;
+        schema:longitude 3.214137
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://inventairepatrimoine.wallonie.be/fr/inventaire-regional-du-patrimoine/fiche/54007-INV-0029-02> ;
+    dcterms:source <https://inventairepatrimoine.wallonie.be/fr/inventaire-regional-du-patrimoine/fiche/54007-INV-0029-02> .

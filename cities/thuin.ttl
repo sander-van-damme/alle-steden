@@ -15,3 +15,20 @@ wd:Q669186 a schema:City ;
         schema:latitude 50.3397445 ;
         schema:longitude 4.2870475
     ] .
+
+# Erfgoed aan de openbare weg
+wd:Q2893756 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Beffroi de Thuin"@fr, "Belfort van Thuin"@nl ;
+    schema:description "Het belfort aan de Place du Chapitre, opgenomen op de Werelderfgoedlijst."@nl ;
+    schema:containedInPlace wd:Q669186 ;
+    schema:identifier "56078-CLT-0001-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.339645 ;
+        schema:longitude 4.286605
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/56078-CLT-0001-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/56078-CLT-0001-01>, <https://whc.unesco.org/fr/list/0943/cartes/> .

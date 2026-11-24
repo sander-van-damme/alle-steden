@@ -15,3 +15,15 @@ wd:Q499599 a schema:City ;
         schema:latitude 51.25 ;
         schema:longitude 5.533333333
     ] .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+wd:Q2457816 a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Parochiekerk Sint-Monulphus en Gondulphus"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Michielsplein."@nl ;
+    schema:containedInPlace wd:Q499599 ;
+    schema:address "Michielsplein (Hamont-Achel)"@nl ;
+    wdt:P1764 "80089" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.25465 ; schema:longitude 5.47917 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/80089> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/80089> .

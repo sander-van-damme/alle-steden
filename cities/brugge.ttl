@@ -55,3 +55,15 @@ wd:Q1108949 a schema:Museum ;
     schema:endDate "2027-05-06T17:30:00+02:00"^^xsd:dateTime ;
     schema:url <https://www.visitbruges.be/nl/agenda/evenementenkalender/heilig-bloedprocessie-2027> ;
     dcterms:source <https://www.visitbruges.be/nl/agenda/evenementenkalender/heilig-bloedprocessie-2027> .
+
+# Buitenstop uit de Inventaris Onroerend Erfgoed
+<https://id.erfgoed.net/erfgoedobjecten/29457> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Belfort van Brugge"@nl ;
+    schema:description "Buitenkant te bekijken vanaf de openbare ruimte bij Markt."@nl ;
+    schema:containedInPlace wd:Q12994 ;
+    schema:address "Markt 7, Oude Burg 2A-D, 2F, Wollestraat 2 (Brugge)"@nl ;
+    wdt:P1764 "29457" ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ; schema:name "Vanop de openbare weg te bekijken"@nl ; schema:value true ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.20798 ; schema:longitude 3.22504 ] ;
+    schema:url <https://id.erfgoed.net/erfgoedobjecten/29457> ;
+    dcterms:source <https://id.erfgoed.net/erfgoedobjecten/29457> .

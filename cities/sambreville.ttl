@@ -16,3 +16,20 @@ wd:Q650185 a schema:City ;
         schema:latitude 50.45 ;
         schema:longitude 4.6
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/92137-CLT-0001-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Vieille Tour de Tamines"@fr ;
+    schema:description "De beschermde oude toren aan de Rue Saint-Martin, in Tamines."@nl ;
+    schema:containedInPlace wd:Q650185 ;
+    schema:identifier "92137-CLT-0001-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.432590 ;
+        schema:longitude 4.614777
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/92137-CLT-0001-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/92137-CLT-0001-01> .

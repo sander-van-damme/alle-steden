@@ -6,6 +6,7 @@ const dateFormat = new Intl.DateTimeFormat('nl-BE', {
   weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
 });
 const svgNS = 'http://www.w3.org/2000/svg';
+const exteriorLabel = 'Vanop de openbare weg te bekijken';
 
 function element(tag, className, content) {
   const node = document.createElement(tag);
@@ -223,14 +224,20 @@ function renderTimeline(trip) {
   for (const item of trip.timeline ?? []) {
     const row = element('li');
     const content = element('div');
-    row.dataset.kind = item.kind;
+    const visit = item.kind === 'visit' || item.kind === 'exterior' ? (trip.visits ?? [])[seen++] : null;
+    const exterior = item.kind === 'exterior' || visit?.kind === 'exterior';
+    row.dataset.kind = exterior ? 'visit' : item.kind;
+    if (exterior) row.dataset.visitKind = 'exterior';
     row.append(element('span', 'trip-time', formatWindow(item.start, item.end)), content);
-    const visit = item.kind === 'visit' ? (trip.visits ?? [])[seen++] : null;
     content.append(
       visit?.url ? link(item.label ?? visit.name, visit.url, 'trip-timeline-name')
         : element('span', 'trip-timeline-name', item.label ?? visit?.name),
     );
-    if (visit?.windowLabel) content.append(element('small', '', visit.windowLabel));
+    if (exterior) content.append(element('span', 'entry-badge trip-exterior-badge', exteriorLabel));
+    const windowLabel = exterior && visit?.windowLabel?.startsWith(exteriorLabel)
+      ? visit.windowLabel.slice(exteriorLabel.length).replace(/^\s*·\s*/, '')
+      : visit?.windowLabel;
+    if (windowLabel) content.append(element('small', '', windowLabel));
     const source = sourceLink(visit?.source, 'trip-visit-source');
     if (source) content.append(source);
     list.append(row);
@@ -345,6 +352,8 @@ function renderTrip(trip) {
   if (Number.isFinite(trip.bikeMinutes)) metrics.append(element('li', '', `Circa ${formatDuration(trip.bikeMinutes)} fietstijd`));
   if (Number.isFinite(trip.finish)) metrics.append(element('li', '', `Geschat klaar om ${formatTime(trip.finish)}`));
   metrics.append(element('li', '', trip.returnRoute ? 'Heen en terug' : 'Enkele rit'));
+  const exteriorCount = (trip.visits ?? []).filter((visit) => visit.kind === 'exterior').length;
+  if (exteriorCount) metrics.append(element('li', 'trip-exterior-metric', exteriorCount === 1 ? '1 buitenstop' : `${exteriorCount} buitenstops`));
   const map = renderRouteMap(trip);
   const core = element('div', 'trip-core');
   const panels = element('div', 'trip-panels');
@@ -361,7 +370,7 @@ function renderTrip(trip) {
   return section;
 }
 
-export function renderPlannerResults(container, results, { mode = 'date' } = {}) {
+export function renderPlannerResults(container, results, { mode = 'date', scheduledOnly = false } = {}) {
   const focusKey = container.contains(document.activeElement) ? document.activeElement.dataset.tripPois : null;
   const limitsOpen = container.querySelector('.planner-limits')?.open;
   const main = document.createDocumentFragment();
@@ -383,7 +392,9 @@ export function renderPlannerResults(container, results, { mode = 'date' } = {})
     main.append(limits);
   }
   if (!trips.length) {
-    main.append(element('p', 'planner-empty', 'Geen passende rit gevonden binnen deze instellingen. Kies een ruimere afstand, ander gewest of een andere datum.'));
+    const hint = scheduledOnly ? 'Laat ook buitenstops toe of probeer een andere datum.'
+      : 'Probeer een ruimere fietsafstand of een andere datum of vertrekplek.';
+    main.append(element('p', 'planner-empty', `Met de beschikbare gegevens kon de planner geen passende rit samenstellen. ${hint} Niet alle steden hebben evenveel bezoekgegevens.`));
   } else if (mode === 'calendar' || mode === 'place') {
     const groups = new Map();
     for (const trip of trips) {

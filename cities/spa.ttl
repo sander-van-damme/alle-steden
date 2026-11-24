@@ -15,3 +15,20 @@ wd:Q39865 a schema:City ;
         schema:latitude 50.492277196 ;
         schema:longitude 5.862210536
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/63072-CLT-0016-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Galerie Léopold II"@fr ;
+    schema:description "De historische wandelgalerij in het Parc de Sept Heures."@nl ;
+    schema:containedInPlace wd:Q39865 ;
+    schema:identifier "63072-CLT-0016-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.492952 ;
+        schema:longitude 5.861282
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/63072-CLT-0016-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/63072-CLT-0016-01> .

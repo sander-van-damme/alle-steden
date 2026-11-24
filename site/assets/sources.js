@@ -2,6 +2,7 @@ const sparqlHeaders = { Accept: 'application/sparql-results+json' };
 const portal = 'https://linked.toerismevlaanderen.be';
 const walloon = 'https://geoservices.wallonie.be/arcgis/rest/services/TOURISME/OFFRES_TOURISTIQUES/MapServer';
 const brussels = 'https://opendata.brussels.be';
+const heritage = 'https://inventaris.onroerenderfgoed.be';
 const namur = 'https://www.odwb.be';
 const gent = 'https://data.stad.gent';
 const ccby = 'https://creativecommons.org/licenses/by/4.0/';
@@ -11,6 +12,12 @@ export const sources = {
   flanders: { label: 'Toerisme Vlaanderen', href: portal },
   wallonia: { label: 'Tourisme Wallonie', href: 'https://geoportail.wallonie.be/catalogue/91721175-5f01-410c-8c78-37c1d1893ba2.html', license: ccby },
   brussels: { label: 'Stad Brussel', href: brussels + '/explore/assets/bruxelles_musees/', license: 'https://creativecommons.org/publicdomain/zero/1.0/' },
+  brusselsGrandPlace: { label: 'Stad Brussel · Grote Markt', href: brussels + '/explore/assets/description-des-batiments-de-la-grand-place/',
+    license: ccby, attribution: 'Ville de Bruxelles/Data Management · Behind Brussels · Google Maps' },
+  brusselsCulture: { label: 'Stad Brussel · Cultuur', href: brussels + '/explore/assets/bruxelles_lieux_culturels/',
+    license: ccby, attribution: 'Ville de Bruxelles/Data Management · Google Maps' },
+  erfg: { label: 'Agentschap Onroerend Erfgoed', href: 'https://metadata.omgeving.vlaanderen.be/srv/api/records/af8c650c-112d-4224-8c81-fd020da7fd10',
+    license: 'https://data.vlaanderen.be/doc/licentie/modellicentie-gratis-hergebruik/v1.0' },
   namur: { label: 'Ville de Namur', href: namur + '/explore/dataset/namur-agenda-des-evenements/information/', license: ccby },
   imio: { label: 'iMio · Open Data Wallonië-Brussel', href: namur + '/explore/dataset/evenements-en-wallonie/information/' },
   gent: { label: 'Visit Gent', href: gent + '/explore/assets/toeristische-evenementen-visit-gent/' },
@@ -50,6 +57,11 @@ export const safeUrl = (value) => {
 export const compact = (value, limit = 220) => typeof value === 'string'
   ? value.replace(/\s+/g, ' ').trim().slice(0, limit)
   : '';
+export function coordinatesInBelgium(latitude, longitude) {
+  return Number.isFinite(latitude) && Number.isFinite(longitude) &&
+    latitude >= 49.4 && latitude <= 51.6 && longitude >= 2.4 && longitude <= 6.5
+    ? { latitude, longitude } : undefined;
+}
 export const cityNames = (city) => [...new Set([city.name, ...(city.names ?? [])].map((name) => compact(name, 90)).filter(Boolean))].slice(0, 8);
 const freeString = (value) => JSON.stringify(value);
 const dataList = (value) => Array.isArray(value) ? value : null;
@@ -79,19 +91,25 @@ export function wikidataQuery(city) {
   if (!qid.test(city.qid)) throw new Error('Ongeldige Wikidata-code');
   const local = city.region === 'Wallonië' ? ['fr', 'de', 'nl', 'en']
     : ['nl', 'fr', 'en', 'de'];
-  return `SELECT ?item ?name ?site ?sitelinks ?osmNode ?osmWay ?osmRelation WHERE {
+  // Some merged cities have unpopulated new municipality entities. Follow only
+  // declared predecessor municipalities with a recent official end date, not
+  // an arbitrary radius or a general geographical name match.
+  return `SELECT ?item ?name ?site ?sitelinks ?osmNode ?osmWay ?osmRelation ?point WHERE {
     { SELECT DISTINCT ?item ?sitelinks WHERE {
-      VALUES ?type { wd:Q33506 wd:Q570116 wd:Q23413 wd:Q2977 wd:Q16970 wd:Q4989906 wd:Q9259 wd:Q2319498 wd:Q839954 wd:Q15243209 wd:Q22698 wd:Q167346 wd:Q207694 wd:Q217646 wd:Q1640824 wd:Q1802963 wd:Q12518 wd:Q2065736 wd:Q245117 }
+      VALUES ?type { wd:Q33506 wd:Q570116 wd:Q23413 wd:Q2977 wd:Q16970 wd:Q4989906 wd:Q9259 wd:Q2319498 wd:Q839954 wd:Q15243209 wd:Q22698 wd:Q167346 wd:Q207694 wd:Q217646 wd:Q1640824 wd:Q1802963 wd:Q12518 wd:Q2065736 wd:Q245117 wd:Q38720 wd:Q108325 wd:Q44613 wd:Q174782 }
       { ?item wdt:P131 wd:${city.qid} }
       UNION { ?sub wdt:P131 wd:${city.qid}. ?item wdt:P131 ?sub. }
+      UNION { wd:${city.qid} wdt:P1365 ?old . ?old wdt:P576 ?ended . FILTER(YEAR(?ended) >= 2018) ?item wdt:P131 ?old. }
+      UNION { wd:${city.qid} wdt:P1365 ?old . ?old wdt:P576 ?ended . FILTER(YEAR(?ended) >= 2018) ?sub wdt:P131 ?old. ?item wdt:P131 ?sub. }
       ?item wdt:P31 ?type; wikibase:sitelinks ?sitelinks.
-    } ORDER BY DESC(?sitelinks) ?item LIMIT 24 }
+    } ORDER BY DESC(?sitelinks) ?item LIMIT 42 }
     ${local.map((lang) => `OPTIONAL { ?item rdfs:label ?label_${lang}. FILTER(LANG(?label_${lang}) = "${lang}") }`).join('\n')}
     BIND(COALESCE(${local.map((lang) => '?label_' + lang).join(', ')}) AS ?name)
     OPTIONAL { ?item wdt:P856 ?site }
     OPTIONAL { ?item wdt:P11693 ?osmNode }
     OPTIONAL { ?item wdt:P10689 ?osmWay }
     OPTIONAL { ?item wdt:P402 ?osmRelation }
+    OPTIONAL { ?item wdt:P625 ?point }
   } ORDER BY DESC(?sitelinks) ?item`;
 }
 
@@ -127,11 +145,13 @@ const fromBindings = (doc, source) => bindings(doc).flatMap((row) => {
   const id = safeUrl(val(row, 'item'));
   const name = compact(val(row, 'name'));
   if (!id || !name) return [];
+  const point = /^Point\((-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\)$/i.exec(val(row, 'point') ?? '');
   return [{
     id, name, source,
     website: safeUrl(val(row, 'site')) ?? id.replace(/^http:\/\/(www.wikidata.org|linked.toerismevlaanderen.be)\//, 'https://$1/'),
     address: [compact(val(row, 'street')), compact(val(row, 'postcode'))].filter(Boolean).join(' · '),
     hours: compact(val(row, 'hours')), category: compact(val(row, 'kind')),
+    coordinates: point ? coordinatesInBelgium(Number(point[2]), Number(point[1])) : undefined,
     osm: ['node', 'way', 'relation'].flatMap((type) => {
       const id = val(row, 'osm' + type[0].toUpperCase() + type.slice(1));
       return /^[1-9]\d{0,12}$/.test(id ?? '') ? [{ type, id }] : [];
@@ -152,13 +172,74 @@ export async function getFlanders(city, options) {
     .filter((item) => !/^(restaurant|café|eetcafé|brasserie|snackbar|bar|bistro)(\s|$)/iu.test(item.category));
 }
 
-export async function getBrussels(options) {
-  const result = await getJson(brussels + '/api/explore/v2.1/catalog/datasets/bruxelles_musees/records?limit=20', options);
-  return rows(result, 'results').flatMap((row) => {
-    const name = compact(row.naam ?? row.nom);
-    return name ? [{ name, source: 'brussels', website: safeUrl(row.lien_web),
-      address: compact(row.adres ?? row.adresse), category: 'Museum' }] : [];
+const brusselsPlaceDatasets = Object.freeze({
+  brussels: { dataset: 'bruxelles_musees', label: 'Museum', names: ['naam', 'nom', 'name'] },
+  brusselsGrandPlace: { dataset: 'description-des-batiments-de-la-grand-place',
+    label: 'Gebouw aan de Grote Markt', names: ['naam', 'nom', 'name'] },
+  brusselsCulture: { dataset: 'bruxelles_lieux_culturels', label: 'Cultuurplek', names: ['beschrijving', 'description'] },
+});
+
+export async function getBrusselsPlaces(source = 'brussels', options) {
+  const definition = Object.hasOwn(brusselsPlaceDatasets, source) && brusselsPlaceDatasets[source];
+  if (!definition) throw new Error('Onbekende Brusselse bron');
+  const { dataset, label, names } = definition;
+  // Legacy Search includes recordid; the current Explore API resolves it.
+  const result = await getJson(parameters(brussels + '/api/records/1.0/search/', {
+    dataset, rows: 40,
+  }), options);
+  return rows(result, 'records').flatMap((record) => {
+    const row = record.fields ?? {};
+    const labels = Object.fromEntries(names.map((key, index) => [
+      ['nl', 'fr', 'en'][index], compact(row[key]),
+    ]).filter(([, value]) => value));
+    const name = labels.nl ?? labels.fr ?? labels.en;
+    const recordId = /^[0-9a-f]{40}$/i.test(record.recordid) ? record.recordid : undefined;
+    if (!name || record.datasetid !== dataset || !recordId) return [];
+    const street = compact(row.adres ?? row.adresse);
+    const locality = compact(row.gemeente ?? row.plaats ?? row.commune);
+    const point = record.geometry?.type === 'Point' ? record.geometry.coordinates : undefined;
+    const sourceRecord = brussels + '/api/explore/v2.1/catalog/datasets/' + dataset + '/records/' + recordId;
+    const sourceId = /^\d{1,12}$/.test(row.id) ? String(row.id) : recordId;
+    return [{
+      id: source + ':' + sourceId, name, labels, source, sourceRecord, sourceId,
+      website: safeUrl(row.lien_web), street, locality, postalCode: compact(row.code_postal),
+      address: [street, locality].filter(Boolean).join(' · '), category: label,
+      coordinates: coordinatesInBelgium(point?.[1], point?.[0]),
+    }];
   });
+}
+
+export const getBrussels = (options) => getBrusselsPlaces('brussels', options);
+
+export async function getFlemishHeritage(city, options = {}) {
+  if (city.region !== 'Vlaanderen' || !/^\d{5}$/.test(city.code ?? '')) return { items: [], state: 'unsupported' };
+  const result = await getJson(parameters(heritage + '/aanduidingsobjecten', {
+    gemeente: city.code, aanduidingstype: '1', geldig: 'true', per_pagina: '44',
+  }), { ...options, headers: { Accept: 'application/json' } });
+  if (!Array.isArray(result)) throw new Error('Onbekend antwoordformaat');
+  const today = localToday();
+  const items = result.flatMap((row) => {
+    const scoped = row.locatie?.gemeenten_niscodes;
+    const name = compact(row.naam);
+    const sourceId = String(row.id);
+    const designationType = row.aanduidingstype ?? row.type;
+    // A multi-municipality designation is not wholly contained in this city.
+    if (!name || !/^[1-9]\d{0,10}$/.test(sourceId) || row.status?.actief !== true ||
+      !Array.isArray(scoped) || scoped.length !== 1 || String(scoped[0]) !== city.code ||
+      designationType?.uri !== 'https://id.erfgoed.net/thesauri/aanduidingstypes/1' ||
+      (row.geldigheid_einde && row.geldigheid_einde.slice(0, 10) < today) ||
+      (row.geldigheid_start && row.geldigheid_start.slice(0, 10) > today)) return [];
+    const website = heritage + '/aanduidingsobjecten/' + sourceId;
+    return [{
+      id: 'erfg:' + sourceId, sourceId, source: 'erfg', name, labels: { nl: name },
+      website, sourceRecord: 'https://id.erfgoed.net/aanduidingsobjecten/' + sourceId,
+      address: compact(row.locatie_samenvatting), locality: compact(row.gemeente_samenvatting),
+      category: 'Beschermd monument',
+    }];
+  });
+  const highlight = /\b(begijnhof|belfort|abdij|kasteel|stadhuis|kathedraal|burcht|windmolen|watermolen|museum|basiliek)\b/i;
+  items.sort((a, b) => Number(highlight.test(b.name)) - Number(highlight.test(a.name)) || a.name.localeCompare(b.name, 'nl-BE'));
+  return { items };
 }
 
 export async function getWallonia(city, options) {
@@ -167,18 +248,30 @@ export async function getWallonia(city, options) {
     const result = await getJson(parameters(walloon + '/' + layer + '/query', {
       where: 'UPPER(COMMUNE) IN (' + values + ')',
       outFields: 'CODE,NOM,TYPE_OFFRE,RUE,NUMERO,CODE_POSTAL,COMMUNE,SITE_WEB',
-      returnGeometry: 'false', resultRecordCount: 14, orderByFields: 'NOM', f: 'json',
+      returnGeometry: 'true', outSR: 4326, resultRecordCount: 32, orderByFields: 'NOM,CODE', f: 'json',
     }), options);
-    return rows(result, 'features').flatMap(({ attributes: row }) => {
+    const items = rows(result, 'features').flatMap(({ attributes: row, geometry }) => {
       const name = compact(row?.NOM);
       if (!name) return [];
-      return [{ name, id: 'pivot:' + row.CODE, source: 'wallonia', website: safeUrl(row.SITE_WEB),
-        address: [compact(row.RUE), compact(row.NUMERO), compact(row.COMMUNE)].filter(Boolean).join(' '),
+      const code = compact(row.CODE, 50);
+      const sourceId = /^[A-Za-z0-9-]+$/.test(code) ? code : undefined;
+      const sourceRecord = sourceId ? parameters(walloon + '/' + layer + '/query', {
+        where: "CODE = '" + sourceId + "'", outFields: 'CODE,NOM,COMMUNE,SITE_WEB', f: 'json',
+      }).href : undefined;
+      const street = [compact(row.RUE), compact(row.NUMERO)].filter(Boolean).join(' ');
+      const locality = compact(row.COMMUNE);
+      return [{ name, labels: { fr: name }, id: sourceId ? 'pivot:' + sourceId : undefined, sourceId, sourceRecord,
+        source: 'wallonia', website: safeUrl(row.SITE_WEB), street, locality, postalCode: compact(row.CODE_POSTAL),
+        address: [street, locality].filter(Boolean).join(' · '),
+        coordinates: coordinatesInBelgium(geometry?.y, geometry?.x),
         category: layer === 10 ? 'Loisirs et découvertes' : 'Point d’intérêt' }];
     });
+    return { items, truncated: result.exceededTransferLimit === true };
   }));
   if (layers.every(({ status }) => status === 'rejected')) throw new Error('Tourisme Wallonie niet bereikbaar');
-  return { items: layers.flatMap((result) => result.value ?? []), partial: layers.some(({ status }) => status === 'rejected') };
+  return { items: layers.flatMap((result) => result.value?.items ?? []),
+    partial: layers.some(({ status }) => status === 'rejected'),
+    truncated: layers.some(({ value }) => value?.truncated) };
 }
 
 export const regionalSource = areaSource;
@@ -219,20 +312,30 @@ const urlKey = (value) => {
 export function mergePlaces(items, limit = 24) {
   const result = [];
   const byId = new Map(), byName = new Map();
+  function compatiblePlace(a, b) {
+    const wa = safeUrl(a.website), wb = safeUrl(b.website);
+    if (wa && wb && urlKey(wa) === urlKey(wb) && new URL(wa).search === new URL(wb).search) return true;
+    const ca = a.coordinates, cb = b.coordinates;
+    if (ca && cb) return Math.abs(ca.latitude - cb.latitude) <= 0.00045 && Math.abs(ca.longitude - cb.longitude) <= 0.0007;
+    // Distinct provider IDs are meaningful even when names are identical.
+    return !a.id || !b.id;
+  }
   function keep(item) {
     if (!item.name || !normalized(item.name)) return;
     const name = normalized(item.name);
     const id = item.id?.replace(/^https:/, 'http:');
-    const existing = (id ? byId.get(id) : undefined) ?? (name ? byName.get(name) : undefined);
+    const existing = (id ? byId.get(id) : undefined) ?? byName.get(name)?.find((entry) => compatiblePlace(entry, item));
     if (existing) {
       const { id: oldId, alternateSources = [] } = existing;
       // Keep the preferred display record but fill omissions for the same named place.
       if (!oldId) existing.id = item.id;
       if (item.id?.includes('wikidata.org/entity/')) existing.wikidata = item.id.split('/').at(-1);
       existing.osm = [...(existing.osm ?? []), ...(item.osm ?? [])];
+      existing.recordReferences = [...(existing.recordReferences ?? []), ...(item.recordReferences ?? []),
+        ...(item.sourceId ? [{ source: item.source, sourceId: item.sourceId }] : [])];
       const informative = (url) => url && !/(wikidata\.org\/entity|linked\.toerismevlaanderen\.be\/id\/)/.test(url);
       if (!existing.website || (!informative(existing.website) && informative(item.website))) existing.website = item.website;
-      for (const key of ['category', 'address', 'hours', 'description']) existing[key] ||= item[key];
+      for (const key of ['category', 'address', 'hours', 'description', 'coordinates']) existing[key] ||= item[key];
       if (item.source !== existing.source && !alternateSources.includes(item.source)) existing.alternateSources = [...alternateSources, item.source];
       if (id) byId.set(id, existing);
       return;
@@ -241,10 +344,21 @@ export function mergePlaces(items, limit = 24) {
     if (item.id?.includes('wikidata.org/entity/')) next.wikidata = item.id.split('/').at(-1);
     result.push(next);
     if (id) byId.set(id, next);
-    if (name) byName.set(name, next);
+    byName.set(name, [...(byName.get(name) ?? []), next]);
   }
   items.forEach(keep);
   return result.slice(0, limit);
+}
+
+// An official provider still gets visible slots when Wikidata alone could
+// fill the first batch. Dedupe repeats within each provider before interleaving.
+export function interleavePlaceSources(groups) {
+  const rows = groups.map((items) => mergePlaces(items, Number.MAX_SAFE_INTEGER));
+  const ordered = [];
+  for (let offset = 0; rows.some((items) => offset < items.length); offset += 1) {
+    for (const items of rows) if (items[offset]) ordered.push(items[offset]);
+  }
+  return ordered;
 }
 
 export function dedupeEvents(items) {

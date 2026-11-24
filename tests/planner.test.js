@@ -126,3 +126,49 @@ test('time-specific live records need a known location and a remote venue gets a
   const schedule = schedulePair(windows,visitWindows(b,date),55,null);
   assert.ok(schedule.timeline[0].end - schedule.timeline[0].start > 12);
 });
+
+test('only an explicitly sourced exterior view can be scheduled without indoor hours', () => {
+  const documented = { name:'Buitenaanzicht', exterior:true, source:'https://source.example/plaats' };
+  const x = city('a',3.75,{places:[
+    documented,
+    { name:'Onbekend', source:'https://source.example/plaats' },
+    { name:'Zonder bron', exterior:true },
+    { name:'Geen openbare aanblik', exterior:false, source:'https://source.example/plaats' },
+  ]});
+  const visits = visitWindows(x, date);
+  assert.deepEqual(visits.map(({kind,name,earliest,latest,duration})=>[kind,name,earliest,latest,duration]),
+    [['exterior','Buitenaanzicht',600,960,25]]);
+  assert.equal(visitWindows(x,date,{scheduledOnly:true}).length,0);
+  assert.equal(visitWindows(x,'2026-12-25').length,1); // No opening-hours assertion on a holiday.
+});
+
+test('mixed mode fits a two-exterior day but never invents routing or published opening hours', async () => {
+  const sight = (name) => ({name,exterior:true,source:'https://source.example/plaats'});
+  const first = city('a',3.75,{places:[sight('Gevel A')]});
+  const second = city('b',4.01,{places:[sight('Gevel B')]});
+  const fetchRoute = async points => makeRoute(points);
+  const result = await planTrips([first,second],opts,{now,fetchRoute});
+  assert.equal(result.trips[0].visits.every(({kind})=>kind==='exterior'),true);
+  assert.ok(result.trips[0].visits.every(({start,end})=> start>=600 && end<=960));
+  assert.equal(result.trips[0].scoreNotes[0].includes('gepubliceerde openingsuren'),false);
+  assert.equal(result.trips[0].route.km,22);
+  const only = await planTrips([first,second],{...opts,scheduledOnly:true},{now,fetchRoute:() => assert.fail('Exterior must not route when disabled')});
+  assert.equal(only.trips.length,0);
+  const unavailable = await planTrips([first,second],opts,{now,fetchRoute:async()=>{throw new Error('router down');}});
+  assert.equal(unavailable.trips.length,0);
+  assert.equal(unavailable.failedRoutes,1);
+});
+
+test('new exterior coverage cannot crowd all known indoor openings out of the routing shortlist', async () => {
+  const sight = name => ({name,exterior:true,source:'https://source.example/plaats'});
+  const first = city('a',3.75,{places:[sight('Gevel A')]});
+  const nearest = Array.from({length:9},(_,i) => city('b'+i,3.78+i*0.02,{places:[sight('Gevel B'+i)]}));
+  const scheduled = city('c',4.08);
+  const destinations=[];
+  const result = await planTrips([first,...nearest,scheduled],opts,{now,
+    fetchRoute:async(points)=>{destinations.push(points[1].slug);return makeRoute(points);}
+  });
+  assert.ok(destinations.includes('c'));
+  assert.ok(destinations.length<=7);
+  assert.ok(result.trips.some((trip)=>trip.visits.some(({kind})=>kind==='place')));
+});

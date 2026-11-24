@@ -15,3 +15,20 @@ wd:Q517899 a schema:City ;
         schema:latitude 50.6103 ;
         schema:longitude 4.4497
     ] .
+
+# Erfgoed aan de openbare weg
+<https://inventairepatrimoine.wallonie.be/fr/inventaire-regional-du-patrimoine/fiche/25031-INV-0033-02> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Église Saint-Jean-Baptiste de Genappe"@fr ;
+    schema:description "De Sint-Jan-de-Doperkerk in het centrum van Genappe."@nl ;
+    schema:containedInPlace wd:Q517899 ;
+    schema:identifier "25031-INV-0033-02" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.611092 ;
+        schema:longitude 4.450977
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://inventairepatrimoine.wallonie.be/fr/inventaire-regional-du-patrimoine/fiche/25031-INV-0033-02> ;
+    dcterms:source <https://inventairepatrimoine.wallonie.be/fr/inventaire-regional-du-patrimoine/fiche/25031-INV-0033-02> .

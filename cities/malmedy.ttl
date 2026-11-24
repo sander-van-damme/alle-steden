@@ -15,3 +15,20 @@ wd:Q159838 a schema:City ;
         schema:latitude 50.423888888 ;
         schema:longitude 6.025833333
     ] .
+
+# Erfgoed aan de openbare weg
+<https://territoire.wallonie.be/fr/liendoc/BC_PAT/63049-CLT-0006-01> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Cathédrale Saints-Pierre-et-Paul et Saint-Quirin"@fr ;
+    schema:description "De voormalige abdijkerk aan de Place du Châtelet."@nl ;
+    schema:containedInPlace wd:Q159838 ;
+    schema:identifier "63049-CLT-0006-01" ;
+    schema:geo [ a schema:GeoCoordinates ;
+        schema:latitude 50.426860 ;
+        schema:longitude 6.027978
+    ] ;
+    schema:amenityFeature [ a schema:LocationFeatureSpecification ;
+        schema:name "Vanop de openbare weg te bekijken"@nl ;
+        schema:value true
+    ] ;
+    schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/63049-CLT-0006-01> ;
+    dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/63049-CLT-0006-01> .
