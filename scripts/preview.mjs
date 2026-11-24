@@ -4,6 +4,8 @@ import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { onRequest } from '../functions/api/city-live.js';
 
+const port = Number(process.env.PORT ?? 4173);
+if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('Ongeldige previewpoort.');
 const directory = fileURLToPath(new URL('../dist', import.meta.url));
 const mediaTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -48,4 +50,4 @@ createServer(async (request, response) => {
     response.writeHead(404, { 'Content-Type': mediaTypes['.html'] });
     response.end(request.method === 'HEAD' ? undefined : await readFile(resolve(directory, '404.html')));
   }
-}).listen(4173, '127.0.0.1', () => console.log('http://127.0.0.1:4173'));
+}).listen(port, '127.0.0.1', () => console.log('http://127.0.0.1:' + port));

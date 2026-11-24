@@ -12,6 +12,14 @@ const json = (data, status = 200, age = 0) => Response.json(data, {
   },
 });
 
+// Workers supports "manual", not the Fetch standard's "error" redirect mode.
+// getJson rejects every non-2xx response, so a redirect cannot make a second request.
+function fetchAtEdge(input, { headers, signal }) {
+  const outgoing = new Headers(headers);
+  outgoing.set('User-Agent', userAgent);
+  return fetch(input, { headers: outgoing, signal, redirect: 'manual' });
+}
+
 export async function onRequest({ request, env, waitUntil }) {
   if (request.method !== 'GET') return new Response(null, { status: 405, headers: { Allow: 'GET' } });
   const url = new URL(request.url);
@@ -42,13 +50,15 @@ export async function onRequest({ request, env, waitUntil }) {
     if (hit) return hit;
   }
 
-  const options = { fetcher: (input, init) => fetch(input, {
-    ...init, headers: { ...init.headers, 'User-Agent': userAgent },
-  }) };
+  const options = { fetcher: fetchAtEdge };
   try {
     const items = source === 'uit' ? await getUiT(city, apiKey, options) : await getFlanders(city, options);
     const response = json({ state: 'ok', items }, 200, source === 'uit' ? 900 : 3600);
     if (cache && waitUntil) waitUntil(cache.put(key, response.clone()).catch(() => {}));
     return response;
-  } catch { return json({ error: 'De bron is tijdelijk niet beschikbaar.' }, 502); }
+  } catch (error) {
+    const reason = /^HTTP [1-5]\d{2}$/.test(error?.message ?? '') ? error.message : error?.name ?? 'Unknown';
+    console.warn('Live bron niet beschikbaar', { source, city: slug, reason });
+    return json({ error: 'De bron is tijdelijk niet beschikbaar.' }, 502);
+  }
 }

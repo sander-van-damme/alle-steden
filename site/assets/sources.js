@@ -12,6 +12,7 @@ export const sources = {
   wallonia: { label: 'Tourisme Wallonie', href: 'https://geoportail.wallonie.be/catalogue/91721175-5f01-410c-8c78-37c1d1893ba2.html', license: ccby },
   brussels: { label: 'Stad Brussel', href: brussels + '/explore/assets/bruxelles_musees/', license: 'https://creativecommons.org/publicdomain/zero/1.0/' },
   namur: { label: 'Ville de Namur', href: namur + '/explore/dataset/namur-agenda-des-evenements/information/', license: ccby },
+  imio: { label: 'iMio · Open Data Wallonië-Brussel', href: namur + '/explore/dataset/evenements-en-wallonie/information/' },
   gent: { label: 'Visit Gent', href: gent + '/explore/assets/toeristische-evenementen-visit-gent/' },
   uit: { label: 'UiTdatabank · publiq', href: 'https://www.publiq.be/nl/projecten/publiq-platform' },
   osm: { label: 'OpenStreetMap-bijdragers', href: 'https://www.openstreetmap.org/copyright', license: 'https://opendatacommons.org/licenses/odbl/' },
@@ -19,9 +20,16 @@ export const sources = {
 
 const qid = /^Q[1-9]\d{0,11}$/;
 const todayFormat = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Brussels', year: 'numeric', month: '2-digit', day: '2-digit' });
+const endTimeFormat = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Brussels',
+  hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
 const dateFormat = new Intl.DateTimeFormat('nl-BE', { timeZone: 'Europe/Brussels', day: 'numeric', month: 'short', year: 'numeric' });
 const dateTimeFormat = new Intl.DateTimeFormat('nl-BE', { timeZone: 'Europe/Brussels', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 export const localToday = (now = new Date()) => todayFormat.format(now);
+export const addCalendarDays = (day, offset) => {
+  const date = new Date(day + 'T12:00:00Z');
+  date.setUTCDate(date.getUTCDate() + offset);
+  return date.toISOString().slice(0, 10);
+};
 export const dateOnly = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value ?? '');
 export const dateValue = (value) => {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2}))?$/.test(value)) return undefined;
@@ -179,7 +187,7 @@ export async function getNamur(today = localToday(), options) {
   if (!dateOnly(dateValue(today))) throw new Error('Ongeldige datum');
   const result = await getJson(parameters(namur + '/api/explore/v2.1/catalog/datasets/namur-agenda-des-evenements/records', {
     select: 'title,name,datedebut,datefin,link',
-    where: `datefin >= date'${today}' OR (datefin is null AND datedebut >= date'${today}')`,
+    where: `(datefin >= date'${today}' OR (datefin is null AND datedebut >= date'${today}'))` + optionalUpperBound('datedebut', options?.through),
     order_by: 'datedebut asc', limit: 24,
   }), options);
   return rows(result, 'results').map((row) => ({ name: compact(row.title), venue: compact(row.name), source: 'namur',
@@ -257,7 +265,7 @@ export async function getGent(today = localToday(), options) {
   if (!dateOnly(dateValue(today))) throw new Error('Ongeldige datum');
   const result = await getJson(parameters(gent + '/api/explore/v2.1/catalog/datasets/toeristische-evenementen-visit-gent/records', {
     select: 'event,name_nl,date_start,date_end,url,ctcname_nl',
-    where: `date_end >= date'${today}' OR (date_end is null AND date_start >= date'${today}')`,
+    where: `(date_end >= date'${today}' OR (date_end is null AND date_start >= date'${today}'))` + optionalUpperBound('date_start', options?.through),
     order_by: 'date_start asc', limit: 24,
   }), options);
   return rows(result, 'results').map((row) => ({ id: safeUrl(row.event), name: compact(row.name_nl),
@@ -317,4 +325,152 @@ export async function getUiT(city, apiKey, options) {
       hours: uiTHours(entry.openingHours ?? row.openingHours),
     })).filter(({ start, end }) => start && (end ?? start).slice(0, 10) >= today).slice(0, 6);
   });
+}
+
+const imioDataset = 'evenements-en-wallonie';
+const imioTypes = Object.freeze({
+  party_folklore: 'Feest en folklore',
+  stroll_discovery: 'Rondleiding',
+  concert_festival: 'Concert of festival',
+  exhibition_artistic_meeting: 'Tentoonstelling',
+  flea_market_market: 'Markt',
+  theater_show: 'Voorstelling',
+  trade_fair_fair: 'Beurs',
+});
+
+function calendarDay(value) {
+  if (!dateValue(value)) return undefined;
+  return dateOnly(value) ? value : localToday(new Date(value));
+}
+
+function validateDay(day) {
+  if (!dateOnly(dateValue(day))) throw new Error('Ongeldige datum');
+  return day;
+}
+
+function optionalUpperBound(field, through) {
+  return through ? ` AND ${field} <= date'${validateDay(through)}'` : '';
+}
+
+function eventSpan({ from = localToday(), through = addCalendarDays(from, 83) } = {}) {
+  validateDay(from);
+  validateDay(through);
+  if (through < from || through > addCalendarDays(from, 120)) throw new Error('Ongeldige of te lange periode');
+  return { from, through };
+}
+
+const imioSelect = 'id,start_datetime,end_datetime,recurrence,whole_day,open_end,title,category,coordinates,address_street_name,address_house_number,address_postal_code,address_city,owner_name,event_url';
+const odsqlLiterals = (values) => values.map((value) => "'" + value.replaceAll("'", "''") + "'").join(', ');
+
+export function walloonAgendaQuery(city, span) {
+  const { from, through } = eventSpan(span);
+  const names = odsqlLiterals(cityNames(city));
+  if (!names) throw new Error('Ontbrekende stadsnaam');
+  // The API stores datetimes in UTC. Fetch a one-day margin at each end,
+  // then filter exactly by Belgian calendar day after normalization.
+  const lower = addCalendarDays(from, -1);
+  const upper = addCalendarDays(through, 1);
+  return parameters(namur + '/api/explore/v2.1/catalog/datasets/' + imioDataset + '/records', {
+    select: imioSelect,
+    where: `owner_name in (${names}) AND address_city in (${names}) AND
+      (end_datetime >= date'${lower}' OR (end_datetime is null AND start_datetime >= date'${lower}')) AND
+      start_datetime < date'${upper}' AND category in (${odsqlLiterals(Object.keys(imioTypes))}) AND
+      (recurrence is null OR recurrence = '')`.replace(/\s*\n\s*/g, ' '),
+    order_by: 'start_datetime asc', limit: 40,
+  });
+}
+
+function nameKey(value) {
+  // Ignore case, diacritics and dash/spacing differences but not additional place names.
+  return normalized(value).replaceAll(' ', '');
+}
+
+function sameWholeDayEnd(first, end) {
+  const last = calendarDay(end);
+  return last > first && endTimeFormat.format(new Date(end)) === '00:00:00'
+    ? addCalendarDays(last, -1) : last;
+}
+
+export function walloonAgendaItems(doc, city, span) {
+  const names = new Set(cityNames(city).map(nameKey));
+  const { from, through } = eventSpan(span);
+  return rows(doc, 'results').flatMap((row) => {
+    const name = compact(row.title);
+    if (!name || !names.has(nameKey(row.owner_name)) || !names.has(nameKey(row.address_city))
+      || !Object.hasOwn(imioTypes, row.category) || compact(row.recurrence)) return [];
+    const start = dateValue(row.start_datetime);
+    const end = dateValue(row.end_datetime);
+    if (!start || (end && Date.parse(end) < Date.parse(start))) return [];
+    const firstDay = calendarDay(start);
+    const lastDay = end ? calendarDay(end) : firstDay;
+    if (lastDay > addCalendarDays(firstDay, row.category === 'exhibition_artistic_meeting' ? 360 : 30)) return [];
+    const allDay = Number(row.whole_day) === 1;
+    const openEnd = Number(row.open_end) === 1;
+    // A timestamp on either end of a multi-day exhibition is not a daily
+    // opening schedule. Retain the dates, never invent an intervening time.
+    const timed = !allDay && !openEnd && end && firstDay === lastDay && !dateOnly(start) && !dateOnly(end);
+    const visibleEnd = timed ? end : openEnd ? undefined :
+      allDay && end && !dateOnly(end) ? sameWholeDayEnd(firstDay, end) : lastDay;
+    if ((calendarDay(visibleEnd) ?? firstDay) < from || firstDay > through) return [];
+    const id = compact(row.id, 160);
+    const sourceRecord = parameters(namur + '/explore/dataset/' + imioDataset + '/table/', { q: id });
+    const address = [compact(row.address_street_name), compact(row.address_house_number), compact(row.address_city)]
+      .filter(Boolean).join(' · ');
+    const lat = row.coordinates?.lat;
+    const lon = row.coordinates?.lon;
+    return [{
+      id: id ? 'imio:' + id : undefined,
+      name, source: 'imio', start: timed ? start : firstDay, end: visibleEnd,
+      address, venue: address, category: imioTypes[row.category],
+      website: safeUrl(row.event_url) ?? (id ? sourceRecord.href : sources.imio.href),
+      coordinates: Number.isFinite(lat) && Number.isFinite(lon) && lat >= 49 && lat <= 52 && lon >= 2 && lon <= 7
+        ? { latitude: lat, longitude: lon } : undefined,
+    }];
+  });
+}
+
+export async function getWalloonEvents(city, options = {}) {
+  const span = eventSpan(options);
+  const result = await getJson(walloonAgendaQuery(city, span), options);
+  return walloonAgendaItems(result, city, span);
+}
+
+export function cityEventSources(city, options = {}) {
+  const { from, through } = eventSpan(options);
+  const sourceOptions = { through, ...(options.fetcher && { fetcher: options.fetcher }) };
+  const available = [];
+  if (city.slug === 'gent') available.push({ key: 'gent', run: () => getGent(from, sourceOptions).then((items) => ({ items })) });
+  if (city.slug === 'namen') available.push({ key: 'namur', run: () => getNamur(from, sourceOptions).then((items) => ({ items })) });
+  if (city.region === 'Wallonië') available.push({
+    key: 'imio', run: () => getWalloonEvents(city, { ...sourceOptions, from }).then((items) => ({ items })),
+  });
+  if (city.region === 'Vlaanderen' || city.slug === 'brussel') {
+    const origin = options.origin ?? globalThis.location?.origin;
+    if (origin) available.push({ key: 'uit', run: async () => {
+      const result = await getJson(parameters(new URL('/api/city-live', origin), { city: city.slug, source: 'uit' }),
+        { ...sourceOptions, timeout: 12_000, credentials: 'same-origin' });
+      if (!Array.isArray(result.items)) throw new Error('Ongeldig antwoord');
+      return result;
+    } });
+  }
+  return available;
+}
+
+export async function fetchCityEvents(city, options = {}) {
+  const span = eventSpan(options);
+  const sources = cityEventSources(city, options);
+  const results = await Promise.allSettled(sources.map(({ run }) => run()));
+  const items = [];
+  const coverage = results.map((result, index) => {
+    const key = sources[index].key;
+    if (result.status === 'rejected') return { source: key, state: 'failed', count: 0 };
+    const inSpan = result.value.items.filter((item) => {
+      const start = calendarDay(item.start);
+      const end = calendarDay(item.end) ?? start;
+      return start && start <= span.through && end >= span.from && !item.cancelled;
+    });
+    items.push(...inSpan);
+    return { source: key, state: result.value.state ?? (inSpan.length ? 'ok' : 'empty'), count: inSpan.length };
+  });
+  return { items: dedupeEvents(items), coverage };
 }

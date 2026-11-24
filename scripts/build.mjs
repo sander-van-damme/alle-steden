@@ -2,7 +2,7 @@ import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Parser, Store } from 'n3';
-import { cityPage, indexPage, layout } from './pages.mjs';
+import { cityPage, indexPage, layout, plannerPage } from './pages.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const source = resolve(root, 'cities');
@@ -10,6 +10,7 @@ const output = resolve(root, 'dist');
 const schema = 'https://schema.org/';
 const rdfType = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 const nisCode = 'http://www.wikidata.org/prop/direct/P1567';
+const sourcePredicate = 'http://purl.org/dc/terms/source';
 const wikidata = 'http://www.wikidata.org/entity/';
 const regions = new Map([
   [wikidata + 'Q9337', 'Vlaanderen'],
@@ -77,15 +78,31 @@ function readCity(filename, turtle) {
   const locations = [city, ...localPlaces];
   const eventSubjects = locations.flatMap((place) => graph.getSubjects(schema + 'location', place, null));
 
+  function entryGeo(entity) {
+    const candidate = objects(entity, 'geo')[0] ?? objects(entity, 'location').flatMap((location) => objects(location, 'geo'))[0];
+    if (!candidate) return undefined;
+    const lat = text(candidate, 'latitude'), lon = text(candidate, 'longitude');
+    if (!lat || !lon || !Number.isFinite(Number(lat)) || !Number.isFinite(Number(lon)) ||
+        Math.abs(Number(lat)) > 90 || Math.abs(Number(lon)) > 180) return undefined;
+    return { lat: Number(lat), lon: Number(lon) };
+  }
+
   function entries(subjects) {
     return [...new Map(subjects.map((entity) => [entity.value, entity])).values()]
       .map((entity) => ({
         id: entity.value,
         name: text(entity, 'name'),
+        point: entryGeo(entity),
         description: text(entity, 'description'),
         start: text(entity, 'startDate'),
         end: text(entity, 'endDate'),
         openingHours: labels(entity, 'openingHours').map((term) => term.value),
+        specialHours: objects(entity, 'specialOpeningHoursSpecification').map((spec) => ({
+          from: text(spec, 'validFrom'), through: text(spec, 'validThrough'),
+          opens: text(spec, 'opens'), closes: text(spec, 'closes'),
+        })),
+        source: graph.getObjects(entity, sourcePredicate, null).find((term) => term.termType === 'NamedNode' &&
+          /^https?:\/\//.test(term.value))?.value,
         url: objects(entity, 'url').find((term) => term.termType === 'NamedNode' &&
           /^https?:\/\//.test(term.value))?.value ?? itemUrl(entity),
       }))
@@ -134,9 +151,20 @@ async function writePage(path, html) {
   await writeFile(resolve(directory, 'index.html'), html);
 }
 
+const plannerCities = cities.filter(({ coordinates }) => coordinates).map(({ slug, name, names, region, cityUrl, coordinates, places, events }) => ({
+  slug, name, names, region, qid: cityUrl.split('/').at(-1),
+  lat: Number(coordinates.latitude), lon: Number(coordinates.longitude),
+  places: places.filter(({ openingHours, specialHours }) => openingHours.length || specialHours.length)
+    .map(({ name, openingHours, specialHours, url, source, point }) => ({ name, openingHours, specialHours, url, source, ...point })),
+  events: events.filter(({ start, end }) => start?.includes('T') && end?.includes('T'))
+    .map(({ name, start, end, url, source, point }) => ({ name, start, end, url, source, ...point })),
+}));
+
 await Promise.all([
   cp(source, resolve(output, 'data'), { recursive: true, filter: (path) => path === source || path.endsWith('.ttl') }),
   writePage('.', indexPage(cities)),
+  writePage('planner', plannerPage(plannerCities)),
+  writeFile(resolve(output, 'planner-data.json'), JSON.stringify(plannerCities)),
   writeFile(resolve(output, 'data', 'cities.json'), JSON.stringify(Object.fromEntries(cities.map(({ slug, name, names, region, cityUrl }) =>
     [slug, { name, names, region, qid: cityUrl.split('/').at(-1) }])))),
   writeFile(resolve(output, '404.html'), layout({

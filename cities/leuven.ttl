@@ -2,6 +2,7 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <> a schema:Dataset ;
     schema:about wd:Q118958 ;
@@ -15,3 +16,21 @@ wd:Q118958 a schema:City ;
         schema:latitude 50.8775 ;
         schema:longitude 4.704444
     ] .
+
+wd:Q2362660 a schema:Museum ;
+    schema:name "M Leuven"@nl ;
+    schema:description "Museum voor oude en hedendaagse kunst in het centrum van Leuven. Op donderdagavond langer open."@nl ;
+    schema:containedInPlace wd:Q118958 ;
+    schema:openingHours "Mo-Tu 11:00-18:00", "Th 11:00-22:00", "Fr-Su 11:00-18:00" ;
+    schema:specialOpeningHoursSpecification [ a schema:OpeningHoursSpecification ; schema:validFrom "2026-12-25"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-01-01"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-12-25"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2028-01-01"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-09-06"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2026-12-24"^^xsd:date ; schema:opens "11:00" ; schema:closes "16:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2026-12-31"^^xsd:date ; schema:opens "11:00" ; schema:closes "16:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-12-24"^^xsd:date ; schema:opens "11:00" ; schema:closes "16:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-12-31"^^xsd:date ; schema:opens "11:00" ; schema:closes "16:00" ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.878889 ; schema:longitude 4.704444 ] ;
+    schema:url <https://www.mleuven.be/plan-je-bezoek/openingsuren-sluitingsdagen> ;
+    dcterms:source <https://www.mleuven.be/plan-je-bezoek/openingsuren-sluitingsdagen> .

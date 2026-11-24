@@ -2,6 +2,7 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <> a schema:Dataset ;
     schema:about wd:Q13121 ;
@@ -21,3 +22,33 @@ wd:Q2710193 a schema:EventSeries ;
     schema:description "Driedaags volksfeest met carnavalsstoeten, de Ajuinworp en de popverbranding."@nl ;
     schema:location wd:Q13121 ;
     schema:url <https://aalst.be/cultuur-sport-en-vrije-tijd/evenementen-en-activiteiten/evenementen/carnaval-in-aalst> .
+
+wd:Q23900566 a schema:Museum ;
+    schema:name "Museum ’t Gasthuys"@nl ;
+    schema:description "Gratis stadsmuseum op de voormalige hospitaalsite. Gesloten op feestdagen."@nl ;
+    schema:containedInPlace wd:Q13121 ;
+    schema:openingHours "Tu-Fr 13:00-17:00", "Sa-Su 14:00-18:00" ;
+    schema:specialOpeningHoursSpecification [ a schema:OpeningHoursSpecification ; schema:validFrom "2026-12-25"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-01-01"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-03-29"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-05-01"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-05-06"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-05-17"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-07-21"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-08-15"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-11-01"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-11-11"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-12-25"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2028-01-01"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.938056 ; schema:longitude 4.042583 ] ;
+    schema:url <https://www.visit-aalst.be/nl/zien-doen/bezienswaardigheden/museum-t-gasthuys> ;
+    dcterms:source <https://www.visit-aalst.be/nl/zien-doen/bezienswaardigheden/museum-t-gasthuys> .
+
+<#aalst-carnaval-2027> a schema:Festival ;
+    schema:name "Aalst Carnaval 2027"@nl ;
+    schema:location wd:Q13121 ;
+    schema:startDate "2027-02-07"^^xsd:date ;
+    schema:endDate "2027-02-09"^^xsd:date ;
+    schema:superEvent wd:Q2710193 ;
+    schema:url <https://aalst.be/nieuws/schrijf-je-in-als-losse-groep-voor-aalst-carnaval-2027> ;
+    dcterms:source <https://aalst.be/nieuws/schrijf-je-in-als-losse-groep-voor-aalst-carnaval-2027> .

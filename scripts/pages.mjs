@@ -4,7 +4,7 @@ const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({
 })[char]);
 const arrow = '<span aria-hidden="true">↗</span>';
 
-export function layout({ title, main, script = '' }) {
+export function layout({ title, main, script = '', active = '' }) {
   return `<!doctype html>
 <html lang="nl-BE">
 <head>
@@ -20,7 +20,7 @@ export function layout({ title, main, script = '' }) {
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span>Alle Steden</a>
-      <nav aria-label="Hoofdnavigatie"><a href="/#steden">Steden</a><a href="${repository}">GitHub ${arrow}</a></nav>
+      <nav aria-label="Hoofdnavigatie"><a href="/#steden">Steden</a><a href="/planner/"${active === 'planner' ? ' aria-current="page"' : ''}>Planner</a><a href="${repository}">GitHub ${arrow}</a></nav>
     </div>
   </header>
   ${main}
@@ -30,6 +30,73 @@ export function layout({ title, main, script = '' }) {
   </footer>
 </body>
 </html>`;
+}
+
+export function plannerPage(cities) {
+  const regions = [...new Set(cities.map((city) => city.region))].sort((a, b) => a.localeCompare(b, 'nl-BE'));
+  const citiesByRegion = regions.map((region) => `<optgroup label="${escapeHtml(region)}">${cities
+    .filter((city) => city.region === region)
+    .map((city) => `<option value="${escapeHtml(city.slug)}" data-region="${escapeHtml(region)}">${escapeHtml(city.name)}</option>`).join('')}</optgroup>`).join('');
+  const regionOptions = regions.map((region) => `<option>${escapeHtml(region)}</option>`).join('');
+  return layout({
+    title: 'Fietsplanner · Alle Steden',
+    active: 'planner',
+    script: '<link rel="stylesheet" href="/assets/planner.css"><script type="module" src="/assets/planner.js"></script>',
+    main: `<main id="inhoud" class="wrap planner">
+      <header class="planner-heading">
+        <div>
+          <p class="eyebrow">Alle Steden · Op de fiets</p>
+          <h1>Plan een stadsrit.</h1>
+          <p>Kies een datum of plek, of blader door de komende weekenden. Ontdek welke steden je op één rit kunt combineren.</p>
+        </div>
+        <span class="planner-heading-mark" aria-hidden="true">01<span>↗&#xfe0e;</span>02</span>
+      </header>
+      <div class="planner-workspace">
+        <form id="planner-form" class="planner-panel" aria-labelledby="planner-options-title">
+          <h2 id="planner-options-title">Waar begin je?</h2>
+          <fieldset class="planner-mode">
+            <legend>Zoeken vanuit</legend>
+            <div class="planner-mode-options">
+              <label><input type="radio" name="mode" value="date" checked><span>Een datum</span></label>
+              <label><input type="radio" name="mode" value="place"><span>Een plek</span></label>
+              <label><input type="radio" name="mode" value="calendar"><span>Weekenden</span></label>
+            </div>
+          </fieldset>
+          <div class="planner-controls" data-mode-date>
+            <label>Datum <input type="date" name="date" id="planner-date" required></label>
+            <label class="planner-check"><input type="checkbox" name="weekend"> Bekijk het hele weekend</label>
+          </div>
+          <p class="planner-hint" id="planner-mode-hint"></p>
+          <div class="planner-controls">
+            <label>Gewest
+              <select name="region" id="planner-region"><option value="">Heel België</option>${regionOptions}</select>
+            </label>
+            <label>Stad
+              <select name="city" id="planner-city"><option value="">Geen vaste stad</option>${citiesByRegion}</select>
+            </label>
+          </div>
+          <div class="planner-controls planner-distance">
+            <label>Max. fietsafstand (km) <input type="number" name="maxKm" value="85" min="15" max="160" step="1" required></label>
+            <label class="planner-check"><input type="checkbox" name="roundtrip"> Terug naar de eerste stad</label>
+          </div>
+          <p class="planner-hint">Zonder terugrit eindigt de rit in de tweede stad.</p>
+          <button type="submit" class="button primary" id="planner-submit" disabled>Zoek ritten <span aria-hidden="true">→</span></button>
+          <noscript><p>Schakel JavaScript in om de planner te gebruiken. De <a href="/#steden">stedenlijst</a> blijft beschikbaar.</p></noscript>
+        </form>
+        <figure class="planner-panel planner-map-panel">
+          <div class="planner-map-heading"><h2>Kies op de kaart</h2><span id="planner-map-selection" aria-live="polite"></span></div>
+          <p class="planner-hint">Klik op een stad of gewest, of kies dezelfde opties in het formulier.</p>
+          <div class="planner-map" id="planner-map"></div>
+          <figcaption>Vereenvoudigde gewestgrenzen: <a href="https://simplemaps.com/gis/country/be">SimpleMaps</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>).</figcaption>
+        </figure>
+      </div>
+      <section class="planner-output" aria-labelledby="planner-output-title">
+        <h2 id="planner-output-title">Ritvoorstellen</h2>
+        <p id="planner-status" class="planner-status" role="status">Een moment, de planner wordt geladen.</p>
+        <div id="planner-results"></div>
+      </section>
+    </main>`,
+  });
 }
 
 export function indexPage(cities) {
