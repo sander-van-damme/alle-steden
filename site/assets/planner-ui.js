@@ -552,6 +552,47 @@ function renderRouteDetails(trip, open) {
   return view;
 }
 
+function renderServices(trip) {
+  const section = element('section', 'trip-pois trip-services');
+  const title = element('h4', '', 'Toiletten en fietshulp');
+  title.dataset.tripServicesTitle = '';
+  title.tabIndex = -1;
+  section.append(title);
+  const state = trip.services;
+  if (trip.km > 100 || state?.state === 'outside') {
+    section.append(element('p', 'planner-hint', 'Voor deze lange of verspreide rit kunnen we niet langs de hele route zoeken.'));
+    return section;
+  }
+  if (state?.state === 'ok') {
+    if (state.items.length) {
+      const list = element('ul', 'trip-poi-list');
+      const byCategory = { toilet: 0, repair: 0 };
+      for (const item of state.items) {
+        const row = element('li');
+        const prefix = item.category === 'toilet' ? 'T' : 'F';
+        row.append(element('span', 'trip-poi-marker', prefix + (++byCategory[item.category])),
+          link(item.name, item.url, 'trip-poi-name'));
+        row.append(element('p', 'planner-hint', `Rond kilometer ${fmtNumber(item.kmAlongRoute)} · ${Math.round(item.distanceToRouteKm * 1000)} m van de route (hemelsbreed)`));
+        list.append(row);
+      }
+      section.append(list, element('p', 'planner-hint', 'Niet ingepland als stop. Toegang, opening en werking zijn niet bevestigd.'));
+    } else section.append(element('p', 'planner-hint', 'Geen voorzieningen gevonden bij deze rit. De kaart is niet volledig.'));
+    if (state.coverage.some(({ state }) => ['failed','limited'].includes(state))) {
+      section.append(element('p', 'planner-hint', 'Deze selectie kan onvolledig zijn.'));
+    }
+    const credit = element('p', 'planner-hint trip-poi-source');
+    credit.append(link(state.source.label, state.source.url), ' · ', link(state.source.attribution, state.source.attributionUrl));
+    section.append(credit);
+  } else {
+    if (state?.state === 'unavailable') section.append(element('p', 'planner-hint', 'Voorzieningen konden niet worden opgehaald.'));
+    const find = button(state?.state === 'loading' ? 'Voorzieningen zoeken…'
+      : state?.state === 'unavailable' ? 'Probeer opnieuw' : 'Zoek toiletten en fietspompen', 'tripServices', trip.id);
+    if (state?.state === 'loading') find.setAttribute('aria-disabled','true');
+    section.append(find);
+  }
+  return section;
+}
+
 function renderTrip(trip, openRoute = false) {
   const section = element('article', 'trip-card');
   section.dataset.tripKey = trip.id ?? '';
@@ -578,7 +619,7 @@ function renderTrip(trip, openRoute = false) {
   const core = element('div', 'trip-core');
   const panels = element('div', 'trip-panels');
   panels.append(renderSignals(trip), renderTimeline(trip));
-  core.append(metrics, renderRouteDetails(trip, openRoute), panels, renderEditor(trip), renderPois(trip));
+  core.append(metrics, renderRouteDetails(trip, openRoute), panels, renderEditor(trip), renderPois(trip), renderServices(trip));
   section.append(heading, core);
   return section;
 }
@@ -587,7 +628,7 @@ const focusFields = {
   tripDate: 'data-trip-date', tripEdit: 'data-trip-edit', tripVisit: 'data-trip-visit',
   tripRemove: 'data-trip-remove', tripAddChoice: 'data-trip-add-choice', tripAdd: 'data-trip-add',
   tripSave: 'data-trip-save', tripCancel: 'data-trip-cancel', tripPois: 'data-trip-pois',
-  tripRouteSummary: 'data-trip-route-summary', tripEditorTitle: 'data-trip-editor-title',
+  tripRouteSummary: 'data-trip-route-summary', tripServices: 'data-trip-services', tripServicesTitle: 'data-trip-services-title', tripEditorTitle: 'data-trip-editor-title',
 };
 
 function focusBeforeRender(container) {
@@ -606,6 +647,7 @@ function restoreFocus(container, saved) {
     .filter((node) => !node.hidden && !node.disabled);
   const equivalent = controls.find(({ dataset }) => dataset[saved.field] === saved.value) ?? controls[0];
   const fallback = saved.field === 'tripPois' ? card.querySelector('.trip-pois h4')
+    : saved.field === 'tripServices' ? card.querySelector('[data-trip-services-title]')
     : card.querySelector('[data-trip-editor-title]') ?? card.querySelector('[data-trip-edit]');
   const next = equivalent ?? fallback;
   if (!next || next.hidden) return;

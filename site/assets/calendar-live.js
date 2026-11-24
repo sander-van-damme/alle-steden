@@ -55,7 +55,7 @@ export async function fetchCalendarMonth(cities, options) {
   const networkOptions = { fetcher, calendar: true, minimumStart: addCalendarDays(span.from, -maxCalendarEventDays) };
   const chosenCity = city && cities.find(({ slug }) => slug === city);
   const work = options.extraSources === false ? [] : extraAgendaJobs(cities, {
-    city, region, span, rawFetcher: native, fetcher, signal, today: options.today,
+    city, region, span, origin, rawFetcher: native, fetcher, signal, today: options.today,
   });
   const localRequest = chosenCity ? fetchCityEvents(chosenCity, { ...span, origin, ...networkOptions }) : null;
   if (!chosenCity && (!region || region === flanders)) {

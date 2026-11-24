@@ -86,3 +86,8 @@
   .route-surface-stat-detail span { display: block; }
   .route-surface-km::before { content: none; }
 }
+
+.route-pin-service-toilet circle { fill: #3056a5; }
+.route-pin-service-repair circle { fill: #576324; }
+.route-map-stop-service-toilet button { color: #3056a5; }
+.route-map-stop-service-repair button { color: #485315; }

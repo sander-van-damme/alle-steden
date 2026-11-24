@@ -297,7 +297,12 @@ function routeMarkers(trip, outbound) {
     point: stopPoint(poi), name: poi.name, icon: 'P' + (i + 1),
     type: selected && (poi === selected || selected.id && selected.id === poi.id) ? 'selected' : 'poi',
   }));
-  return [...cities, ...visitMarkers, ...poiMarkers].filter((marker) => marker.point && marker.name);
+  const counts = { toilet: 0, repair: 0 };
+  const services = (trip.services?.items ?? []).slice(0, 12).map((item) => ({
+    point: stopPoint(item), name: item.name, type: 'service-' + item.category,
+    icon: (item.category === 'toilet' ? 'T' : 'F') + (++counts[item.category]),
+  }));
+  return [...cities, ...visitMarkers, ...poiMarkers, ...services].filter((marker) => marker.point && marker.name);
 }
 
 function createMap(doc, outbound, inbound, markers, label, edited) {
@@ -329,7 +334,7 @@ function createMap(doc, outbound, inbound, markers, label, edited) {
     north = Math.min(north, y); south = Math.max(south, y);
   }
   for (const {point, type} of markers) {
-    if (type === 'poi') continue; // Optional suggestions should not zoom out the actual route.
+    if (type === 'poi' || type.startsWith('service-')) continue; // Optional suggestions should not zoom out the actual route.
     const [x, y] = project(point);
     west = Math.min(west, x); east = Math.max(east, x);
     north = Math.min(north, y); south = Math.max(south, y);
@@ -378,6 +383,8 @@ function createMap(doc, outbound, inbound, markers, label, edited) {
   if (markers.some(({type}) => type === 'visit')) caption.append(node(doc, 'p', '',
     edited ? 'B = geplande bezoekstop' : 'B = bezoeklocatie; het fietstraject toont de rit tussen de stadsankers.'));
   if (markers.some(({type}) => type === 'poi')) caption.append(node(doc, 'p', '', 'P = mogelijke stop; niet automatisch in de fietsroute.'));
+  if (markers.some(({type}) => type.startsWith('service-'))) caption.append(node(doc, 'p', '',
+    'T = toilet · F = fietshulp. Deze punten zijn geen geplande stops.'));
   if (markerList.children.length) caption.append(markerList);
   figure.append(frame, caption, live);
 

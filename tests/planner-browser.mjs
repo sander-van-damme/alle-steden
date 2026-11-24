@@ -23,6 +23,7 @@ const errors = [];
 let browser;
 let storedPoi;
 let missing = false;
+let serviceRequests = 0;
 let directions = [];
 const mocksEnabled = process.env.LIVE_PLANNER !== '1';
 const iframeSafe = (page) => page.on('pageerror', (error) => errors.push(error.message));
@@ -71,6 +72,16 @@ async function installFixtures(context) {
       kind: { value: 'http://www.wikidata.org/entity/Q23413' }, coord: { value: 'Point(' + storedPoi.join(' ') + ')' }, links: { value: '8' },
     }] : [] },
   } }));
+  await context.route('https://geodata.toerismevlaanderen.be/geoserver/poi/wfs?**', async (route) => {
+    serviceRequests++;
+    const layer = new URL(route.request().url()).searchParams.get('typeNames').split(':').at(-1);
+    const [lon,lat] = storedPoi;
+    return route.fulfill({ headers:cors, json:{ type:'FeatureCollection',
+      crs:{ properties:{ name:'urn:ogc:def:crs:CRS::84' } }, numberMatched:1, features:[{
+        id:layer+'.101', geometry:{type:'Point',coordinates:[lon,lat]},
+        properties:{ objectid:101, lon, lat, access:'yes', servicebicyclepump:'yes' },
+      }], } });
+  });
   await context.route('**/api/city-live?**', (route) => route.fulfill({ json: { state:'not-configured', items:[] } }));
   for (const host of ['data.stad.gent', 'www.odwb.be']) {
     await context.route('https://' + host + '/api/**', (route) => route.fulfill({ headers:cors, json:{ results:[], total_count:0 } }));
@@ -133,6 +144,12 @@ try {
     await card.locator('.trip-poi-name').filter({ hasText:'Testkasteel halverwege' }).waitFor({ timeout:20_000 });
     assert.ok(directions.some((points)=>points.length===3));
     assert.match(await card.innerText(), /omweg over fietsroutes/);
+    assert.equal(serviceRequests, 0);
+    await card.locator('[data-trip-services]').click();
+    await card.getByRole('link',{name:'Fietspomp'}).waitFor({timeout:15000});
+    assert.equal(serviceRequests, 2);
+    assert.match(await card.locator('.trip-services').innerText(), /Niet ingepland als stop/);
+    await card.locator('.route-pin-service-repair').waitFor();
     await card.locator('[data-trip-edit]').click();
     const extra = card.locator('[data-trip-add-choice] option').filter({hasText:'Extra proefstop'});
     assert.equal(await extra.count(),1);
@@ -143,6 +160,8 @@ try {
     await card.locator('[data-kind=visit]').filter({hasText:'Extra proefstop'}).waitFor({timeout:20000});
     assert.equal(await card.locator('[data-kind=visit]').count(),3);
     await card.locator('.route-view').waitFor();
+    assert.equal(await card.locator('.route-pin-service-repair').count(), 0);
+    assert.equal(serviceRequests, 2);
     const [editedFile] = await Promise.all([page.waitForEvent('download'), card.getByRole('link',{name:'Download GPX'}).click()]);
     const editedXml = await readFile(await editedFile.path(), 'utf8');
     assert.notEqual(editedXml, xml);

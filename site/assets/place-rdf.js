@@ -7,6 +7,9 @@ const identifiers = Object.freeze({
   brussels: { property: 'Open Data Brussel record ID', type: 'TouristAttraction', authority: 'https://www.brussel.be/' },
   brusselsGrandPlace: { property: 'Stad Brussel Grote Markt ID', type: 'LandmarksOrHistoricalBuildings', authority: 'https://www.brussel.be/' },
   brusselsCulture: { property: 'Open Data Brussel record ID', type: 'Place', authority: 'https://www.brussel.be/' },
+  visitBrussels: { property: 'Visit.Brussels record ID', type: 'Place', authority: 'https://www.brussel.be/' },
+  marcheHeritage: { property: 'Marche-en-Famenne erfgoed ID', type: 'Place', authority: 'https://www.marche.be/' },
+  marcheArt: { property: 'Marche-en-Famenne kunst ID', type: 'Place', authority: 'https://www.marche.be/' },
   erfg: { property: 'Aanduidingsobject Onroerend Erfgoed ID', type: 'LandmarksOrHistoricalBuildings',
     authority: 'https://www.onroerenderfgoed.be/' },
 });
@@ -63,7 +66,8 @@ export function placeSnapshotTurtle(city, records, retrievedAt = new Date()) {
       'dcterms:rightsHolder ' + iri(item.authority),
       'dcterms:license ' + iri(source.license),
     ];
-    if (source.attribution) fields.push('dcterms:bibliographicCitation ' + literal(source.attribution));
+    const credit = source.attribution ?? (source.credit && source.label + ' · ' + source.credit);
+    if (credit) fields.push('dcterms:bibliographicCitation ' + literal(credit));
     const website = iri(record.website);
     if (website) fields.push('schema:url ' + website);
     const street = compact(record.street);

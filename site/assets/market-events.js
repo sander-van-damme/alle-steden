@@ -173,6 +173,13 @@ function span(options) {
     limited: from < today || through > horizon };
 }
 
+// Shared date-only policy for other market sources. Dated municipal
+// announcements may explicitly override the conservative exclusions.
+export const normalMarketSpan = (options = {}) => span(options);
+export const localMarketTime = localTimestamp;
+export const marketEasterSunday = easterSunday;
+export const uncertainMarketDay = (day) => uncertainDay(day, easterSunday(Number(day.slice(0, 4))));
+
 function sourceRecord(source, id) {
   return parameters(source.origin + '/explore/dataset/' + source.dataset + '/table/', { q: id }).href;
 }

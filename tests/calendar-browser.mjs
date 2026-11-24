@@ -26,8 +26,8 @@ async function install(page, { fails = false, pauseGent = null } = {}) {
   await page.route('https://uwtaxdtecrngvmgzradk.supabase.co/functions/v1/calendar-feed?**', route => route.fulfill({
     contentType: 'text/calendar', body: ics, headers: { 'Access-Control-Allow-Origin': '*' },
   }));
-  for (const host of ['https://randonneurs.be/api/**', 'https://opendata.brussels.be/api/**', 'https://opendata.liege.be/api/**']) {
-    await page.route(host, route => route.fulfill({ json: { rides:[], results:[] }, headers: { 'Access-Control-Allow-Origin': '*' } }));
+  for (const host of ['https://randonneurs.be/api/**', 'https://opendata.brussels.be/api/**', 'https://opendata.liege.be/api/**', 'https://geodata.antwerpen.be/arcgissql/**']) {
+    await page.route(host, route => route.fulfill({ json: { rides:[], results:[], features:[] }, headers: { 'Access-Control-Allow-Origin': '*' } }));
   }
   await page.route('https://data.stad.gent/api/**', async (route) => {
     if (pauseGent) await pauseGent;

@@ -42,6 +42,8 @@ Zie [Gent](cities/gent.ttl) voor een volledig voorbeeld. De build leest de Turtl
 
 ## Bronnen
 
+Het [bronnenregister](docs/data-sources.md) vermeldt gebruikte en kandidaatbronnen, rechten, beperkingen en de meting voor uitbreidingen.
+
 De eerste stedenindex bevat 138 administratieve gemeenten (65 in Vlaanderen, 72 in Wallonië en 1 in het Brussels Hoofdstedelijk Gewest). Ze volgt de [Nederlandstalige stedenlijst](https://nl.wikipedia.org/wiki/Lijst_van_steden_in_Belgi%C3%AB), vergeleken met de [Franstalige stedenlijst](https://fr.wikipedia.org/wiki/Liste_des_villes_de_Belgique) en aangevuld met bronnen voor de verschillen. Zo telt Tongeren-Borgloon als één stad en is Libramont-Chevigny sinds 2025 opgenomen. De geraadpleegde bronnen staan waar relevant in de Turtle-bestanden via `dcterms:source`.
 
 - [Wikidata](https://www.wikidata.org/) levert de IRI's, coördinaten en [NIS-koppelingen](https://www.wikidata.org/wiki/Property:P1567). [Statbel](https://statbel.fgov.be/nl/over-statbel/methodologie/classificaties/geografie) documenteert de gemeente-indeling en wijzigingen van NIS-codes.

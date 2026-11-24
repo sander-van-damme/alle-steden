@@ -1,8 +1,9 @@
 import {
-  sources, safeUrl, visitorUrl, compact, dateValue, displayDate, getJson, regionalSource, walloonAgendaUrl,
-  getWikidata, getWallonia, getBrusselsPlaces, getFlemishHeritage, cityEventSources, getOsmHours,
-  interleavePlaceSources, mergePlaces, upcomingEvents, dedupeEvents,
+  sources, safeUrl, visitorUrl, compact, dateValue, displayDate, walloonAgendaUrl,
+  cityEventSources, getOsmHours,
+  upcomingEvents, dedupeEvents,
 } from './sources.js';
+import { displayedPlaces, placeProviders } from './place-providers.js';
 import { livePlaceFragment } from './place-rdf.js';
 import { enhanceVerifiedLinks, isLinkRecord } from './link-check.js';
 
@@ -32,6 +33,7 @@ function sourceLine(item) {
     const source = sources[key];
     if (i) paragraph.append(' · ');
     paragraph.append(link(source.label, source.visitorHref ?? source.href));
+    if (source.credit) paragraph.append(' · ' + source.credit);
     if (source.license) {
       const license = source.license.includes('/by/4.0') ? 'CC BY 4.0'
         : source.license.includes('/zero/') ? 'CC0' : 'Gebruiksvoorwaarden';
@@ -116,40 +118,12 @@ function officialLinks(section, city, type) {
   node.hidden = false;
 }
 
-async function readProxy(city, source) {
-  const url = new URL('/api/city-live', location.origin);
-  url.searchParams.set('city', city.slug);
-  url.searchParams.set('source', source);
-  const value = await getJson(url, { timeout: 12_000, credentials: 'same-origin' });
-  if (!Array.isArray(value.items)) throw new Error('Ongeldig antwoord');
-  return value;
-}
-
 function fromStatic(section) {
   return [...section.querySelectorAll('[data-static-results] li')].map((card) => {
     const date = [...card.querySelectorAll('time')].map((time) => dateValue(time.dateTime));
     return { card, item: { id: card.dataset.itemId, name: plainHeading(card), start: date[0], end: date[1],
       website: safeUrl(card.querySelector('h3 a')?.href) } };
   });
-}
-
-function placeSources(city) {
-  const region = regionalSource(city);
-  const wikidata = { key: 'wikidata', run: () => getWikidata(city).then((items) => ({ items })) };
-  if (region === 'brussels') return [
-    wikidata,
-    ...['brussels', 'brusselsGrandPlace', 'brusselsCulture'].map((key) => ({
-      key, run: () => getBrusselsPlaces(key).then((items) => ({ items })),
-    })),
-  ];
-  if (region === 'wallonia') return [wikidata, { key: region, run: async () => {
-    const result = await getWallonia(city);
-    // Tie verification to the same provider's exact outgoing href. A merged
-    // card may otherwise inherit a website from a different data source.
-    return { ...result, items: result.items.map((item) => ({ ...item, verificationHref: safeUrl(item.website) })) };
-  } }];
-  return [wikidata, { key: 'flanders', run: () => readProxy(city, 'flanders') },
-    { key: 'erfg', run: () => getFlemishHeritage(city) }];
 }
 
 function placeControls(section, list, onMore) {
@@ -175,7 +149,7 @@ function enhanceSection(section, city, type) {
   const status = section.querySelector('[data-status]');
   const retry = section.querySelector('[data-retry]');
   const stored = fromStatic(section);
-  const configured = type === 'places' ? placeSources(city) : cityEventSources(city);
+  const configured = type === 'places' ? placeProviders(city) : cityEventSources(city);
   const batch = 18;
   let amount = batch;
   let activeRender = () => {};
@@ -204,7 +178,7 @@ function enhanceSection(section, city, type) {
       const online = groups.flat();
       let visible;
       if (type === 'places') {
-        const merged = mergePlaces([...stored.map(({ item, card }) => ({ ...item, card })), ...interleavePlaceSources(groups)], 112);
+        const merged = displayedPlaces(city, stored.map(({ item, card }) => ({ ...item, card })), groups);
         mappedPlaces = merged;
         const added = merged.filter((item) => !item.card);
         if (settled && requestedFragment.startsWith('bron-')) {

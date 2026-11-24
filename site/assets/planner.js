@@ -170,6 +170,27 @@ async function loadStops(trip, current) {
   renderResults();
 }
 
+async function loadServices(trip, current) {
+  if (!trip || ['loading','ok'].includes(trip.services?.state) || job !== current) return;
+  const state = { state: 'loading', items: [] };
+  const route = trip.route;
+  trip.services = state;
+  remember(trip);
+  renderResults();
+  try {
+    const { findRouteServices } = await import('./route-services.js');
+    if (job !== current || trip.services !== state || trip.route !== route) return;
+    const legs = [...(route.legs ?? [route]), ...(trip.returnRoute?.legs ?? (trip.returnRoute ? [trip.returnRoute] : []))];
+    const result = await findRouteServices({ ...route, legs }, { signal: current.signal });
+    if (job !== current || trip.services !== state || trip.route !== route) return;
+    Object.assign(state, result, { state: result.coverage.every(({ state }) => state === 'failed') ? 'unavailable' : 'ok' });
+  } catch (error) {
+    if (job !== current || trip.services !== state || trip.route !== route) return;
+    Object.assign(state, { state: error instanceof RangeError ? 'outside' : 'unavailable' });
+  }
+  if (shown?.trips.some((item) => item.services === state)) renderResults();
+}
+
 function renderResults() {
   renderPlannerResults(resultEl, shown, { mode: activeMode, scheduledOnly: activeScheduledOnly });
 }
@@ -228,7 +249,7 @@ async function saveEditor(trip) {
       fetchRoute, signal: AbortSignal.any([run.signal, parent.signal]),
     });
     if (run.signal.aborted || job !== parent) return;
-    Object.assign(trip, edited, { editor: undefined });
+    Object.assign(trip, edited, { editor: undefined, services: undefined });
     remember(trip);
     renderResults();
   } catch (error) {
@@ -317,6 +338,7 @@ resultEl.addEventListener('click', (event) => {
   const trip = displayedTrip(event);
   if (!button || !trip || !job) return;
   if ('tripPois' in button.dataset) return loadStops(trip, job);
+  if ('tripServices' in button.dataset) return loadServices(trip, job);
   if ('tripEdit' in button.dataset && !trip.editor) {
     trip.editor = editFlags(editVisitOptions(trip, activeFilters));
     return renderResults();
