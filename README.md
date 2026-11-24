@@ -2,6 +2,8 @@
 
 Een persoonlijk ontdekkingsproject langs de Belgische gemeenten met een officiële stadstitel. De stedengids geeft een doorzoekbare lijst naast een kaart met alle 138 steden. De twee lichten dezelfde stad op bij aanwijzen of toetsenbordfocus; tik op een kaartpunt om de stad te kiezen. Elke stad heeft een eigen pagina met een kaartlink. De RDF-bestanden blijven rechtstreeks bereikbaar, bijvoorbeeld via `/data/gent.ttl`, maar staan niet als download op de bezoekerspagina. Waar er al gegevens zijn, toont de pagina ook bezienswaardigheden en evenementen.
 
+Voor publiekswijzigingen: zie de [stijlrichtlijnen voor de veldgids](docs/visual-style.md).
+
 ## Lokaal draaien
 
 Gebruik Node.js 22 of nieuwer.

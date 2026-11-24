@@ -16,12 +16,9 @@ export function calendarMain({ cities, events }, now = new Date()) {
     <span>${escape(cityNames[item.city])} · ${escape(eventTime(item))}</span>
   </li>`).join('')}</ul>` : '<p>Er staan nog geen toekomstige evenementen in het lokale overzicht.</p>';
   return `<main id="inhoud" class="wrap calendar">
-    <header class="calendar-hero">
-      <div><p class="eyebrow">Alle Steden · Op datum</p><h1>Kalender</h1>
-        <p>Bekijk welke evenementen op de agenda staan in Belgische steden. Kies een maand, stad of soort activiteit.</p></div>
-      <div class="calendar-hero-art" aria-hidden="true">
-        <svg viewBox="0 0 160 110" fill="none"><path d="M19 26h114v69H19zM19 43h114M45 14v24m60-24v24M49 58h10m14 0h9m15 0h9M49 70h10m14 0h9m15 0h9M49 82h10m14 0h9m15 0h9" /><path class="calendar-hero-spark" d="M138 8v24m-12-12h24m-19-8 14 16m0-16-14 16"/></svg>
-      </div>
+    <header class="calendar-intro">
+      <h1>Kalender</h1>
+      <p>Evenementen in Belgische steden, per maand of per dag.</p>
     </header>
     <section id="calendar-fallback" aria-labelledby="calendar-fallback-title">
       <h2 id="calendar-fallback-title">Binnenkort in de steden</h2>
@@ -50,16 +47,16 @@ export function calendarMain({ cities, events }, now = new Date()) {
             </div>
             <div id="calendar-grid" role="rowgroup"></div>
           </div>
-          <div class="calendar-key"><span></span> Ten minste één evenement opgenomen</div>
+          <div class="calendar-key"><span></span> Aantal evenementen in deze kalender</div>
         </section>
         <section class="calendar-list-panel" aria-labelledby="calendar-agenda-title">
           <div class="calendar-list-heading">
-            <div><p class="eyebrow">Op de agenda</p><h2 id="calendar-agenda-title"></h2></div>
+            <h2 id="calendar-agenda-title"></h2>
             <button type="button" id="calendar-clear-day" hidden>Hele maand</button>
           </div>
           <p id="calendar-status" class="calendar-status" role="status"></p>
           <div id="calendar-events"></div>
-          <button id="calendar-more" type="button" class="button secondary" aria-controls="calendar-events" hidden>Toon meer</button>
+          <button id="calendar-more" type="button" aria-controls="calendar-events" hidden>Toon meer</button>
         </section>
       </div>
       <details class="calendar-sources"><summary>Over deze kalender</summary>

@@ -67,7 +67,6 @@ function updateResults() {
   }
   count.textContent = results === 1 ? '1 stad' : `${results} steden`;
   empty.hidden = results > 0;
-  if (map) map.querySelector('.directory-map-count').textContent = results;
   if (byId.get(selected)?.card.hidden) selected = undefined;
   if (!roving || byId.get(roving)?.card.hidden) roving = entries.find(entry => entry.pin && !entry.card.hidden)?.id;
   for (const { id, pin } of entries) pin?.setAttribute('tabindex', id === roving ? '0' : '-1');

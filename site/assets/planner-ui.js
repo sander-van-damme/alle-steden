@@ -270,7 +270,7 @@ function renderTimeline(trip) {
       visit?.url ? link(item.label ?? visit.name, visit.url, 'trip-timeline-name')
         : element('span', 'trip-timeline-name', item.label ?? visit?.name),
     );
-    if (exterior) content.append(element('span', 'entry-badge trip-exterior-badge', exteriorLabel));
+    if (exterior) content.append(element('span', 'trip-exterior-badge', exteriorLabel));
     const windowLabel = exterior && visit?.windowLabel?.startsWith(exteriorLabel)
       ? visit.windowLabel.slice(exteriorLabel.length).replace(/^\s*·\s*/, '')
       : visit?.windowLabel;
@@ -288,7 +288,7 @@ function renderTimeline(trip) {
 
 function renderSignals(trip) {
   const panel = element('section', 'trip-signals');
-  panel.append(element('h4', '', 'Hoe aangenaam is de route?'));
+  panel.append(element('h4', '', 'Over de route'));
   // The expanded route view owns surface and elevation breakdowns.
   const notes = (trip.scoreNotes ?? []).filter((note) => !/verhard oppervlak in de bron|onverhard volgens de router|geschatte hoogtemeters klimmen/i.test(note));
   const safety = notes.find((note) => /niet rechtstreeks gemeten/i.test(note));
@@ -363,7 +363,7 @@ function renderPois(trip) {
     return section;
   }
   if (state === 'unavailable') section.append(element('p', 'planner-hint', 'Stops konden niet worden opgehaald.'));
-  else if (!state) section.append(element('p', 'planner-hint', 'Zoek plekken langs deze lijn en bereken waar mogelijk de echte fietsomweg.'));
+  else if (!state) section.append(element('p', 'planner-hint', 'Ontdek extra stops met een fietsomweg waar we die kunnen berekenen.'));
   if (trip.id != null) {
     const button = element('button', 'button secondary', state === 'loading' ? 'Stops worden gezocht…'
       : state === 'unavailable' ? 'Stops opnieuw zoeken' : 'Zoek stops langs de route');
@@ -425,7 +425,7 @@ function renderEditor(trip) {
   title.tabIndex = -1;
   title.dataset.tripEditorTitle = '';
   section.append(title, element('p', 'planner-hint',
-    'Kies, voeg toe of verwijder. Daarna berekent de planner opnieuw de route en dagindeling voor deze datum.'));
+    'Wijzig je stops. We berekenen de route en dagindeling opnieuw.'));
   const slots = editor.slots ?? [];
   const options = editor.options ?? [];
   const busy = editor.state === 'saving' || editor.state === 'loading';
@@ -498,7 +498,7 @@ function renderRouteDetails(trip, open) {
   view.dataset.tripRoute = '';
   const summary = element('summary');
   summary.append(element('span', 'trip-route-summary-title', 'Kaart, hoogteprofiel en wegdek'),
-    element('small', 'trip-route-summary-hint', 'Bekijk de route en download de GPX.'));
+    element('small', 'trip-route-summary-hint', 'Met GPX-download'));
   summary.dataset.tripRouteSummary = '';
   const status = element('p', 'planner-hint');
   status.setAttribute('role', 'status');
@@ -608,9 +608,14 @@ function renderTrip(trip, openRoute = false) {
   const date = renderTripDate(trip);
   heading.append(date, title);
   const metrics = element('ul', 'trip-metrics');
-  if (Number.isFinite(trip.km)) metrics.append(element('li', '', `${fmtNumber(trip.km)} km fietsen`));
-  if (Number.isFinite(trip.bikeMinutes)) metrics.append(element('li', '', `Circa ${formatDuration(trip.bikeMinutes)} fietstijd`));
-  if (Number.isFinite(trip.finish)) metrics.append(element('li', '', `Geschat klaar om ${formatTime(trip.finish)}`));
+  const metric = (value, before = '', after = '') => {
+    const item = element('li');
+    item.append(before, element('strong', '', value), after);
+    metrics.append(item);
+  };
+  if (Number.isFinite(trip.km)) metric(`${fmtNumber(trip.km)} km`, '', ' fietsen');
+  if (Number.isFinite(trip.bikeMinutes)) metric(formatDuration(trip.bikeMinutes), 'Circa ', ' fietstijd');
+  if (Number.isFinite(trip.finish)) metric(formatTime(trip.finish), 'Geschat klaar om ');
   const loopLabel = trip.loop === true || trip.routeType === 'loop'
     ? 'Lusrondrit' : trip.returnRoute ? 'Heen en terug · grotendeels dezelfde route' : trip.roundtrip ? 'Heen en terug' : 'Enkele rit';
   metrics.append(element('li', '', loopLabel));
@@ -618,8 +623,10 @@ function renderTrip(trip, openRoute = false) {
   if (exteriorCount) metrics.append(element('li', 'trip-exterior-metric', exteriorCount === 1 ? '1 buitenstop' : `${exteriorCount} buitenstops`));
   const core = element('div', 'trip-core');
   const panels = element('div', 'trip-panels');
-  panels.append(renderSignals(trip), renderTimeline(trip));
-  core.append(metrics, renderRouteDetails(trip, openRoute), panels, renderEditor(trip), renderPois(trip), renderServices(trip));
+  panels.append(renderTimeline(trip), renderSignals(trip));
+  const options = element('div', 'trip-options');
+  options.append(renderPois(trip), renderServices(trip));
+  core.append(metrics, renderRouteDetails(trip, openRoute), panels, renderEditor(trip), options);
   section.append(heading, core);
   return section;
 }

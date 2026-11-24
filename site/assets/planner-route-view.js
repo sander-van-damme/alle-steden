@@ -379,7 +379,7 @@ function createMap(doc, outbound, inbound, markers, label, edited) {
   controls.append(zoomIn, zoomOut, reset);
   viewport.append(tiles, overlay);
   frame.append(viewport, controls, credit, tileStatus);
-  caption.append(node(doc, 'p', '', inbound.length ? 'Volle lijn: heen · gestreepte lijn: terug' : 'Blauwe lijn: fietsroute'));
+  caption.append(node(doc, 'p', '', inbound.length ? 'Volle lijn: heen · gestreepte lijn: terug' : 'Volle lijn: fietsroute'));
   if (markers.some(({type}) => type === 'visit')) caption.append(node(doc, 'p', '',
     edited ? 'B = geplande bezoekstop' : 'B = bezoeklocatie; het fietstraject toont de rit tussen de stadsankers.'));
   if (markers.some(({type}) => type === 'poi')) caption.append(node(doc, 'p', '', 'P = mogelijke stop; niet automatisch in de fietsroute.'));

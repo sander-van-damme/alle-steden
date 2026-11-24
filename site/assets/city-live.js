@@ -114,7 +114,7 @@ function officialLinks(section, city, type) {
     : city.slug === 'brussel' ? [['Agenda Visit Brussels', 'https://www.visit.brussels/nl/bezoekers/agenda']]
     : city.region === 'Vlaanderen' ? [['UiT in Vlaanderen', 'https://www.uitinvlaanderen.be/']]
     : [['Agenda VisitWallonia', walloonAgendaUrl]];
-  node.replaceChildren(...links.map(([label, href]) => link(label + ' ↗', href)));
+  node.replaceChildren(...links.map(([label, href]) => link(label, href)));
   node.hidden = false;
 }
 

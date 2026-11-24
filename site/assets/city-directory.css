@@ -1,32 +1,31 @@
-.directory-workspace { display: grid; grid-template-columns: 1.04fr minmax(0, .96fr); gap: clamp(.85rem, 2.6vw, 2.4rem); align-items: start; }
-.directory-workspace .city-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
-.directory-map { --map-highlight: #b53b28; position: sticky; top: .7rem; min-width: 0; padding: clamp(.65rem, 2.3vw, 1.55rem); border: 1px solid #cdd6c8; border-radius: .75rem; background: #eff1e9; }
-.directory-map-heading { display: flex; justify-content: space-between; gap: .5rem; align-items: start; }
-.directory-map-heading .eyebrow { margin: 0; color: #52635b; font-size: .68rem; }
-.directory-map-heading h3 { margin: .12rem 0 .45rem; font: 500 clamp(1.55rem, 3vw, 2.2rem)/1.08 var(--display); letter-spacing: -.04em; }
-.directory-map-count { flex: none; color: #315246; font-size: .74rem; font-weight: 700; background: #dfe7d9; border-radius: 2rem; padding: .18rem .52rem; }
-.directory-map-svg { display: block; overflow: visible; width: 100%; }
-.directory-land { fill: #d8e3d3; stroke: #f2f4ee; stroke-width: 1.9px; }
-.directory-land[data-map-region="Wallonië"] { fill: #e5dfca; }
-.directory-land[data-map-region="Brussels Hoofdstedelijk Gewest"] { fill: #c1d7cd; }
+.directory-workspace {
+  display: grid; grid-template-columns: minmax(0, 1.16fr) minmax(0, .84fr);
+  gap: clamp(.85rem, 3.25vw, 2.4rem); align-items: start; border-top: 2px solid var(--accent);
+}
+.directory-list { min-width: 0; }
+.directory-list h2, .directory-map-title { margin: 0; padding: .55rem 0 .4rem; font: 500 1.38rem/1.15 var(--display); letter-spacing: -.026em; }
+.directory-list h2 { border-bottom: 1px solid var(--line); }
+.directory-map { --map-highlight: #b53b28; position: sticky; top: .7rem; min-width: 0; }
+.directory-map-svg { display: block; overflow: visible; width: 100%; background: #eceee3; border-block: 1px solid #d4dbcf; }
+.directory-land { fill: #d4dfc9; stroke: #f7f5ed; stroke-width: 1.9px; }
+.directory-land[data-map-region="Wallonië"] { fill: #e2d8b9; }
+.directory-land[data-map-region="Brussels Hoofdstedelijk Gewest"] { fill: #bdd2c8; }
 .directory-pin { touch-action: manipulation; cursor: pointer; }
 .directory-pin-hit { fill: transparent; }
 .directory-pin-dot { fill: #34594b; stroke: #f9faf4; stroke-width: 1.15px; pointer-events: none; }
 .directory-pin:focus-visible { outline: 0; }
-.city-card.is-active a { border-color: #a75c4d; background: #f4e8e0; }
-.city-card.is-active .city-arrow { color: #943f31; }
-.directory-map-focus { display: flex; flex-wrap: wrap; gap: .1rem .65rem; justify-content: space-between; align-items: baseline; min-height: 2.3rem; padding: .55rem .68rem; color: #41584b; background: #f9faf4; border-radius: .35rem; font-size: .82rem; }
+.city-card.is-active a { color: #6f3328; background: #f0e1d7; box-shadow: inset 2px 0 var(--signal); }
+.directory-map-focus { display: flex; flex-wrap: wrap; gap: .1rem .65rem; justify-content: space-between; align-items: baseline; min-height: 2.2rem; padding: .36rem 0; color: #41584b; font-size: .84rem; }
 .directory-map-focus p { margin: 0; font-weight: 650; }
 .directory-map-focus a { font-weight: 650; }
-.directory-map figcaption { margin: .45rem 0 0; font-size: .70rem; color: #52635b; }
+.directory-map figcaption { margin: .2rem 0 0; font-size: .74rem; color: #52635b; }
+@media (max-width: 46rem), (max-height: 41rem) {
+  .directory-map { position: static; }
+}
 @media (max-width: 46rem) {
-  .directory-workspace { grid-template-columns: minmax(0,1fr); }
-  .directory-map { grid-row: 1; position: static; }
+  .directory-workspace { grid-template-columns: minmax(0,1fr); gap: .6rem; }
 }
-@media (max-width: 29rem) {
-  .directory-workspace .city-card a { padding: .65rem; }
-}
-/* Concentric, non-scaling strokes keep the active dot legible even on a phone. */
+/* The active mapped point must remain visible above adjacent pins on touch and keyboard. */
 .directory-pin-highlight { pointer-events: none; }
 .directory-pin-highlight circle { fill: none; vector-effect: non-scaling-stroke; }
 .directory-pin-halo { stroke: #b53b28; stroke-opacity: .22; stroke-width: 30px; }
@@ -34,6 +33,3 @@
 .directory-pin-ring { stroke: #fff9ed; stroke-width: 20px; }
 .directory-pin-center { stroke: var(--map-highlight); stroke-width: 15px; }
 .directory-map-svg:focus-within .directory-pin-edge { stroke: #3d231e; stroke-width: 25px; }
-
-.directory-list { min-width: 0; }
-.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

@@ -24,8 +24,8 @@ function eventCard(item, cities, selectedDay) {
     heading.append(a);
   } else heading.textContent = item.name;
 
-  const dateBadge = node('time', 'calendar-event-date', shortDay.format(new Date((selectedDay || date) + 'T12:00:00Z')));
-  dateBadge.dateTime = selectedDay || date;
+  const dateLabel = node('time', 'calendar-event-date', shortDay.format(new Date((selectedDay || date) + 'T12:00:00Z')));
+  dateLabel.dateTime = selectedDay || date;
   const body = node('div', 'calendar-event-body');
   const place = node('a', 'calendar-event-city', cities[item.city].name);
   place.href = '/steden/' + item.city + '/';
@@ -53,7 +53,7 @@ function eventCard(item, cities, selectedDay) {
     }
   }
   body.append(footer);
-  article.append(dateBadge, body);
+  article.append(dateLabel, body);
   return article;
 }
 
@@ -178,7 +178,7 @@ async function start() {
     if (focus) calendarGrid.querySelector('[tabindex="0"]')?.focus();
 
     find('calendar-clear-day').hidden = !selectedDay;
-    find('calendar-agenda-title').textContent = selectedDay ? labelDay(selectedDay) : 'Deze maand';
+    find('calendar-agenda-title').textContent = selectedDay ? labelDay(selectedDay) : 'Evenementen deze maand';
     const selection = selectedDay ? perDay.get(selectedDay) ?? [] : shown;
     find('calendar-status').textContent = statusText(live.coverage, liveCalendarSpan(span, today), selection.length, pending, scope);
     const itemList = find('calendar-events');
@@ -186,10 +186,8 @@ async function start() {
       itemList.replaceChildren(...selection.slice(0, agendaLimit).map((item) => eventCard(item, byCity, selectedDay)));
     } else {
       const panel = node('div', 'calendar-empty');
-      panel.append(node('span', 'calendar-empty-icon', '○'),
-        node('p', '', pending ? 'Even geduld terwijl de kalender wordt aangevuld.'
-          : selectedDay ? 'Kies een andere dag of bekijk de hele maand.'
-            : 'Kies een andere maand of pas je filters aan.'));
+      if (!pending) panel.append(node('p', '', selectedDay ? 'Kies een andere dag of bekijk de hele maand.'
+        : 'Kies een andere maand of pas je filters aan.'));
       itemList.replaceChildren(panel);
     }
 

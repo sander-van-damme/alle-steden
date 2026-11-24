@@ -40,7 +40,7 @@ try {
   await desktop.locator('#region').selectOption({label:'Wallonië'});
   assert.equal(await desktop.locator('[data-city-pin]:not([hidden])').count(), 0);
   assert.equal(await desktop.locator('[data-pin-highlight]').count(), 0);
-  await desktop.locator('#region').selectOption({label:'Alle gewesten'});
+  await desktop.locator('#region').selectOption('');
   await desktop.locator('#query').fill('ant');
   const candidate = desktop.locator('[data-city-pin][tabindex="0"]');
   const first = await candidate.getAttribute('data-city-pin');

@@ -53,18 +53,21 @@ try {
   desktop.on('pageerror', (error) => errors.push(error.message));
   await fixture(desktop);
   await desktop.goto(base);
-  assert.deepEqual(await desktop.locator('.top nav a').allTextContents(), ['Steden', 'Kalender', 'Planner']);
+  assert.deepEqual(await desktop.locator('.top nav a').allTextContents(), ['Steden', 'Kalender', 'Fietsplanner']);
   assert.equal(await desktop.locator('footer a[href*="github.com"]').count(), 0);
   await desktop.keyboard.press('Tab');
   assert.equal(await desktop.locator(':focus').innerText(), 'Naar de inhoud');
+  assert.equal(await desktop.getByRole('heading', { level: 1 }).innerText(), 'Steden van België');
   const query = desktop.locator('#query');
+  assert.ok((await query.boundingBox()).y < 250, 'The city search starts in the first viewport.');
+  assert.ok((await desktop.locator('.directory-map-svg').boundingBox()).y < 390, 'The map does not compete with a photo header.');
   await query.fill('Liege');
   assert.equal(await desktop.locator('.city-card:visible').count(), 1);
   assert.match(await desktop.locator('.city-card:visible').innerText(), /Luik/);
   await desktop.locator('#region').selectOption({ label: 'Vlaanderen' });
   assert.equal(await desktop.locator('.city-card:visible').count(), 0);
   assert.ok(await desktop.locator('#empty').isVisible());
-  await desktop.locator('#region').selectOption({ label: 'Alle gewesten' });
+  await desktop.locator('#region').selectOption('');
   await query.fill('gand');
   const gent = desktop.locator('.city-card:visible a');
   await gent.press('Enter');
@@ -88,7 +91,19 @@ try {
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, deviceScaleFactor: 2, hasTouch: true });
   pages.push(mobile);
   await fixture(mobile, { upstreamFailure: true });
+  await mobile.goto(base);
+  for (const width of [320, 390]) {
+    await mobile.setViewportSize({ width, height: 844 });
+    await mobile.locator('#query:visible').waitFor();
+    assert.ok((await mobile.locator('#query').boundingBox()).y < 275);
+    assert.ok((await mobile.locator('.directory-map-svg').boundingBox()).y < 370);
+    assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth), width);
+    assert.ok(await mobile.getByRole('link', { name: 'Fietsplanner' }).isVisible());
+  }
   await mobile.goto(base + city);
+  assert.equal(await mobile.getByRole('heading', { level: 1 }).innerText(), 'Gent');
+  assert.ok((await mobile.getByRole('heading', { name: 'Bezienswaardigheden' }).boundingBox()).y < 435);
+  assert.match(await mobile.getByRole('link', { name: 'Plan een rit bij Gent' }).getAttribute('href'), /city=gent$/);
   await mobile.getByRole('heading', { name: 'Tweede bron' }).waitFor();
   const retry = mobile.locator('[data-live-places] [data-retry]');
   await retry.waitFor();

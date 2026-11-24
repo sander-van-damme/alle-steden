@@ -40,7 +40,7 @@ show();
 for (const [width,height] of [[1440,900],[390,844]]) {
   const browser = await chromium.launch({
     headless: true,
-    ...(shell ? { executablePath: await shell.executablePath(), args:shell.args } : {}),
+    ...(shell ? { executablePath: await shell.executablePath(), args:shell.args.filter(arg => !['--disable-web-security','--allow-running-insecure-content'].includes(arg)) } : {}),
   });
   try {
     const page = await browser.newPage({viewport:{width,height},isMobile:width<500,hasTouch:width<500});
@@ -64,7 +64,7 @@ for (const [width,height] of [[1440,900],[390,844]]) {
     assert.match(await chart.innerText(), /In rijvolgorde/);
     const chartPos = await chart.boundingBox(), altitude = await page.locator('.route-altitude').boundingBox();
     const map = await page.locator('.route-map-viewport').boundingBox();
-    assert.ok(chartPos.y < altitude.y && altitude.y < map.y, 'both charts come before the map');
+    assert.ok(Math.max(chartPos.y + chartPos.height, altitude.y + altitude.height) < map.y, 'both charts come before the map');
     assert.ok(chartPos.y + chartPos.height < height, 'complete surface graphic is visible before scrolling');
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     if (output) await page.screenshot({path:output+'/route-surface-'+width+'.png'});
