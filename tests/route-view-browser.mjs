@@ -44,17 +44,38 @@ window.updateRoute = () => {
     visits:[{name:'Nieuwe stop',lon:3.644,lat:51.082}], pois:{items:[]}}));
 };
 </script>`;
-for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{width:390,height:820}]]) {
-  if (live && label === 'mobile') break; // one public router call is sufficient
-  const browser = await chromium.launch(launchOptions);
+async function serveRouteFixture(page) {
+  await page.route(origin + '/**', async (route) => {
+    const {pathname} = new URL(route.request().url());
+    if (pathname === '/') return route.fulfill({contentType:'text/html',body:html});
+    const type = pathname.endsWith('.css')?'text/css':'text/javascript';
+    return route.fulfill({contentType:type,body:await readFile('site/assets'+pathname)});
+  });
+}
+
+async function verifyForestNotices(context, label) {
+  // Isolate this tap/keyboard flow from the CDP drag and download on the map fixture.
+  const page = await context.newPage();
+  const errors = [];
+  let notices = 0;
+  const noticeRoute = 'https://geoservices.wallonie.be/**/CHASSE_TERRIT_ANONYM/**';
+  const isNoticeResponse = (response) => {
+    const url = new URL(response.url());
+    return url.hostname === 'geoservices.wallonie.be' && url.pathname.includes('/CHASSE_TERRIT_ANONYM/');
+  };
+  const activate = async (toggle, expectedStatus) => {
+    const [response] = await Promise.all([
+      page.waitForResponse(isNoticeResponse),
+      label === 'desktop' ? toggle.press('Enter') : toggle.tap(),
+    ]);
+    assert.equal(response.status(), expectedStatus, 'Forest service response from an explicit activation');
+  };
   try {
-    const context = await browser.newContext({viewport, isMobile:label==='mobile', hasTouch:label==='mobile', acceptDownloads:true,
-      ignoreHTTPSErrors: live });
-    const page = await context.newPage();
-    const errors = [];
-    let tileCount = 0, loadedTiles = 0, notices = 0;
     await page.clock.setFixedTime(new Date('2026-11-25T11:00:00+01:00'));
-    if (!live) await page.route('https://geoservices.wallonie.be/**/CHASSE_TERRIT_ANONYM/**', (route) => {
+    page.on('pageerror', (error) => errors.push(error.message));
+    await serveRouteFixture(page);
+    await page.route('https://tile.openstreetmap.org/**', (route) => route.abort());
+    await page.route(noticeRoute, (route) => {
       notices++;
       const request = new URL(route.request().url());
       assert.ok(request.searchParams.get('where').includes("LISTOFDATEBATTUECLOSE LIKE '%05/12/2026%'"));
@@ -72,14 +93,51 @@ for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{
         }],
       }) });
     });
+    await page.goto(origin);
+    const advisory = page.locator('.route-forest-notices');
+    const toggle = advisory.getByRole('button', {name: 'Controleer jachtmeldingen'});
+    await advisory.waitFor({state:'attached'});
+    assert.equal(notices, 0, 'Closed route does not fetch forest notices');
+    await page.locator('summary').click();
+    await toggle.waitFor();
+    await toggle.scrollIntoViewIfNeeded();
+    await toggle.evaluate((button) => button.focus({preventScroll: true}));
+    if (label === 'desktop') await toggle.hover();
+    assert.equal(notices, 0, 'Opening the route, focusing and hovering do not fetch notices');
+    if (label === 'desktop') {
+      await activate(toggle, 200);
+      await advisory.getByText(/jachtterrein waarvoor een aanvraag.*goedgekeurd/u).waitFor();
+      await advisory.getByRole('link',{name:'CC BY 4.0'}).waitFor();
+      assert.match(await advisory.innerText(), /niet welk pad op jouw route afgesloten is/);
+    } else {
+      await activate(toggle, 503);
+      await advisory.getByText(/bron voor bosmeldingen is niet bereikbaar/u).waitFor();
+      await activate(toggle, 200);
+      await advisory.getByText(/geen overlappende meldingen.*Afsluitingen kunnen ontbreken/u).waitFor();
+    }
+    assert.equal(notices, label === 'mobile' ? 2 : 1);
+    assert.equal(await advisory.getByRole('link',{name:'Officiële kaart ChasseOnWeb'}).getAttribute('href'), 'https://www.chasseonweb.be/');
+    assert.match(await advisory.innerText(), /volg de borden ter plaatse/);
+    assert.doesNotMatch(await advisory.innerText(), /veilig|route is open/u);
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+}
+
+for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{width:390,height:820}]]) {
+  if (live && label === 'mobile') break; // one public router call is sufficient
+  const browser = await chromium.launch(launchOptions);
+  try {
+    const context = await browser.newContext({viewport, isMobile:label==='mobile', hasTouch:label==='mobile', acceptDownloads:true,
+      ignoreHTTPSErrors: live });
+    const page = await context.newPage();
+    const errors = [];
+    let tileCount = 0, loadedTiles = 0;
+    await page.clock.setFixedTime(new Date('2026-11-25T11:00:00+01:00'));
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('response', (res) => { if (res.url().startsWith('https://tile.openstreetmap.org/') && res.ok()) loadedTiles++; });
-    await page.route(origin + '/**', async (route) => {
-      const {pathname} = new URL(route.request().url());
-      if (pathname === '/') return route.fulfill({contentType:'text/html',body:html});
-      const type = pathname.endsWith('.css')?'text/css':'text/javascript';
-      return route.fulfill({contentType:type,body:await readFile('site/assets'+pathname)});
-    });
+    await serveRouteFixture(page);
     if (replay && live) await page.route('https://brouter.de/brouter?**', (route) =>
       route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:replay}));
     await page.route('https://tile.openstreetmap.org/**', (route) => {
@@ -140,28 +198,6 @@ for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{
     assert.deepEqual(parsed, {namespace:'http://www.topografix.com/GPX/1/1', points:2*counts[0], height:2*counts[1],
       segments:2, waypoints:['Echte stop']});
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-    if (!live) {
-      const advisory = page.locator('.route-forest-notices');
-      const toggle = advisory.getByRole('button', {name: 'Controleer jachtmeldingen'});
-      await toggle.focus();
-      if (label === 'desktop') await toggle.hover();
-      assert.equal(notices,0,'opening the route, focusing and hovering do not fetch notices');
-      if (label === 'desktop') {
-        await toggle.press('Enter');
-        await advisory.getByText(/jachtterrein waarvoor een aanvraag.*goedgekeurd/u).waitFor();
-        await advisory.getByRole('link',{name:'CC BY 4.0'}).waitFor();
-        assert.match(await advisory.innerText(), /niet welk pad op jouw route afgesloten is/);
-      } else {
-        await toggle.tap();
-        await advisory.getByText(/bron voor bosmeldingen is niet bereikbaar/u).waitFor();
-        await toggle.tap();
-        await advisory.getByText(/geen overlappende meldingen.*Afsluitingen kunnen ontbreken/u).waitFor();
-      }
-      assert.equal(notices,label === 'mobile' ? 2 : 1);
-      assert.equal(await advisory.getByRole('link',{name:'Officiële kaart ChasseOnWeb'}).getAttribute('href'),'https://www.chasseonweb.be/');
-      assert.match(await advisory.innerText(), /volg de borden ter plaatse/);
-      assert.doesNotMatch(await advisory.innerText(), /veilig|route is open/u);
-    }
     if (output) await page.screenshot({path:output + '/route-view-' + label + '.png',fullPage:true});
     await page.evaluate(() => window.updateRoute());
     assert.equal(await page.locator('.route-map-line-1').count(),0);
@@ -172,6 +208,7 @@ for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{
       assert.ok(loadedTiles > 0, 'actual OpenStreetMap tiles loaded under correct Referer');
       assert.ok(counts[0] > 10 && counts[1] > 0, 'actual BRouter route has detailed geometry and elevation');
     }
+    if (!live) await verifyForestNotices(context, label);
     console.log(label, {tileCount,loadedTiles, real:live, replayedRouterResponse: !!replay, points:counts[0], altitudePoints:counts[1]});
   } finally {
     await browser.close();
