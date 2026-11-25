@@ -243,6 +243,19 @@ function entryList(title, intro, kind, items, linkIds) {
   </section>`;
 }
 
+function localRoutes(slug) {
+  if (slug !== 'andenne') return '';
+  return `<section id="routes" class="entries calendar-city-link" aria-labelledby="routes-title" data-local-routes>
+    <div class="entries-heading"><h2 id="routes-title">Wandel- en fietsroutes</h2>
+      <p>Uitgestippelde routes van de lokale aanbieder. Controleer vóór vertrek of je overal langs kunt.</p></div>
+    <ul class="entry-list" data-routes-results hidden></ul>
+    <p class="source-status" data-routes-status role="status"></p>
+    <button type="button" class="button secondary retry" data-routes-retry hidden>Opnieuw proberen</button>
+    <p class="entry-source" data-routes-credit hidden></p>
+    <p><a href="https://www.andennetourisme.be/toutes-les-balades-a-proximite-dandenne/">Alle routes bij Andenne Tourisme ${arrow}</a></p>
+  </section>`;
+}
+
 export function cityPage(city, linkIds) {
   const { name, names, slug, region, province, code, coordinates, cityUrl, description, places, events } = city;
   const aliases = names.filter((value) => value !== name);
@@ -273,11 +286,13 @@ export function cityPage(city, linkIds) {
       </header>
       <nav class="city-nav" aria-label="Op deze pagina">
         <a href="#places">Bezienswaardigheden</a><a href="#events">Evenementen</a>
+        ${slug === 'andenne' ? '<a href="#routes">Wandel- en fietsroutes</a>' : ''}
       </nav>
       <div class="visit-grid">
         ${entryList('Bezienswaardigheden', 'Openingsuren staan erbij als ze bekend zijn. Bij buitenstops is toegang tot gebouwen niet bevestigd.', 'places', places, linkIds)}
         ${entryList('Evenementen', '', 'events', events, linkIds)}
       </div>
+      ${localRoutes(slug)}
       <p class="calendar-city-link"><a class="button secondary" href="/kalender/?stad=${encodeURIComponent(slug)}">Bekijk de kalender voor ${escapeHtml(name)} ${arrow}</a></p>
     </main>`,
   });

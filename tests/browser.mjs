@@ -196,11 +196,46 @@ try {
   assert.equal(await artPhone.evaluate(() => document.documentElement.scrollWidth),390);
   assert.deepEqual(hit.sort(),['communesgemeente-belgium','namur-lartdanslaville']);
 
+  const routePhone = await browser.newPage({ viewport:{width:390,height:844},isMobile:true,hasTouch:true });
+  pages.push(routePhone);
+  const fallbackRouteQuery = /gal-meuse-campagnes-circuits-touristiques/;
+  let routeRequests = 0;
+  await routePhone.route(/^https:\/\/(?:www\.odwb\.be|query\.wikidata\.org|geoservices\.wallonie\.be)\//, route => {
+    if (!fallbackRouteQuery.test(route.request().url())) return route.abort();
+    if (++routeRequests === 1) return route.fulfill({status:503,headers:{'Access-Control-Allow-Origin':'*'}});
+    return json(route, {total_count:1,results:[{
+      id:'GALMC-010', name:'Histoires Agricoles - Bonneville', transport_means:'Marche',
+      starting_point_address:'107 Rue du Centre, 5300 Andenne', starting_point_latitude:50.47088,
+      starting_point_longitude:5.03349,length:5.5,gpx:'https://www.cirkwi.com/fr/exporter-gpx/195160_0',
+      description:'DO NOT DISPLAY',opening_hours:'24/7',
+    }]});
+  });
+  await routePhone.goto(base + '/steden/rochefort/');
+  assert.equal(routeRequests,0);
+  await routePhone.goto(base + '/steden/andenne/');
+  const outdoor = routePhone.locator('[data-local-routes]');
+  await outdoor.getByText(/De routes konden niet worden opgehaald/).waitFor();
+  assert.match(await outdoor.getByRole('link',{name:/Alle routes bij Andenne Tourisme/}).getAttribute('href'),
+    /^https:\/\/www\.andennetourisme\.be\//u);
+  await outdoor.getByRole('button',{name:'Opnieuw proberen'}).tap();
+  const trip = outdoor.getByRole('link',{name:'Histoires Agricoles - Bonneville'});
+  await trip.waitFor();
+  assert.equal(await trip.count(),1);
+  assert.match(await trip.getAttribute('href'),/mb_id=195160/);
+  assert.match(await outdoor.innerText(), /Wandelroute · 5,5 km · Vertrek: Bonneville.*GAL Meuse@Campagnes.*CC BY 4\.0/su);
+  assert.match(await outdoor.innerText(),/Een deel van de routes ontbreekt/);
+  assert.doesNotMatch(await outdoor.innerText(),/24\/7|Openingsuren|DO NOT DISPLAY/u);
+  assert.equal(await routePhone.locator('[data-live-events]').getByText('Histoires Agricoles - Bonneville',{exact:false}).count(),0);
+  assert.equal(await routePhone.evaluate(()=>document.documentElement.scrollWidth),390);
+  assert.equal(routeRequests,2);
+
   const fallback = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   pages.push(fallback);
   await fallback.goto(base + city);
   assert.ok(await fallback.getByRole('heading', { name: 'Gravensteen' }).isVisible());
   assert.ok(await fallback.getByText(/Je ziet hier een selectie van bezienswaardigheden/).isVisible());
+  await fallback.goto(base + '/steden/andenne/');
+  assert.ok(await fallback.locator('[data-local-routes]').getByRole('link',{name:/Alle routes bij Andenne Tourisme/}).isVisible());
   console.log('Chromium: toetsenbord, zoekfilters, navigatie, live inhoud, openingstijden, datums, mobiel, opnieuw proberen en zonder JavaScript geslaagd (voorspelbare bronantwoorden).');
 
   if (process.env.LIVE_BROWSER === '1') {

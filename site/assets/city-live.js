@@ -285,12 +285,51 @@ function enhanceSection(section, city, type) {
   load();
 }
 
+function enhanceLocalRoutes(section, city) {
+  const list = section.querySelector('[data-routes-results]');
+  const status = section.querySelector('[data-routes-status]');
+  const retry = section.querySelector('[data-routes-retry]');
+  const credit = section.querySelector('[data-routes-credit]');
+  async function load() {
+    retry.hidden = true;
+    retry.disabled = true;
+    status.textContent = 'Routes ophalen…';
+    try {
+      const { getLocalOutdoorRoutes, andenneOutdoor } = await import('./local-outdoor-routes.js');
+      const { items, partial } = await getLocalOutdoorRoutes(city);
+      list.replaceChildren(...items.map((item) => {
+        const card = el('li');
+        const heading = el('h3');
+        heading.append(link(item.name, item.website));
+        card.append(heading, el('p', item.category + ' · ' + item.distance + ' · Vertrek: ' + item.departure, 'entry-meta'));
+        return card;
+      }));
+      list.hidden = !items.length;
+      credit.replaceChildren('Bron: ', link(andenneOutdoor.attribution, andenneOutdoor.sourceHref), ' (',
+        link('CC BY 4.0', andenneOutdoor.license), ')');
+      credit.hidden = !items.length;
+      status.textContent = !items.length ? 'Geen routes uit deze bron beschikbaar. Bekijk de routes bij Andenne Tourisme.'
+        : partial ? 'Een deel van de routes ontbreekt. Bekijk het volledige aanbod bij Andenne Tourisme.' : '';
+      retry.hidden = !partial;
+    } catch {
+      status.textContent = 'De routes konden niet worden opgehaald. Bekijk de routes bij Andenne Tourisme.';
+      retry.hidden = false;
+    } finally {
+      retry.disabled = false;
+    }
+  }
+  retry.addEventListener('click', load);
+  load();
+}
+
 if (root) {
   enhanceVerifiedLinks(root);
   let names = [];
   try { names = JSON.parse(root.dataset.aliases ?? '[]'); } catch { /* The primary name is sufficient. */ }
   const city = { slug: root.dataset.city, region: root.dataset.region, qid: root.dataset.qid,
     name: root.dataset.name, code: root.dataset.code, names };
+  const routes = root.querySelector('[data-local-routes]');
+  if (routes) enhanceLocalRoutes(routes, city);
   for (const type of ['places', 'events']) {
     const section = root.querySelector('[data-live-' + type + ']');
     if (section) enhanceSection(section, city, type);
