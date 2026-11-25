@@ -113,3 +113,21 @@ test('unrecognized payloads and unsafe unbounded retrieval periods do not become
   assert.throws(() => parseIdeesCalendar(publish(), catalog, { from: '2026-10-01', through: '2028-02-01' }), /periode/);
   assert.throws(() => parseIdeesCalendar(publish().replace('END:VCALENDAR', 'BEGIN:VEVENT\r\nEND:VCALENDAR'), catalog, window), /Onafgewerkt/);
 });
+
+test('the exact stale Weihnachtszauber aggregator entry yields to the verified 2026 local edition, not other records or years', () => {
+  const city = {slug:'sankt-vith', name:'Sankt Vith', names:['Saint-Vith','St. Vith']};
+  const market = {
+    DTSTART:'20261210T230000Z', DTEND:'20261211T230000Z',
+    SUMMARY:'Marché de Noël "Weihnachtszauber" à St. Vith',
+    LOCATION:'Rathausplatz\\, 4780 St. Vith\\, St. Vith', CATEGORIES:'Marché de Noël',
+    URL:'https://ideessorties.be/events/marche-de-noel-weihnachtszauber-a-st-vith-st-vith',
+  };
+  const inDecember = parseIdeesCalendar(publish(event(market,'wrong-2026'),
+    event({...market, URL:'https://ideessorties.be/events/un-autre-marche-distinct'},'different-event')),
+  [city], window);
+  assert.equal(inDecember.stats.rejected['official-local-edition'],1);
+  assert.deepEqual(inDecember.items.map(i=>i.id),['idees:different-event@ideessorties.be']);
+  const future = parseIdeesCalendar(publish(event({...market, DTSTART:'20271210T230000Z',DTEND:'20271211T230000Z'},'edition-2027')),
+    [city], {from:'2027-11-15',through:'2027-12-31'});
+  assert.equal(future.items.length,1);
+});

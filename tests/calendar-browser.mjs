@@ -23,6 +23,9 @@ async function install(page, { fails = false, pauseGent = null } = {}) {
   const ics = ['BEGIN:VCALENDAR','VERSION:2.0','BEGIN:VEVENT','UID:test-idee@ideessorties.be',
     'DTSTART;VALUE=DATE:20261223','SUMMARY:Expo van ideeën','CATEGORIES:Exposition',
     'LOCATION:Station, Mons, Belgique','URL:https://ideessorties.be/events/test-idee',
+    'END:VEVENT','BEGIN:VEVENT','UID:weihnachtszauber@ideessorties.be','DTSTART:20261210T230000Z',
+    'DTEND:20261211T230000Z','SUMMARY:Marché de Noël Weihnachtszauber','CATEGORIES:Marché de Noël',
+    'LOCATION:Rathausplatz, 4780 Sankt Vith','URL:https://ideessorties.be/events/marche-de-noel-weihnachtszauber-a-st-vith-st-vith',
     'END:VEVENT','END:VCALENDAR',''].join('\r\n');
   await page.route('https://uwtaxdtecrngvmgzradk.supabase.co/functions/v1/calendar-feed?**', route => route.fulfill({
     contentType: 'text/calendar', body: ics, headers: { 'Access-Control-Allow-Origin': '*' },
@@ -207,6 +210,40 @@ try {
   assert.match(await sunday.innerText(), /Uur niet vermeld.*Bouvignes-sur-Meuse/su);
   const organizer = await sunday.getByRole('link', { name: 'Bron bij de activiteit' }).getAttribute('href');
   assert.equal(organizer, 'https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/');
+
+  await desktop.goto(origin + '/kalender/?stad=eupen&maand=2026-12');
+  await loaded(desktop);
+  await desktop.locator('#calendar-category').selectOption('Markt');
+  const eupenMarket = desktop.locator('.calendar-event').filter({ hasText: 'Kerstmarkt van Eupen' });
+  for (const day of ['11','12','13']) {
+    await desktop.locator('[data-day="2026-12-' + day + '"]').click();
+    assert.equal(await eupenMarket.count(),1);
+    assert.match(await eupenMarket.innerText(), /Klötzerbahn.*14.00–21.00.*11.00–20.00/su);
+    assert.doesNotMatch(await eupenMarket.innerText(), /Hele dag/u);
+  }
+  await desktop.locator('[data-day="2026-12-14"]').click();
+  assert.equal(await eupenMarket.count(),0);
+
+  await phone.goto(origin + '/kalender/?stad=sankt-vith&maand=2026-12');
+  await loaded(phone);
+  const vithMarket = phone.locator('.calendar-event').filter({ hasText: 'Weihnachtszauber' });
+  await phone.locator('[data-day="2026-12-11"]').tap();
+  assert.equal(await vithMarket.count(),0, 'Ignore the mirror’s older date.');
+  for (const day of ['12','13']) {
+    await phone.locator('[data-day="2026-12-' + day + '"]').tap();
+    assert.equal(await vithMarket.count(),1);
+    assert.match(await vithMarket.innerText(), /Rathausplatz/u);
+    assert.doesNotMatch(await vithMarket.innerText(), /16:00|Hele dag/u);
+  }
+  await phone.goto(origin + '/kalender/?stad=sankt-vith&maand=2027-01');
+  await loaded(phone);
+  await phone.locator('#calendar-category').selectOption('Muziek');
+  const concert = phone.locator('.calendar-event').filter({ hasText: 'Nieuwjaarsconcert: Euro Symphonic Orchestra' });
+  assert.equal(await concert.count(),1);
+  assert.match(await concert.innerText(), /Vanaf 16:00.*Triangel/su);
+  assert.equal(await concert.locator('.calendar-event-meta').textContent(), 'Sankt Vith · Vanaf 16:00');
+  assert.equal(plannerCatalogue.filter(({slug})=>['eupen','sankt-vith'].includes(slug)).flatMap(({events})=>events).length,0);
+  assert.equal(await phone.evaluate(() => document.documentElement.scrollWidth),390);
 
   const offline = await browser.newPage({ javaScriptEnabled: false });
   await offline.goto(origin + '/kalender/');

@@ -223,6 +223,13 @@ export function parseIdeesCalendar(text, cities, { from, through } = {}) {
       /^(?:marche(?:s)?denoelenbelgique|touslesevenements[a-z]*|agendaofevents)$/.test(normalize(name))) { skip('not-an-event'); continue; }
     if (/^(?:annul[eé]e?|report[eé]e?|afgelast)\b|\((?:annulé[e]?|reporté[e]?|afgelast)\)/i.test(name)) { skip('cancelled'); continue; }
     if (!website) { skip('source-link'); continue; }
+    // Exact 2026 edition: the publisher's mirror gave 11–12 December, while
+    // the organizer confirms 12–13. Prefer the sourced local Turtle edition.
+    // Apply even if a future locality alias makes the current "St. Vith" match.
+    if (website === 'https://ideessorties.be/events/marche-de-noel-weihnachtszauber-a-st-vith-st-vith') {
+      const day = parse(event.DTSTART)?.day;
+      if (day >= '2026-12-11' && day <= '2026-12-13') { skip('official-local-edition'); continue; }
+    }
     const city = matchCity(event.LOCATION?.value);
     if (!city) { skip('unmapped-locality'); continue; }
     const dates = normalizeDates(event, category, parse, name);

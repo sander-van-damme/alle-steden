@@ -2,6 +2,7 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <> a schema:Dataset ;
     schema:about wd:Q151831 ;
@@ -31,3 +32,15 @@ wd:Q151831 a schema:City ;
     ] ;
     schema:url <https://www.ostbelgien.eu/de/fiche/virtualtour/st-nikolaus-kirche> ;
     dcterms:source <https://www.ostbelgien.eu/de/fiche/virtualtour/st-nikolaus-kirche>, <https://www.eupen.be/leben-in-eupen/gesundheit-und-soziales/religion/>, <https://territoire.wallonie.be/fr/liendoc/BC_PAT/63023-CLT-0015-02> .
+
+# Eén editie met verschillende daguren; geen doorlopend bezoekvenster.
+<#kerstmarkt-eupen-2026> a schema:SaleEvent ;
+    schema:name "Kerstmarkt van Eupen"@nl, "54. Eupener Weihnachtsmarkt"@de ;
+    schema:description "Klötzerbahn en centrum. Op 11 en 12 december van 14.00–21.00 uur (alleen drankkraampjes tot middernacht); op 13 december van 11.00–20.00 uur."@nl ;
+    schema:containedInPlace wd:Q151831 ;
+    schema:location [ a schema:Place ; schema:name "Klötzerbahn" ] ;
+    schema:startDate "2026-12-11"^^xsd:date ;
+    schema:endDate "2026-12-13"^^xsd:date ;
+    schema:url <https://eupenlives.be/nl/nieuws/54e-kerstmarkt-van-eupen> ;
+    dcterms:source <https://eupenlives.be/nl/nieuws/54e-kerstmarkt-van-eupen>,
+        <https://eupenlives.be/de/events/event/7978-54-eupener-weihnachtsmarkt> .
