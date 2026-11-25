@@ -297,7 +297,7 @@ try {
     assert.equal(await night.count(),1);
     await device.locator('[data-day="2026-12-03"]').click();
     assert.equal(await route.count(),0);
-    assert.match(await night.innerText(), /18:00 tot 01:00/);
+    assert.match(await night.locator('.calendar-event-meta').innerText(), /18:00–01:00 \(\+1 dag\)/);
     await device.locator('[data-day="2026-12-04"]').click();
     assert.equal(await night.count(),0);
     await device.locator('[data-day="2026-12-05"]').click();

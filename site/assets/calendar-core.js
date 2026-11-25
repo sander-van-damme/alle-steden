@@ -51,7 +51,7 @@ function visitSessions(entries, day, last) {
     if (!start || !end || dateOnly(start) || dateOnly(end)) continue;
     const sessionDay = brusselsDay(start);
     const duration = Date.parse(end) - Date.parse(start);
-    if (sessionDay < day || sessionDay > last || brusselsDay(end) !== sessionDay ||
+    if (sessionDay < day || sessionDay > last || brusselsDay(end) > addCalendarDays(sessionDay, 1) ||
       duration <= 0 || duration > 18 * 60 * 60_000) continue;
     seen.set(new Date(start).toISOString() + '|' + new Date(end).toISOString(), { day: sessionDay, start, end });
   }
@@ -142,7 +142,8 @@ export function eventTime(item, selectedDay = '') {
   const time = (date) => clock.format(new Date(date));
   if (item.sessions && (selectedDay || item.sessions.length === 1)) {
     const sessions = selectedDay ? item.sessions.filter(({ day }) => day === selectedDay) : item.sessions;
-    return sessions.map(({ start, end }) => time(start) + '–' + time(end)).join(' en ') || 'Uur niet vermeld';
+    return sessions.map(({ start, end, day }) => time(start) + '–' + time(end) +
+      (brusselsDay(end) > day ? ' (+1 dag)' : '')).join(' en ') || 'Uur niet vermeld';
   }
   const timedStart = !dateOnly(item.start);
   const timedEnd = item.end && !dateOnly(item.end);

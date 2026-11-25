@@ -137,7 +137,7 @@ test('a visitor edition with exact date sessions appears only on those dates and
       { start:'2026-12-24T11:00:00+01:00', end:'2026-12-24T16:00:00+01:00' },
       { start:'2027-01-01T14:00:00+01:00', end:'2027-01-01T19:00:00+01:00' },
       { start:'2026-12-23T14:00:00+01:00', end:'2026-12-23T19:00:00+01:00' },
-      { start:'2027-01-02T23:00:00+01:00', end:'2027-01-03T04:00:00+01:00' },
+      { start:'2027-01-02T09:00:00+01:00', end:'2027-01-03T04:00:00+01:00' },
       { start:'2027-01-02', end:'2027-01-02' },
     ],
   }, 'damme');
@@ -151,4 +151,14 @@ test('a visitor edition with exact date sessions appears only on those dates and
   const laterEdition = calendarEvent({name:v.name, start:'2027-12-25T11:00:00+01:00', website}, 'damme');
   assert.deepEqual(mergeCalendarEvents([duplicate,v,laterEdition]),[v,laterEdition]);
   assert.equal(calendarEvent({name:'Ongeldige sessies',start:'2026-12-24',sessions:[]},'damme'),null);
+});
+
+test('an overnight session is listed on its start day and names the following-day end', () => {
+  const start = '2026-12-03';
+  const night = calendarEvent({name:'Museumnacht', start, end:start, sessions:[
+    {start:'2026-12-03T18:00:00+01:00', end:'2026-12-04T01:00:00+01:00'},
+  ]}, 'gent');
+  assert.equal(eventTime(night, start), '18:00–01:00 (+1 dag)');
+  assert.equal(eventTime(night), '18:00–01:00 (+1 dag)');
+  assert.equal(eventsByDay([night], ['2026-12-04']).get('2026-12-04').length,0);
 });

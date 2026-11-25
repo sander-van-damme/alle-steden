@@ -64,10 +64,11 @@ wd:Q980285 a schema:Museum ;
 # Stadsbrede evenementen zonder specifiek vertrekpunt voor de fietsplanner.
 <#museumnacht-2026> a schema:Festival ;
     schema:name "Museumnacht"@nl ;
-    schema:description "Gratis avondprogramma bij deelnemende musea en kunstlocaties in Gent, van 18:00 tot 01:00 de volgende ochtend."@nl ;
+    schema:description "Gratis avondprogramma bij deelnemende musea en kunstlocaties in Gent."@nl ;
     schema:location wd:Q1296 ;
     schema:startDate "2026-12-03"^^xsd:date ;
     schema:endDate "2026-12-03"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-03T18:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-04T01:00:00+01:00"^^xsd:dateTime ] ;
     schema:url <https://visit.gent.be/nl/agenda/museumnacht> ;
     dcterms:source <https://degentsemusea.be/beleef-meer/museumnacht>, <https://visit.gent.be/nl/agenda/museumnacht> .
 
