@@ -11,7 +11,8 @@ const end = addCalendarDays(start, 6);
 const origin = 'https://allesteden.bysander.net';
 const [calendar, planner] = await Promise.all(['../dist/calendar-data.json','../dist/planner-data.json'].map(async (path) =>
   JSON.parse(await readFile(new URL(path, import.meta.url)))));
-const placeSlugs = ['brussel','marche-en-famenne'];
+const placeSlugs = ['brussel','marche-en-famenne','bergen','namen'];
+const artKeys = new Set(['monsArt', 'namurArt']);
 const marketSlugs = ['ninove','aalst','dendermonde','nieuwpoort'];
 const uniqueRules = (items) => new Set(items.map((item) => item.sourceId ?? item.id.replace(/:\d{4}-\d\d-\d\d(?:$|:.*)/,''))).size;
 
@@ -22,9 +23,12 @@ const auditPlaces = async (slug) => {
   const resolved = await Promise.allSettled(providers.map(({run})=>run()));
   const rows = providers.map(({ key, added },i)=>({
     key, added: !!added, ...(resolved[i].status === 'fulfilled' ? { items: resolved[i].value.items,
-      limited: resolved[i].value.truncated === true } : { failed: true, items: [] }),
+      limited: resolved[i].value.truncated === true,
+      raw: resolved[i].value.total } : { failed: true, items: [] }),
   }));
-  const before = displayedPlaces(city,stored,rows.filter((x)=>!x.added).map((x)=>x.items),false);
+  const artTown = ['bergen','namen'].includes(slug);
+  const beforeRows = rows.filter((x) => artTown ? !artKeys.has(x.key) : !x.added);
+  const before = displayedPlaces(city,stored,beforeRows.map((x)=>x.items),false);
   const after = displayedPlaces(city,stored,rows.map((x)=>x.items));
   return { city:slug, before:before.length, after:after.length, net:after.length-before.length,
     providers:rows.map(({items,...r})=>({...r, count:items.length})) };

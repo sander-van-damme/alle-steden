@@ -12,6 +12,8 @@ const identifiers = Object.freeze({
   visitBrussels: { property: 'Visit.Brussels record ID', type: 'Place', authority: 'https://www.brussel.be/' },
   marcheHeritage: { property: 'Marche-en-Famenne erfgoed ID', type: 'Place', authority: 'https://www.marche.be/' },
   marcheArt: { property: 'Marche-en-Famenne kunst ID', type: 'Place', authority: 'https://www.marche.be/' },
+  monsArt: { property: 'Alle Steden · Bergen street-art key', type: 'Place', authority: 'https://www.mons.be/' },
+  namurArt: { property: 'Namur L’Art dans la Ville identifiant', type: 'Place', authority: 'https://www.namur.be/' },
   erfg: { property: 'Aanduidingsobject Onroerend Erfgoed ID', type: 'LandmarksOrHistoricalBuildings',
     authority: 'https://www.onroerenderfgoed.be/' },
 });

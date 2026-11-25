@@ -130,7 +130,7 @@ function buildCard(item) {
     if (item.end && item.end !== item.start) date.append(' tot ', time(item.end));
     card.append(date);
   }
-  const where = [item.category, item.address || item.venue].filter(Boolean).join(' · ');
+  const where = [item.category, item.artist, item.address || item.venue].filter(Boolean).join(' · ');
   if (where) card.append(el('p', where, 'entry-meta'));
   if (item.description) card.append(el('p', item.description, 'entry-description'));
   appendHours(card, item);
@@ -276,7 +276,7 @@ function enhanceSection(section, city, type) {
     }));
     if (revision !== requestId || type !== 'places') return;
     render(true);
-    extraHours = await getOsmHours(mappedPlaces.filter((item) => !visitNotice(item)));
+    extraHours = await getOsmHours(mappedPlaces.filter((item) => item.category !== 'Buitenkunst' && !visitNotice(item)));
     if (revision !== requestId || !extraHours.size) return;
     render();
   };

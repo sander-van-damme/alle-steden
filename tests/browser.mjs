@@ -163,6 +163,39 @@ try {
   assert.equal(await movedMuseum.getByText('Openingsuren:',{exact:false}).count(),0);
   assert.equal(await desktop.locator('[data-live-places] li').filter({hasText:'Totemus, des Celtes à aujourd’hui'}).locator('[data-visit-notice]').count(),0);
 
+  const artPhone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  pages.push(artPhone);
+  const artIsolate = new Set(['namur-lartdanslaville','communesgemeente-belgium']);
+  const hit = [];
+  await artPhone.route(/^https:\/\/(?:www\.odwb\.be|query\.wikidata\.org|geoservices\.wallonie\.be)\//, route => {
+    const url = new URL(route.request().url());
+    const dataset = /datasets\/([^/]+)/.exec(url.pathname)?.[1];
+    if (!artIsolate.has(dataset)) return route.abort();
+    hit.push(dataset);
+    if (dataset === 'communesgemeente-belgium') return json(route, { results: [{
+      mun_code: ['92094'], mun_name_fr: ['Namur'], mun_type: 'Commune/Gemeente/Gemeinde',
+      geo_shape: { geometry: { type: 'Polygon', coordinates: [[[4.8,50.4],[4.9,50.4],[4.9,50.5],[4.8,50.5],[4.8,50.4]]] } },
+    }] });
+    const results = [[57,'Rue Saint-Jean',4.865416], [64,'Rue des Fripiers',4.865602], [65,'Galerie Saint-Joseph',4.864525]]
+      .map(([identifiant,rue,lon])=>({identifiant,rue,adresse:rue+' - Namur',localite:'Namur',
+        nomoeuvre:'Mini sculptures Cordal',artiste:'Isaac Cordal',type:'Mini sculptures Cordal',
+        geo_point_2d:{lat:50.4630,lon},descriptif:'DO NOT DISPLAY',opening_hours:'24/7'}));
+    return json(route, { total_count: results.length, results });
+  });
+  await artPhone.goto(base + '/steden/namen/#bron-namurart-64');
+  const cordalPlaces = artPhone.locator('[data-live-places] li').filter({hasText:'Mini sculptures Cordal'});
+  await cordalPlaces.first().waitFor();
+  assert.equal(await cordalPlaces.count(),2);
+  assert.notEqual(await cordalPlaces.nth(0).locator('h3 a').getAttribute('href'),
+    await cordalPlaces.nth(1).locator('h3 a').getAttribute('href'));
+  assert.ok(await artPhone.locator('#bron-namurart-64').count());
+  assert.match(await cordalPlaces.nth(1).innerText(),/Buitenkunst.*Rue des Fripiers/su);
+  assert.match(await cordalPlaces.nth(1).innerText(),/Ville de Namur.*CC BY 4\.0/su);
+  assert.doesNotMatch(await cordalPlaces.nth(1).innerText(),/24\/7|Openingsuren|DO NOT DISPLAY/u);
+  assert.equal(await artPhone.locator('[data-live-events]').getByText('Mini sculptures Cordal',{exact:false}).count(),0);
+  assert.equal(await artPhone.evaluate(() => document.documentElement.scrollWidth),390);
+  assert.deepEqual(hit.sort(),['communesgemeente-belgium','namur-lartdanslaville']);
+
   const fallback = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   pages.push(fallback);
   await fallback.goto(base + city);

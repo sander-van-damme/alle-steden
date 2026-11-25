@@ -5,7 +5,7 @@ import { fwbMuseumQuery } from './fwb-museums.js';
 
 const ready = (items) => ({ items });
 export const placeViewLimit = (city, expanded = true) =>
-  expanded && ['brussel','marche-en-famenne'].includes(city.slug) ? 192 : 112;
+  expanded && ['brussel','marche-en-famenne','bergen','namen'].includes(city.slug) ? 192 : 112;
 
 export function placeProviders(city, { expanded = true, origin = globalThis.location?.origin, ...options } = {}) {
   const region = regionalSource(city);
@@ -13,6 +13,11 @@ export function placeProviders(city, { expanded = true, origin = globalThis.loca
   const loadMarche = () => marche ??= import('./marche-places.js').then((module) => module.marchePlaceSources(city, options));
   const museumSource = expanded && fwbMuseumQuery(city) ? [{
     key: 'fwbMuseums', added: true, run: async () => (await import('./fwb-museums.js')).getFwbMuseums(city, options),
+  }] : [];
+  // Not used by the planner: the inventory proves street-art locations, not schedules.
+  const outdoorArt = expanded && ['bergen', 'namen'].includes(city.slug) ? [{
+    key: city.slug === 'bergen' ? 'monsArt' : 'namurArt', added: true,
+    run: async () => (await import('./outdoor-art.js')).getOutdoorArt(city, options),
   }] : [];
   const wikidata = { key: 'wikidata', run: () => getWikidata(city, options).then(ready) };
   if (region === 'brussels') return [
@@ -30,7 +35,7 @@ export function placeProviders(city, { expanded = true, origin = globalThis.loca
     return { ...result, items: result.items.map((item) => ({ ...item, verificationHref: safeUrl(item.website) })) };
   } }, ...(expanded && city.slug === 'marche-en-famenne' ? ['marcheHeritage','marcheArt'].map((key) => ({
     key, added: true, run: async () => (await loadMarche()).find((entry) => entry.key === key).run(),
-  })) : []), ...museumSource];
+  })) : []), ...museumSource, ...outdoorArt];
   return [wikidata, { key: 'flanders', run: async () => {
     if (!origin) throw new Error('Herkomst ontbreekt');
     const url = new URL('/api/city-live', origin);
