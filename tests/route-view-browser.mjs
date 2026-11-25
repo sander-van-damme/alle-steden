@@ -7,7 +7,7 @@ const live = process.env.LIVE_ROUTE_VIEW === '1';
 const replay = process.env.ROUTE_VIEW_REPLAY ? await readFile(process.env.ROUTE_VIEW_REPLAY) : null;
 const launchOptions = {
   headless: true,
-  ...(shell ? { executablePath: await shell.executablePath(), args: shell.args } : {}),
+  ...(shell ? { executablePath: await shell.executablePath(), args: shell.args.filter((arg) => !['--disable-web-security','--allow-running-insecure-content'].includes(arg)) } : {}),
   ...(proxy && live ? { proxy: { server: proxy } } : {}),
 };
 const origin = 'https://route-views.test';
@@ -27,11 +27,11 @@ const mocked = async () => normalizeBRouter({features:[{geometry:{type:'LineStri
 const route = await (${live} ? fetchRoute([[3.72528,51.05361],[3.5639,51.1858]]) : mocked());
 const reverse = {...route, coordinates:[...route.coordinates].reverse(),elevationM:[...route.elevationM].reverse() };
 window.loadedRoute = route;
-const cities = [{name:'Gent'}, {name:${JSON.stringify(live ? 'Eeklo' : 'Mariakerke & vrienden')}}];
+const cities = [{name:'Gent',region:${JSON.stringify(live ? 'Vlaanderen' : 'Wallonië')}}, {name:${JSON.stringify(live ? 'Eeklo' : 'Mariakerke & vrienden')}}];
 const place = ([lon,lat]) => ({lon,lat});
 const first = place(route.coordinates[0]), last = place(route.coordinates.at(-1));
 const midway = place(route.coordinates[Math.floor(route.coordinates.length / 2)]);
-const trip = {route,returnRoute:reverse,cities,edited:true,startCity:first,
+const trip = {route,returnRoute:reverse,cities,date:'2026-12-05',edited:true,startCity:first,
   visits:[{id:'first',name:'Echte stop',...last}],
   pois:{items:[{id:'first',name:'Echte stop als suggestie',...last},{name:'Eventuele stop',...midway}]}};
 const main = document.querySelector('main');
@@ -52,7 +52,26 @@ for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{
       ignoreHTTPSErrors: live });
     const page = await context.newPage();
     const errors = [];
-    let tileCount = 0, loadedTiles = 0;
+    let tileCount = 0, loadedTiles = 0, notices = 0;
+    await page.clock.setFixedTime(new Date('2026-11-25T11:00:00+01:00'));
+    if (!live) await page.route('https://geoservices.wallonie.be/**/CHASSE_TERRIT_ANONYM/**', (route) => {
+      notices++;
+      const request = new URL(route.request().url());
+      assert.ok(request.searchParams.get('where').includes("LISTOFDATEBATTUECLOSE LIKE '%05/12/2026%'"));
+      assert.doesNotMatch(request.searchParams.get('outFields'), /BATTUEOPEN|LISTOFDATETXT|request/);
+      const headers = { 'Access-Control-Allow-Origin': '*' };
+      if (label === 'mobile' && notices === 1) return route.fulfill({ status:503, headers });
+      if (label === 'mobile') return route.fulfill({ contentType:'application/geo+json', headers,
+        body:JSON.stringify({ type:'FeatureCollection', features:[] }) });
+      const ring = [[3.68,51.05],[3.74,51.05],[3.74,51.07],[3.68,51.07],[3.68,51.05]];
+      return route.fulfill({ contentType:'application/geo+json', headers, body:JSON.stringify({
+        type:'FeatureCollection', features: [{
+          type:'Feature', geometry:{type:'Polygon',coordinates:[ring]},
+          properties:{ KEYG:'2026/7123134008', SAISON:2026, DATE_EXTRACT:Date.parse('2026-11-24'),
+            LISTOFDATEBATTUECLOSE:'05/12/2026', LISTOFDATEAFFUTCLOSE:null, LISTOFDATEAUTRECLOSE:null },
+        }],
+      }) });
+    });
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('response', (res) => { if (res.url().startsWith('https://tile.openstreetmap.org/') && res.ok()) loadedTiles++; });
     await page.route(origin + '/**', async (route) => {
@@ -121,6 +140,28 @@ for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{
     assert.deepEqual(parsed, {namespace:'http://www.topografix.com/GPX/1/1', points:2*counts[0], height:2*counts[1],
       segments:2, waypoints:['Echte stop']});
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    if (!live) {
+      const advisory = page.locator('.route-forest-notices');
+      const toggle = advisory.getByRole('button', {name: 'Controleer jachtmeldingen'});
+      await toggle.focus();
+      if (label === 'desktop') await toggle.hover();
+      assert.equal(notices,0,'opening the route, focusing and hovering do not fetch notices');
+      if (label === 'desktop') {
+        await toggle.press('Enter');
+        await advisory.getByText(/jachtterrein waarvoor een aanvraag.*goedgekeurd/u).waitFor();
+        await advisory.getByRole('link',{name:'CC BY 4.0'}).waitFor();
+        assert.match(await advisory.innerText(), /niet welk pad op jouw route afgesloten is/);
+      } else {
+        await toggle.tap();
+        await advisory.getByText(/bron voor bosmeldingen is niet bereikbaar/u).waitFor();
+        await toggle.tap();
+        await advisory.getByText(/geen overlappende meldingen.*Afsluitingen kunnen ontbreken/u).waitFor();
+      }
+      assert.equal(notices,label === 'mobile' ? 2 : 1);
+      assert.equal(await advisory.getByRole('link',{name:'Officiële kaart ChasseOnWeb'}).getAttribute('href'),'https://www.chasseonweb.be/');
+      assert.match(await advisory.innerText(), /volg de borden ter plaatse/);
+      assert.doesNotMatch(await advisory.innerText(), /veilig|route is open/u);
+    }
     if (output) await page.screenshot({path:output + '/route-view-' + label + '.png',fullPage:true});
     await page.evaluate(() => window.updateRoute());
     assert.equal(await page.locator('.route-map-line-1').count(),0);

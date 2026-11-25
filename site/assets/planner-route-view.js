@@ -548,6 +548,66 @@ function createMap(doc, outbound, inbound, markers, label, edited) {
   return { figure, dispose };
 }
 
+function forestNotices(doc, trip, outbound, inbound) {
+  if (!trip.cities?.some(({ region }) => region === 'Wallonië') || !/^\d{4}-\d{2}-\d{2}$/.test(trip.date ?? '')) return null;
+  const area = node(doc, 'section', 'route-insight route-forest-notices');
+  area.append(node(doc, 'h5', '', 'Waalse bosmeldingen'));
+  const sources = node(doc, 'p', 'route-view-hint');
+  const mapLink = node(doc, 'a', '', 'Officiële kaart ChasseOnWeb');
+  mapLink.href = 'https://www.chasseonweb.be/';
+  sources.append('Controleer de officiële kaart vóór vertrek en volg de borden ter plaatse. ', mapLink);
+  const control = node(doc, 'button', 'button secondary', 'Controleer jachtmeldingen');
+  control.type = 'button';
+  const status = node(doc, 'p', 'route-view-hint');
+  status.setAttribute('role', 'status');
+  const credit = node(doc, 'p', 'route-view-hint');
+  const stamp = new Date(trip.date + 'T12:00:00Z');
+  if (!Number.isFinite(+stamp)) return null;
+  const date = new Intl.DateTimeFormat('nl-BE', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+    .format(stamp);
+  area.append(sources, control, status, credit);
+  const run = new AbortController();
+  let loading = false;
+  control.addEventListener('click', async () => {
+    if (loading || run.signal.aborted) return;
+    loading = true;
+    control.setAttribute('aria-disabled', 'true');
+    status.textContent = 'Meldingen voor ' + date + ' opzoeken…';
+    credit.replaceChildren();
+    try {
+      if (trip.returnRoute && !inbound.length) throw new RangeError('Geen volledig traject.');
+      const { findForestNotices, forestNoticeSource } = await import('./route-forest-notices.js');
+      if (run.signal.aborted || !area.isConnected) return;
+      const result = await findForestNotices([...outbound, ...inbound], trip.date, { signal: run.signal });
+      if (run.signal.aborted || !area.isConnected) return;
+      const { state, count, kinds = [] } = result;
+      if (state === 'outside') status.textContent = 'Geen broncontrole beschikbaar voor ' + date + '.';
+      else if (count) status.textContent = date + ': de route raakt ' + count + (count === 1 ? ' jachtterrein' : ' jachtterreinen')
+        + ' waarvoor een aanvraag tot tijdelijke afsluiting van boswegen is goedgekeurd.'
+        + (kinds.length ? ' ' + kinds.join(', ') + '.' : '')
+        + ' De melding vermeldt niet welk pad op jouw route afgesloten is.'
+        + (state === 'limited' ? ' De broncontrole was onvolledig.' : '');
+      else status.textContent = state === 'limited' ? 'Voor ' + date + ' was alleen een onvolledige controle mogelijk.'
+        : 'Voor ' + date + ' geen overlappende meldingen in deze bron gevonden. Afsluitingen kunnen ontbreken.';
+      if (state !== 'outside') {
+        const source = node(doc, 'a', '', forestNoticeSource.credit);
+        source.href = forestNoticeSource.metadata;
+        const license = node(doc, 'a', '', 'CC BY 4.0');
+        license.href = forestNoticeSource.license;
+        credit.append(source, ' · ', license);
+      }
+    } catch (error) {
+      if (run.signal.aborted || !area.isConnected) return;
+      status.textContent = error instanceof RangeError ? 'Deze route kon niet volledig worden gecontroleerd.'
+        : 'De bron voor bosmeldingen is niet bereikbaar. Er is geen controle uitgevoerd.';
+    } finally {
+      loading = false;
+      control.removeAttribute('aria-disabled');
+    }
+  });
+  return { area, close: () => run.abort() };
+}
+
 export function renderRouteView(trip, { document: doc = globalThis.document } = {}) {
   const outbound = routeParts(trip.route), inbound = routeParts(trip.returnRoute);
   if (!outbound.length || !doc?.defaultView) return null;
@@ -576,7 +636,9 @@ export function renderRouteView(trip, { document: doc = globalThis.document } = 
   charts.append(renderSurface(doc, trip), renderElevation(doc, elevationProfile(trip)));
   const map = createMap(doc, outbound, inbound, routeMarkers(trip, outbound), label, trip.edited === true || trip.exactStops === true);
   view.append(header, charts, map.figure);
-  view.dismissRouteView = map.dispose;
+  const notices = forestNotices(doc, trip, outbound, inbound);
+  if (notices) view.append(notices.area);
+  view.dismissRouteView = () => { notices?.close(); map.dispose(); };
   if (trip.returnRoute && !inbound.length) view.append(node(doc, 'p', 'route-view-hint', 'Geometrie voor de terugrit ontbreekt; de kaart toont alleen de heenrit.'));
   return view;
 }
