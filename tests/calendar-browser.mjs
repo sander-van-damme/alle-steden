@@ -306,6 +306,39 @@ try {
   }
   assert.ok(!plannerCatalogue.flatMap(({events})=>events).some(({id})=>/museumnacht-2026|ganda-kunstroute-2026/u.test(id)));
 
+  const brocantesData = [
+    ['brocante-de-saint-pholien','Brocante de Saint-Pholien','Boulevard de la Constitution','4020','friday'],
+    ['petites-puces-de-saint-gilles','Petites Puces de Saint-Gilles','Boulevard Louis Hillier','4000','saturday'],
+  ].map(([id,name,street_name,postal_code,weekday]) => ({
+    id,name,street_name,postal_code,city:'Liège',geo_point_2d:{lat:50.64,lon:5.56},
+    url:'https://www.liege.be/fr/annuaire/'+id,
+    schedule_json:JSON.stringify(Object.fromEntries(
+      ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
+        .map(key => [key,key === weekday ? [{from:'06:00',to:'13:00',comment:''}] : []]))),
+  }));
+  const brocantesUrl = 'https://opendata.liege.be/api/explore/v2.1/catalog/datasets/brocantes/records?**';
+  for (const device of [desktop,phone]) {
+    await device.route(brocantesUrl, route => route.fulfill({ json:{ results:brocantesData, total_count:2 },
+      headers:{ 'Access-Control-Allow-Origin':'*' } }));
+    await device.goto(origin + '/kalender/?stad=luik&maand=2026-12');
+    await loaded(device);
+    await device.locator('#calendar-category').selectOption('Markt');
+    const row = (name) => device.locator('.calendar-event').filter({ hasText:name });
+    await device.locator('[data-day="2026-12-04"]').click();
+    assert.equal(await row('Brocante de Saint-Pholien').count(),1);
+    assert.equal(await row('Petites Puces de Saint-Gilles').count(),0);
+    assert.match(await row('Brocante de Saint-Pholien').innerText(), /06:00–13:00.*Controleer wijzigingen.*Ville de Liège.*CC BY 4.0/su);
+    await device.locator('[data-day="2026-12-05"]').click();
+    assert.equal(await row('Petites Puces de Saint-Gilles').count(),1);
+    await device.locator('[data-day="2026-12-25"]').click();
+    assert.equal(await row('Brocante de Saint-Pholien').count(),0);
+  }
+  await phone.unroute(brocantesUrl);
+  await phone.route(brocantesUrl, route => route.fulfill({ status:503, headers:{ 'Access-Control-Allow-Origin':'*' } }));
+  await phone.goto(origin + '/kalender/?stad=luik&maand=2026-12');
+  await loaded(phone);
+  assert.match(await phone.locator('#calendar-status').innerText(),/Niet bereikbaar:.*Ville de Liège · brocantes/su);
+
   const offline = await browser.newPage({ javaScriptEnabled: false });
   await offline.goto(origin + '/kalender/');
   assert.equal(await offline.locator('#calendar-fallback').isVisible(), true);

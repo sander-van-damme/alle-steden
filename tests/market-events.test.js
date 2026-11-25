@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { getMarketEvents, marketEventSource, marketOccurrences, marketSources } from '../site/assets/market-events.js';
+import { getMarketEvents, liegeBrocantesEventSource, marketEventSource, marketOccurrences, marketSources } from '../site/assets/market-events.js';
 
 const brussels = {
   statut: 'Actif / Actief / Active', id: '008', nom: 'Marché De Wand', naam: 'Markt De Wand',
@@ -87,7 +87,7 @@ test('calendar can list regular lower-confidence times not used by short-horizon
   assert.deepEqual(forPlanner.map((r) => r.start.slice(0, 10)), ['2026-11-27', '2026-12-04']);
 });
 
-test('only two municipal sources use bounded keyless CORS feeds and preserve count limits', async () => {
+test('municipal market sources use bounded keyless CORS feeds and preserve count limits', async () => {
   assert.equal(marketEventSource({ slug: 'namen' }), undefined);
   let calls = 0;
   const fetcher = (url, options) => {
@@ -105,4 +105,54 @@ test('only two municipal sources use bounded keyless CORS feeds and preserve cou
   assert.equal((await getMarketEvents({ slug: 'gent' }, span)).items.length, 0);
   assert.equal((await getMarketEvents({ slug: 'brussel' }, { ...span, from: '2027-12-28', through: '2027-12-29' })).items.length, 0);
   assert.equal(calls, 1);
+});
+
+const pholien = { ...liege, id:'brocante-de-saint-pholien', name:'Brocante de Saint-Pholien',
+  postal_code:'4020', street_name:'Boulevard de la Constitution', schedule_json:hours('friday','06:00','13:00'),
+  url:'https://www.liege.be/fr/annuaire/brocante-de-saint-pholien' };
+const gilles = { ...liege, id:'petites-puces-de-saint-gilles', name:'Petites Puces de Saint-Gilles',
+  street_name:'Boulevard Louis Hillier', schedule_json:hours('saturday','06:00','13:00'),
+  url:'https://www.liege.be/fr/annuaire/petites-puces-de-saint-gilles' };
+
+test('Luik projects reviewed flea-market series only; no unknown holiday, season or planner claim', () => {
+  const key = 'liegeBrocantes';
+  const friday = onDay(key,'2026-12-04',pholien,gilles);
+  const saturday = onDay(key,'2026-12-05',pholien,gilles);
+  assert.deepEqual(friday.map(({name,start,end}) => [name,start,end]),
+    [['Brocante de Saint-Pholien','2026-12-04T06:00:00+01:00','2026-12-04T13:00:00+01:00']]);
+  assert.equal(saturday[0].name,'Petites Puces de Saint-Gilles');
+  assert.equal(saturday[0].plannerEligible,false);
+  assert.equal(friday[0].scheduleBased,true);
+  assert.match(friday[0].description,/Controleer wijzigingen/);
+  assert.match(friday[0].sourceRecord,/brocantes.*brocante-de-saint-pholien/);
+  assert.equal(marketSources[key].license,'https://creativecommons.org/licenses/by/4.0/');
+  assert.deepEqual(onDay(key,'2026-12-25',pholien),[]);
+  assert.deepEqual(onDay(key,'2026-08-14',pholien),[]);
+  assert.deepEqual(onDay(key,'2027-05-15',{...gilles,id:'place-aux-livres'}),[]);
+  assert.deepEqual(onDay(key,'2026-12-04',pholien,pholien),[]);
+  for (const edit of [
+    {city:'Seraing'}, {postal_code:'4032'}, {geo_point_2d:{lat:49,lon:5}},
+    {schedule_json:hours('friday','06:00','13:00','Annulé')},
+    {schedule_json:hours('saturday','06:00','13:00')}, {url:'https://example.org/not-the-city'},
+  ]) assert.deepEqual(onDay(key,'2026-12-04',{...pholien,...edit}),[]);
+});
+
+test('Luik brocantes requests only bounded public fields and survives as an independent source', async () => {
+  assert.equal(liegeBrocantesEventSource({slug:'herve'}),undefined);
+  const options = {
+    today:'2026-12-04', from:'2026-12-04', through:'2026-12-05',
+    fetcher: async (url, request) => {
+      assert.equal(request.credentials,'omit');
+      assert.equal(url.pathname,'/api/explore/v2.1/catalog/datasets/brocantes/records');
+      assert.equal(url.searchParams.get('limit'),'30');
+      assert.doesNotMatch(url.searchParams.get('select'),/activity|description|photo|email|phone/u);
+      return Response.json(doc(pholien,gilles));
+    },
+  };
+  const job = liegeBrocantesEventSource({slug:'luik'},options);
+  assert.equal(job.key,'liegeBrocantes');
+  assert.equal((await job.run()).items.length,2);
+  assert.deepEqual((await liegeBrocantesEventSource({slug:'luik'},{...options,planner:true}).run()).items,[]);
+  await assert.rejects(liegeBrocantesEventSource({slug:'luik'},{...options,
+    fetcher:async () => new Response('',{status:503})}).run());
 });

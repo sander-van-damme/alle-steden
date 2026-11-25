@@ -27,9 +27,18 @@ export const marketSources = {
     origin: liege, dataset: 'marches', city: 'luik',
     fields: 'id,city,name,street_name,postal_code,schedule_json,geo_point_2d,url,last_modified',
   },
+  liegeBrocantes: {
+    label: 'Stad Luik · Brocantes',
+    href: liege + '/explore/assets/brocantes/',
+    license: 'https://creativecommons.org/licenses/by/4.0/',
+    attribution: 'Ville de Liège',
+    organizer: 'https://www.liege.be/fr/vie-communale/services-communaux/commerce/foires-et-marches/brocantes',
+    origin: liege, dataset: 'brocantes', city: 'luik',
+    fields: 'id,city,name,street_name,postal_code,schedule_json,geo_point_2d,url',
+  },
 };
 
-const sourceByCity = new Map(Object.entries(marketSources).map(([key, { city }]) => [city, key]));
+const sourceByCity = new Map(Object.entries(marketSources).filter(([key]) => key !== 'liegeBrocantes').map(([key, { city }]) => [city, key]));
 const weekdayFr = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 const weekdayEn = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 const monthsFr = ['janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'];
@@ -38,6 +47,11 @@ const keyText = (s) => typeof s === 'string' ? s.normalize('NFD').replace(/\p{M}
 // appear (labelled as such) in the calendar. Unknown IDs never become stops.
 const reviewedBrussels = new Set(['001', '002', '003', '004', '005', '006', '007', '008', '010', '011', '012', '013']);
 const plannerBrussels = new Set(['001', '002', '003', '005', '008', '010', '011', '012']);
+// Compare the postal sectors and series to the municipality's visitor pages.
+const liegeBrocantes = new Map([
+  ['brocante-de-saint-pholien', { postcode: '4020', weekday: 5 }],
+  ['petites-puces-de-saint-gilles', { postcode: '4000', weekday: 6 }],
+]);
 const reviewedLiege = new Set(['marche-de-la-batte', 'marche-de-chenee']);
 const formatter = new Intl.DateTimeFormat('sv-SE', {
   timeZone: 'Europe/Brussels', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -134,6 +148,17 @@ function metadata(key, row) {
     if (!coordinates || !slots.length || !name || !venue) return undefined;
     return { id: row.id, coordinates, slots, name, venue, plannerVerified: plannerBrussels.has(row.id) };
   }
+  if (key === 'liegeBrocantes') {
+    const verified = liegeBrocantes.get(row.id);
+    if (!verified || keyText(row.city) !== 'liege' || String(row.postal_code) !== verified.postcode) return undefined;
+    const coordinates = coords(row.geo_point_2d, key);
+    const slots = liegeSchedule(row.schedule_json);
+    const name = compact(row.name), venue = compact(row.street_name);
+    const link = safeUrl(row.url);
+    const website = link && new URL(link).origin === 'https://www.liege.be' ? link : undefined;
+    if (!coordinates || slots.length !== 1 || slots[0].weekday !== verified.weekday || !name || !venue || !website) return undefined;
+    return { id: row.id, coordinates, slots, name, venue, website, plannerVerified: false };
+  }
   const place = keyText(row.city);
   if (!reviewedLiege.has(row.id) ||
     !(place === 'liege' && row.id === 'marche-de-la-batte' && row.postal_code === '4000' ||
@@ -207,6 +232,9 @@ export function marketOccurrences(key, doc, options = {}) {
     for (const market of markets) {
       // Official Brussels annex XII closes the art & crafts market all January.
       if (key === 'brusselsMarkets' && market.id === '006' && month === 1) continue;
+      // Saint-Pholien is also omitted on confirmed city-announced closures
+      // that are not themselves holidays (e.g. the day before the Outremeuse festival).
+      if (key === 'liegeBrocantes' && market.id === 'brocante-de-saint-pholien' && day === '2026-08-14') continue;
       const slots = market.slots.filter((slot) => slot.weekday === weekday && (!slot.season || inSeason(slot.season, month)));
       // The sources here describe one ordinary market session per day. If two
       // claims overlap this season we cannot choose a reliable closing time.
@@ -231,8 +259,7 @@ export function marketOccurrences(key, doc, options = {}) {
   return { items, limited: period.limited || doc.results.length >= maxRows || Number(doc.total_count) > rows.length };
 }
 
-export async function getMarketEvents(city, options = {}) {
-  const key = sourceByCity.get(city?.slug);
+async function fetchMarketEvents(key, options) {
   if (!key) return { items: [], limited: false };
   const period = span(options);
   if (period.from > period.through) return { items: [], limited: period.limited };
@@ -241,6 +268,15 @@ export async function getMarketEvents(city, options = {}) {
     limit: maxRows, select: source.fields,
   });
   return marketOccurrences(key, await getJson(endpoint, options), options);
+}
+
+export async function getMarketEvents(city, options = {}) {
+  return fetchMarketEvents(sourceByCity.get(city?.slug), options);
+}
+
+export function liegeBrocantesEventSource(city, options = {}) {
+  const key = 'liegeBrocantes';
+  return city?.slug === marketSources[key].city ? { key, run: () => fetchMarketEvents(key, options) } : undefined;
 }
 
 export function marketEventSource(city, options = {}) {

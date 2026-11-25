@@ -16,6 +16,8 @@ export const sources = {
     license: 'https://creativecommons.org/publicdomain/zero/1.0/', attribution: 'Ville de Bruxelles · Affaires économiques / Data Management' },
   liegeMarkets: { label: 'Ville de Liège · marchés', href: 'https://opendata.liege.be/explore/dataset/marches/information/',
     license: ccby, attribution: 'Ville de Liège' },
+  liegeBrocantes: { label: 'Ville de Liège · brocantes', href: 'https://opendata.liege.be/explore/assets/brocantes/',
+    license: ccby, attribution: 'Ville de Liège' },
   antwerpMarkets: { label: 'bron stad Antwerpen', href: 'https://www.antwerpen.be/shoppen-en-markten',
     license: 'https://www.antwerpen.be/info/gratis-open-data-licentie' },
   ninoveMarkets: { label: 'Stad Ninove', href: 'https://www.ninove.be/dinsdagmarkt' },

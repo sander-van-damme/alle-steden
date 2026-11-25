@@ -3,7 +3,7 @@
 // turns into a guaranteed sightseeing slot.
 import { addCalendarDays, dateOnly, localToday } from './sources.js';
 import { ideesFeedUrl, ideesFeedMaxBytes, parseIdeesCalendar } from './idees-events.js';
-import { marketEventSource } from './market-events.js';
+import { liegeBrocantesEventSource, marketEventSource } from './market-events.js';
 import { antwerpMarketEventSource } from './antwerp-market-events.js';
 import { localMarketEventSource } from './local-market-events.js';
 import { fetchRandonneursEvents } from './randonneurs-events.js';
@@ -84,6 +84,8 @@ export function extraAgendaJobs(cities, { city, region, span, rawFetcher = globa
       const settings = { ...span, ...options, today };
       const provider = marketEventSource(entry, settings) ?? antwerpMarketEventSource(entry, settings) ?? localMarketEventSource(entry, settings);
       if (provider) work.push([provider.key, provider.run]);
+      const brocantes = liegeBrocantesEventSource(entry, settings);
+      if (brocantes) work.push([brocantes.key, brocantes.run]);
     }
   }
   return work;
