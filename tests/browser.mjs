@@ -229,6 +229,19 @@ try {
   assert.equal(await routePhone.evaluate(()=>document.documentElement.scrollWidth),390);
   assert.equal(routeRequests,2);
 
+  await routePhone.route('https://www.odwb.be/api/explore/v2.1/catalog/datasets/parcs-et-squares-verviers/**', route => json(route, {
+    total_count: 2,
+    results: [
+      {nom:'Parc de Séroule', categorie:'Zone parc public', accessibil:'Accessible', geo_point_2d:{lat:50.5774865,lon:5.859008}},
+      {nom:'Parc Moreau', categorie:'Zone parc public', accessibil:'Non accessible', geo_point_2d:{lat:50.584,lon:5.8435}},
+    ],
+  }));
+  await routePhone.goto(base + '/steden/verviers/');
+  const seroule = routePhone.locator('[data-live-places] li').filter({hasText:'Parc de Séroule'});
+  await seroule.getByRole('link', {name:'CC BY 4.0'}).waitFor();
+  assert.match(await seroule.innerText(), /actuele toegang en openingsuren niet bevestigd[\s\S]*Ville de Verviers/);
+  assert.equal(await routePhone.getByText('Parc Moreau',{exact:true}).count(),0);
+
   const fallback = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   pages.push(fallback);
   await fallback.goto(base + city);
@@ -248,6 +261,7 @@ try {
     assert.deepEqual(await p.locator('.info-page h3').allTextContents(),
       ['Steden en bezienswaardigheden', 'Kalender en bezoekuren', 'Kaarten, fietsroutes en meldingen onderweg']);
     assert.equal(await p.getByRole('main').getByRole('link', { name:'BRouter' }).count(), 1);
+    assert.equal(await p.getByRole('main').getByRole('link', { name:'Ville de Verviers' }).count(), 1);
     assert.equal(await p.getByRole('main').locator('button, a[href*="github.com"], a[href$=".ttl"]').count(), 0);
     assert.doesNotMatch(await p.getByRole('main').innerText(), /UiTdatabank/);
     await footer.getByRole('link', { name:'Privacy' }).click();

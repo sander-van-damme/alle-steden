@@ -19,6 +19,9 @@ export function placeProviders(city, { expanded = true, origin = globalThis.loca
     key: city.slug === 'bergen' ? 'monsArt' : 'namurArt', added: true,
     run: async () => (await import('./outdoor-art.js')).getOutdoorArt(city, options),
   }] : [];
+  const publicParks = expanded && city.slug === 'verviers' ? [{
+    key: 'verviersParks', added: true, run: async () => (await import('./verviers-parks.js')).getVerviersParks(city, options),
+  }] : [];
   const wikidata = { key: 'wikidata', run: () => getWikidata(city, options).then(ready) };
   if (region === 'brussels') return [
     wikidata,
@@ -35,7 +38,7 @@ export function placeProviders(city, { expanded = true, origin = globalThis.loca
     return { ...result, items: result.items.map((item) => ({ ...item, verificationHref: safeUrl(item.website) })) };
   } }, ...(expanded && city.slug === 'marche-en-famenne' ? ['marcheHeritage','marcheArt'].map((key) => ({
     key, added: true, run: async () => (await loadMarche()).find((entry) => entry.key === key).run(),
-  })) : []), ...museumSource, ...outdoorArt];
+  })) : []), ...museumSource, ...outdoorArt, ...publicParks];
   return [wikidata, { key: 'flanders', run: async () => {
     if (!origin) throw new Error('Herkomst ontbreekt');
     const url = new URL('/api/city-live', origin);
