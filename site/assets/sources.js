@@ -8,6 +8,9 @@ const gent = 'https://data.stad.gent';
 const ccby = 'https://creativecommons.org/licenses/by/4.0/';
 
 export const sources = {
+  zuidLimburg: { label:'Visit Zuid-Limburg',
+    href:'https://partners.visitzuidlimburg.nl/voor-partners/rss-feeds/',
+    visitorHref:'https://www.visitzuidlimburg.nl/agenda/' },
   stripmuseum: { label:'Centre Belge de la Bande Dessinée',
     href:'https://openagenda.com/fr/centre-belge-de-la-bande-dessinee',
     visitorHref:'https://www.comicscenter.net/en/practical-information/opening-hours-and-admission-fees',

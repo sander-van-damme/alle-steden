@@ -9,6 +9,7 @@ import { fetchRandonneursEvents } from './randonneurs-events.js';
 import { fetchAdepsEvents } from './adeps-events.js';
 import { fetchMetroEvents, metroCities } from './eurometropolis-events.js';
 import { fetchComicsEvents } from './stripmuseum-events.js';
+import { fetchZuidLimburgEvents, zuidLimburgCities } from './zuidlimburg-events.js';
 import { loadIdees } from './idees-feed.js';
 
 const day = (value) => typeof value === 'string' && (dateOnly(value) ? value :
@@ -35,6 +36,8 @@ export function extraAgendaJobs(cities, { city, region, span, origin, rawFetcher
       ...span, ...options, origin, cities:chosen,
     })]);
     if (origin && allowed.has('brussel')) work.push(['stripmuseum',() => fetchComicsEvents({...span,...options,origin})]);
+    if (origin && chosen.some(({slug})=>zuidLimburgCities.includes(slug))) work.push(['zuidLimburg',() =>
+      fetchZuidLimburgEvents({...span,...options,origin,cities:chosen})]);
     const adepsCities = chosen;
     if (adepsCities.length) work.push(['adeps', () => fetchAdepsEvents({ ...options, cities: adepsCities, from: span.from, to: span.through })]);
     for (const entry of chosen) {

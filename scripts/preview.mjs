@@ -4,7 +4,8 @@ import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { onRequest as cityLive } from '../functions/api/city-live.js';
 import { onRequest as verifyLink } from '../functions/api/verify-link.js';
-const functions = new Map([['/api/city-live', cityLive], ['/api/verify-link', verifyLink]]);
+import { onRequest as zuidLimburg } from '../functions/api/zuid-limburg.js';
+const functions = new Map([['/api/city-live', cityLive], ['/api/verify-link', verifyLink], ['/api/zuid-limburg', zuidLimburg]]);
 const functionAssets = new Set(['/data/cities.json', '/link-check-data.json']);
 
 const port = Number(process.env.PORT ?? 4173);

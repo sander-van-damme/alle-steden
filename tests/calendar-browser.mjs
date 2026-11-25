@@ -26,7 +26,10 @@ async function install(page, { fails = false, pauseGent = null, pauseIdeas = nul
     'END:VEVENT','BEGIN:VEVENT','UID:weihnachtszauber@ideessorties.be','DTSTART:20261210T230000Z',
     'DTEND:20261211T230000Z','SUMMARY:Marché de Noël Weihnachtszauber','CATEGORIES:Marché de Noël',
     'LOCATION:Rathausplatz, 4780 Sankt Vith','URL:https://ideessorties.be/events/marche-de-noel-weihnachtszauber-a-st-vith-st-vith',
-    'END:VEVENT','END:VCALENDAR',''].join('\r\n');
+    'END:VEVENT','BEGIN:VEVENT','UID:liege-noel-test@ideessorties.be','DTSTART;VALUE=DATE:20261127',
+    'DTEND;VALUE=DATE:20261231','SUMMARY:Le Village de Noël de Liège','CATEGORIES:Marché de Noël','LOCATION:Place du Marché, 4000 Liège',
+    'URL:https://ideessorties.be/events/le-village-de-noel-de-liege-liege','END:VEVENT','END:VCALENDAR',''].join('\r\n');
+  await page.route(origin + '/api/zuid-limburg', route => route.fulfill({json:{items:[]}}));
   await page.route('https://uwtaxdtecrngvmgzradk.supabase.co/functions/v1/calendar-feed?**',async route=>{
     if(pauseIdeas) await pauseIdeas;
     return route.fulfill({status:ideasStatus,contentType:'text/calendar',body:ideasStatus===200?ics:'',headers:{'Access-Control-Allow-Origin':'*'}}).catch(()=>{});
@@ -76,7 +79,7 @@ try {
   assert.match(await desktop.locator('.calendar-sources').innerText(), /Niet alle evenementen/);
   assert.ok(await desktop.locator('#calendar-sources a').count() > 0);
   assert.match(await desktop.locator('#calendar-status').textContent(), /Dit is een selectie/);
-  const ideas = desktop.locator('.calendar-event[data-calendar-source=idees]');
+  const ideas = desktop.locator('.calendar-event[data-calendar-source=idees]').filter({hasText:'Expo van ideeën'});
   const fixtureLink = desktop.getByRole('link', { name: fixture.title });
   const ideasLink = ideas.getByRole('link', {name:'Expo van ideeën'});
   const more = desktop.locator('#calendar-more');
@@ -504,6 +507,35 @@ try {
   await offline.goto(origin + '/kalender/');
   assert.equal(await offline.locator('#calendar-fallback').isVisible(), true);
   assert.equal(await offline.locator('#calendar-app').isVisible(), false);
+  const dutch = [];
+  const visit = {source:'zuidLimburg',id:'zuidLimburg:452194dc-66d3-439a-bba1-cf2f7abdaa16',city:'luik',
+    name:'Village de Noël in Luik',start:'2026-11-27',end:'2026-12-30',category:'Markt',
+    website:'https://www.villagedenoel.be/se-rendre-a-noel-a-liege'};
+  for (const device of [desktop, phone]) {
+    await device.route(origin+'/api/zuid-limburg',route=>{
+      dutch.push(route.request().url());
+      return route.fulfill({json:{items:[visit,{
+        ...visit, id:'zuidLimburg:878314ed-4111-4689-9fc3-55ecc95c6c18',city:'hasselt',name:'Winterland Hasselt',
+        start:'2026-11-13',end:'2027-01-03',venue:'Kolonel Dusartplein',website:'https://www.winterland.be/nl/ontdek-winterland/openingsuren',
+      }]}});
+    });
+    await device.goto(origin+'/kalender/?stad=hasselt&maand=2027-01');
+    await loaded(device);
+    const winter = device.getByRole('link',{name:'Winterland Hasselt',exact:true});
+    assert.equal(await winter.count(),1);
+    assert.match(await device.locator('.calendar-event').filter({has:winter}).innerText(), /Kolonel Dusartplein[\s\S]*Visit Zuid-Limburg/u);
+    await device.locator('[data-day="2027-01-04"]').click();
+    assert.equal(await winter.count(),0);
+    await device.goto(origin+'/kalender/?stad=luik&maand=2026-12');
+    await loaded(device);
+    assert.equal(await device.getByRole('link',{name:'Le Village de Noël de Liège',exact:true}).count(),1);
+    assert.equal(await device.getByRole('link',{name:'Village de Noël in Luik',exact:true}).count(),0);
+    const before=dutch.length;
+    await device.goto(origin+'/kalender/?stad=gent&maand=2026-12');
+    await loaded(device);
+    assert.equal(dutch.length,before);
+  }
+
   console.log('Kalender in Chromium: maanden, toetsenbord, smartphone, filters, bronfout, toekomstgrens en fallback zonder JavaScript.');
 } finally {
   clearTimeout(timeout);
