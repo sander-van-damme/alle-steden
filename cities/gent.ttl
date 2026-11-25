@@ -61,6 +61,30 @@ wd:Q980285 a schema:Museum ;
     schema:url <https://gentsewinterfeesten.be/faq> ;
     dcterms:source <https://gentsewinterfeesten.be/faq> .
 
+# Stadsbrede evenementen zonder specifiek vertrekpunt voor de fietsplanner.
+<#museumnacht-2026> a schema:Festival ;
+    schema:name "Museumnacht"@nl ;
+    schema:description "Gratis avondprogramma bij deelnemende musea en kunstlocaties in Gent, van 18:00 tot 01:00 de volgende ochtend."@nl ;
+    schema:location wd:Q1296 ;
+    schema:startDate "2026-12-03"^^xsd:date ;
+    schema:endDate "2026-12-03"^^xsd:date ;
+    schema:url <https://visit.gent.be/nl/agenda/museumnacht> ;
+    dcterms:source <https://degentsemusea.be/beleef-meer/museumnacht>, <https://visit.gent.be/nl/agenda/museumnacht> .
+
+<#ganda-kunstroute-2026> a schema:ExhibitionEvent ;
+    schema:name "G.AN.D.A. Kunstroute"@nl ;
+    schema:description "Kunstroute langs deelnemende galeries, antiekzaken en ontwerpers in Gent."@nl ;
+    schema:location wd:Q1296 ;
+    schema:startDate "2026-11-27"^^xsd:date ;
+    schema:endDate "2026-12-06"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-11-27T17:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-11-27T22:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-11-28T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-11-28T18:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-11-29T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-11-29T18:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-05T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-05T18:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-06T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-06T18:00:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://visit.gent.be/nl/agenda/ganda-kunstroute> ;
+    dcterms:source <https://www.ganda-kunstroute.be/>, <https://visit.gent.be/nl/agenda/ganda-kunstroute> .
+
 # Buitenstop uit de Inventaris Onroerend Erfgoed
 wd:Q815443 a schema:LandmarksOrHistoricalBuildings ;
     schema:name "Belfort van Gent"@nl ;

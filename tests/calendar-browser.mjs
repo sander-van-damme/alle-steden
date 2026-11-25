@@ -279,6 +279,33 @@ try {
   assert.ok(!plannerCatalogue.flatMap(({events})=>events).some(({id})=>/makersmarkt-brugge|wintersfeer-damme/u.test(id)));
   assert.equal(await phone.evaluate(() => document.documentElement.scrollWidth),390);
 
+  // The mirror will begin returning the same editions when they are underway.
+  // Keep the organizer's visit sessions, not the mirror's continuous date range.
+  for (const device of [desktop,phone]) {
+    await device.unroute('https://data.stad.gent/api/**');
+    await device.route('https://data.stad.gent/api/**', route => route.fulfill({ json:{ results:[
+      { name_nl:'G.AN.D.A. Kunstroute', date_start:'2026-11-27', date_end:'2026-12-06',
+        url:'https://visit.gent.be/nl/agenda/ganda-kunstroute' },
+      { name_nl:'Museumnacht', date_start:'2026-12-03', date_end:'2026-12-03',
+        url:'https://visit.gent.be/nl/agenda/museumnacht' },
+    ] }, headers:{ 'Access-Control-Allow-Origin':'*' } }));
+    await device.goto(origin + '/kalender/?stad=gent&maand=2026-12');
+    await loaded(device);
+    const route = device.locator('.calendar-event').filter({ hasText:'G.AN.D.A. Kunstroute' });
+    const night = device.locator('.calendar-event').filter({ hasText:'Museumnacht' });
+    assert.equal(await route.count(),1);
+    assert.equal(await night.count(),1);
+    await device.locator('[data-day="2026-12-03"]').click();
+    assert.equal(await route.count(),0);
+    assert.match(await night.innerText(), /18:00 tot 01:00/);
+    await device.locator('[data-day="2026-12-04"]').click();
+    assert.equal(await night.count(),0);
+    await device.locator('[data-day="2026-12-05"]').click();
+    assert.equal(await route.count(),1);
+    assert.match(await route.locator('.calendar-event-meta').innerText(), /11:00–18:00/);
+  }
+  assert.ok(!plannerCatalogue.flatMap(({events})=>events).some(({id})=>/museumnacht-2026|ganda-kunstroute-2026/u.test(id)));
+
   const offline = await browser.newPage({ javaScriptEnabled: false });
   await offline.goto(origin + '/kalender/');
   assert.equal(await offline.locator('#calendar-fallback').isVisible(), true);
