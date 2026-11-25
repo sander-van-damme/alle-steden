@@ -1,65 +1,14 @@
 // Public, first-party agenda integrations. Kept separate from the planner's
 // confirmed-hour adapters: no estimated ride finish or regular market schedule
 // turns into a guaranteed sightseeing slot.
-import { addCalendarDays, dateOnly, localToday } from './sources.js';
-import { ideesFeedUrl, ideesFeedMaxBytes, parseIdeesCalendar } from './idees-events.js';
+import { dateOnly, localToday } from './sources.js';
 import { liegeBrocantesEventSource, marketEventSource } from './market-events.js';
 import { antwerpMarketEventSource } from './antwerp-market-events.js';
 import { localMarketEventSource } from './local-market-events.js';
 import { fetchRandonneursEvents } from './randonneurs-events.js';
 import { fetchAdepsEvents } from './adeps-events.js';
 import { fetchMetroEvents, metroCities } from './eurometropolis-events.js';
-
-export { ideesFeedUrl };
-const snapshotLimit = ideesFeedMaxBytes;
-const staleAfter = 60 * 60_000;
-const slots = new WeakMap();
-
-async function boundedCalendar(fetcher) {
-  const response = await fetcher(new URL(ideesFeedUrl), {
-    headers: { Accept: 'text/calendar' }, credentials: 'omit', redirect: 'error', signal: AbortSignal.timeout(8500),
-  });
-  const reader = response.body?.getReader();
-  if (!response.ok || !/^text\/calendar\b/i.test(response.headers.get('content-type') ?? '') ||
-      !reader || Number(response.headers.get('content-length')) > snapshotLimit) {
-    reader?.cancel().catch(() => {});
-    throw new Error('Agendaformaat niet beschikbaar');
-  }
-  const decoder = new TextDecoder('utf-8', { fatal: true });
-  let size = 0, input = '';
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      size += value.byteLength;
-      if (size > snapshotLimit) throw new Error('Agenda is groter dan de leeslimiet');
-      input += decoder.decode(value, { stream: true });
-    }
-    input += decoder.decode();
-    if (!/^BEGIN:VCALENDAR\r?\n/.test(input) || !/\r?\nEND:VCALENDAR(?:\r?\n)?$/.test(input)) {
-      throw new Error('Agenda niet compleet');
-    }
-    return input;
-  } finally {
-    reader.cancel().catch(() => {});
-  }
-}
-
-function fetchIdees(cities, fetcher, from = localToday()) {
-  const now = Date.now();
-  const previous = slots.get(fetcher);
-  if (previous && previous.until > now && previous.cities === cities && previous.from === from) return previous.promise;
-  const slot = { until: now + staleAfter, cities, from, promise: null };
-  // Share the same public feed through scope/month transitions. A city change
-  // discards a previous UI result; it does not interrupt this shared download.
-  slot.promise = boundedCalendar(fetcher).then((raw) => parseIdeesCalendar(raw, cities,
-    { from, through: addCalendarDays(from, 120) })).catch((error) => {
-    if (slots.get(fetcher) === slot) slots.delete(fetcher);
-    throw error;
-  });
-  slots.set(fetcher, slot);
-  return slot.promise;
-}
+import { loadIdees } from './idees-feed.js';
 
 const day = (value) => typeof value === 'string' && (dateOnly(value) ? value :
   Number.isFinite(Date.parse(value)) && localToday(new Date(value)));
@@ -69,11 +18,13 @@ export function extraAgendaJobs(cities, { city, region, span, origin, rawFetcher
   const allowed = new Set(chosen.map(({ slug }) => slug));
   const work = [];
   if (chosen.length) {
-    work.push(['idees', async () => {
-      const parsed = await fetchIdees(cities, rawFetcher, today);
-      const items = parsed.items.filter((item) => allowed.has(item.city) && day(item.start) <= span.through &&
-        (day(item.end) || day(item.start)) >= span.from);
-      return { items };
+    work.push(['idees', async (progress) => {
+      const scoped = parsed => ({
+        items:parsed.items.filter((item)=>allowed.has(item.city) && day(item.start) <= span.through &&
+          (day(item.end) || day(item.start)) >= span.from),
+        ...(parsed.state === 'stale' && {stale:true}),
+      });
+      return scoped(await loadIdees({cities,fetcher:rawFetcher,origin,today,onStale:snapshot=>progress?.(scoped(snapshot))}));
     }]);
     work.push(['randonneurs', async () => {
       const response = await fetchRandonneursEvents({ ...options, cities: chosen, from: span.from, to: span.through });

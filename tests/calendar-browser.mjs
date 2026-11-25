@@ -18,7 +18,7 @@ const fixture = {
   category: 'concert_festival', start_datetime: '2026-12-20T16:00:00Z', end_datetime: '2026-12-20T17:30:00Z',
   event_url: 'https://example.org/concert',
 };
-async function install(page, { fails = false, pauseGent = null } = {}) {
+async function install(page, { fails = false, pauseGent = null, pauseIdeas = null, ideasStatus = 200 } = {}) {
   await page.clock.setFixedTime(date);
   const ics = ['BEGIN:VCALENDAR','VERSION:2.0','BEGIN:VEVENT','UID:test-idee@ideessorties.be',
     'DTSTART;VALUE=DATE:20261223','SUMMARY:Expo van ideeën','CATEGORIES:Exposition',
@@ -27,9 +27,10 @@ async function install(page, { fails = false, pauseGent = null } = {}) {
     'DTEND:20261211T230000Z','SUMMARY:Marché de Noël Weihnachtszauber','CATEGORIES:Marché de Noël',
     'LOCATION:Rathausplatz, 4780 Sankt Vith','URL:https://ideessorties.be/events/marche-de-noel-weihnachtszauber-a-st-vith-st-vith',
     'END:VEVENT','END:VCALENDAR',''].join('\r\n');
-  await page.route('https://uwtaxdtecrngvmgzradk.supabase.co/functions/v1/calendar-feed?**', route => route.fulfill({
-    contentType: 'text/calendar', body: ics, headers: { 'Access-Control-Allow-Origin': '*' },
-  }));
+  await page.route('https://uwtaxdtecrngvmgzradk.supabase.co/functions/v1/calendar-feed?**',async route=>{
+    if(pauseIdeas) await pauseIdeas;
+    return route.fulfill({status:ideasStatus,contentType:'text/calendar',body:ideasStatus===200?ics:'',headers:{'Access-Control-Allow-Origin':'*'}}).catch(()=>{});
+  });
   for (const host of ['https://randonneurs.be/api/**', 'https://opendata.brussels.be/api/**', 'https://opendata.liege.be/api/**', 'https://geodata.antwerpen.be/arcgissql/**']) {
     await page.route(host, route => route.fulfill({ json: { rides:[], results:[], features:[] }, headers: { 'Access-Control-Allow-Origin': '*' } }));
   }
@@ -400,6 +401,41 @@ try {
   assert.match(await phone.locator('#calendar-status').innerText(),/Niet bereikbaar:.*Eurometropolis/);
   assert.equal(await phone.locator('[data-calendar-source=eurometropolis]').count(),0);
 
+  let releaseIdeas;
+  const delayed = await browser.newPage({viewport:{width:390,height:844}});
+  await install(delayed,{pauseIdeas:new Promise(resolve=>{ releaseIdeas=resolve; }),ideasStatus:502});
+  await delayed.goto(origin+'/kalender/?stad=verviers&maand=2026-12');
+  const early = delayed.locator('.calendar-event').filter({hasText:'Live concert in Verviers'});
+  await early.waitFor({timeout:6000});
+  assert.match(await delayed.locator('#calendar-status').innerText(),/We zoeken naar meer evenementen/);
+  releaseIdeas();
+  await loaded(delayed);
+  assert.equal(await early.count(),1);
+  assert.match(await delayed.locator('#calendar-status').innerText(),/Niet bereikbaar:.*Idées de sorties/);
+  await delayed.close();
+
+  const stale = await browser.newPage({viewport:{width:390,height:844}});
+  await install(stale);
+  await stale.goto(origin+'/kalender/?stad=bergen&maand=2026-12');
+  await loaded(stale);
+  const hasSaved = async () => (await (await caches.open('alle-steden-idees-v1')).keys()).length === 1;
+  await stale.waitForFunction(hasSaved);
+  let releaseRefresh;
+  const refresh = new Promise(resolve=>{releaseRefresh=resolve;});
+  await stale.route('https://uwtaxdtecrngvmgzradk.supabase.co/functions/v1/calendar-feed?**',async route=>{
+    await refresh;
+    return route.fulfill({status:503,headers:{'Access-Control-Allow-Origin':'*'}});
+  });
+  await stale.clock.setFixedTime(new Date(+date+30*60_000));
+  await stale.reload();
+  await stale.locator('[data-calendar-source=idees]').waitFor({timeout:6000});
+  assert.match(await stale.locator('#calendar-status').innerText(),/eerdere opname/);
+  releaseRefresh();
+  await loaded(stale);
+  assert.equal(await stale.locator('[data-calendar-source=idees]').count(),1);
+  assert.match(await stale.locator('#calendar-status').innerText(),/Eerder opgehaald: Idées de sorties.*Controleer wijzigingen bij de bron/);
+  assert.doesNotMatch(await stale.locator('#calendar-status').innerText(),/Niet bereikbaar: Idées de sorties/);
+  await stale.close();
   const offline = await browser.newPage({ javaScriptEnabled: false });
   await offline.goto(origin + '/kalender/');
   assert.equal(await offline.locator('#calendar-fallback').isVisible(), true);

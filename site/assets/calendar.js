@@ -65,13 +65,16 @@ function eventCard(item, cities, selectedDay, month) {
 function statusText(coverage, liveSpan, count, pending, scope) {
   const quantity = count ? count + (count === 1 ? ' evenement opgenomen.' : ' evenementen opgenomen.')
     : 'Geen evenementen opgenomen voor deze selectie.';
-  if (pending) return quantity + ' We zoeken naar meer evenementen…';
+  if (pending) return quantity + ' We zoeken naar meer evenementen…' +
+    (coverage.some(({state})=>state==='stale') ? ' Sommige evenementen komen uit een eerdere opname.' : '');
   if (liveSpan.reason === 'past') return quantity + ' Voor voorbije maanden zie je alleen een selectie.';
   if (liveSpan.reason === 'future') return quantity + ' Extra evenementen worden tot 120 dagen vooruit getoond.';
   if (!coverage?.length) return quantity + ' Voor deze selectie zijn geen extra evenementen beschikbaar.';
   const failed = coverage.filter(({ state }) => state === 'failed').map(({ source }) => sources[source]?.label).filter(Boolean);
+  const stale = coverage.filter(({ state }) => state === 'stale').map(({ source }) => sources[source]?.label).filter(Boolean);
   const limited = coverage.some(({ state }) => state === 'limited');
   return quantity + (failed.length ? ' Niet bereikbaar: ' + failed.join(', ') + '.' : '') +
+    (stale.length ? ' Eerder opgehaald: ' + stale.join(', ') + '. Controleer wijzigingen bij de bron.' : '') +
     (limited ? ' Dit is een selectie. Kies een stad om gerichter te zoeken.' : '') +
     (liveSpan.limited ? ' Voor enkele dagen in deze maand zie je alleen een selectie.' : '') +
     (!limited && !scope.city ? ' Niet alle evenementen staan in deze kalender.' : '');
@@ -235,12 +238,21 @@ async function start() {
     const controller = new AbortController();
     abort = controller;
     try {
-      const result = await fetchCalendarMonth(cities, { ...scope, span, origin: location.origin, today, signal: controller.signal });
-      if (token !== sequence) return;
-      live = { ...result, items: result.items
+      const normalize = (result) => ({ ...result, items: result.items
         .map((item) => Object.hasOwn(byCity, item?.city) && calendarEvent(item, item.city)).filter(Boolean)
-        .filter(({ day, last }) => day <= span.through && last >= span.from) };
-      if (!live.coverage.some(({ state }) => state === 'failed')) {
+        .filter(({ day, last }) => day <= span.through && last >= span.from) });
+      let previousCount = 0;
+      const onProgress = (result) => {
+        if (token !== sequence || !result.items.length && !previousCount) return;
+        previousCount = result.items.length;
+        live = normalize(result);
+        render({ focus:calendarGrid.contains(document.activeElement) });
+      };
+      const result = await fetchCalendarMonth(cities, { ...scope, span, origin: location.origin, today,
+        signal:controller.signal,onProgress });
+      if (token !== sequence) return;
+      live = normalize(result);
+      if (!live.coverage.some(({ state }) => state === 'failed' || state === 'stale')) {
         if (cache.size >= 12) cache.delete(cache.keys().next().value);
         cache.set(key, live);
       }

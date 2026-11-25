@@ -73,16 +73,33 @@ export async function fetchCalendarMonth(cities, options) {
       work.push(['imio', () => regionalWalloonEvents(cities, span, networkOptions)]);
     }
   }
-  const [results, local] = await Promise.all([Promise.allSettled(work.map(([, run]) => run())), localRequest]);
-  const coverage = results.map((result, index) => {
-    const [source] = work[index];
-    if (result.status === 'rejected') return { source, state: 'failed' };
-    const value = result.value;
-    return { source, state: value.limited ? 'limited' : value.items.length ? 'ok' : 'empty', count: value.items.length };
+  const results = Array.from({ length:work.length });
+  let local;
+  function snapshot() {
+    const coverage = results.flatMap((result,index) => {
+      if (!result) return [];
+      const [source] = work[index];
+      if (result.status === 'rejected') return [{source,state:'failed'}];
+      const value = result.value;
+      return [{source,state:value.stale ? 'stale' : value.limited ? 'limited' : value.items.length ? 'ok' : 'empty',
+        count:value.items.length}];
+    });
+    return {
+      items:preferAdeps([...(local?.items ?? []).map((item)=>({...item,city})),...results.flatMap(result=>result?.value?.items ?? [])]),
+      coverage:[...(local?.coverage ?? []),...coverage], ...(local && {scoped:true}),
+    };
+  }
+  function progress() {
+    if (!signal?.aborted && options.onProgress) options.onProgress(snapshot());
+  }
+  const workPromises = work.map(async ([,run],index)=>{
+    try {
+      const interim = value => { results[index] = {status:'fulfilled',value}; progress(); };
+      results[index] = {status:'fulfilled',value:await run(interim)};
+    }
+    catch { results[index] = {status:'rejected'}; }
+    progress();
   });
-  return {
-    items: preferAdeps([...(local?.items ?? []).map((item) => ({ ...item, city })), ...results.flatMap((result) => result.value?.items ?? [])]),
-    coverage: [...(local?.coverage ?? []), ...coverage],
-    ...(local && { scoped: true }),
-  };
+  await Promise.all([...workPromises,localRequest?.then(value=>{local=value;progress();})]);
+  return snapshot();
 }
