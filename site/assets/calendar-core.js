@@ -48,14 +48,21 @@ function visitSessions(entries, day, last) {
   const seen = new Map();
   for (const row of entries) {
     const start = dateValue(row?.start), end = dateValue(row?.end);
-    if (!start || !end || dateOnly(start) || dateOnly(end)) continue;
+    if (!start || dateOnly(start) || (row?.end != null && (!end || dateOnly(end)))) continue;
     const sessionDay = brusselsDay(start);
+    if (sessionDay < day || sessionDay > last) continue;
+    const key = new Date(start).toISOString();
+    if (!end) {
+      if (!seen.has(key)) seen.set(key, { day: sessionDay, start });
+      continue;
+    }
     const duration = Date.parse(end) - Date.parse(start);
-    if (sessionDay < day || sessionDay > last || brusselsDay(end) > addCalendarDays(sessionDay, 1) ||
-      duration <= 0 || duration > 18 * 60 * 60_000) continue;
-    seen.set(new Date(start).toISOString() + '|' + new Date(end).toISOString(), { day: sessionDay, start, end });
+    if (brusselsDay(end) > addCalendarDays(sessionDay, 1) || duration <= 0 || duration > 18 * 60 * 60_000) continue;
+    seen.set(key + '|' + new Date(end).toISOString(), { day: sessionDay, start, end });
   }
-  return [...seen.values()].sort((a, b) => Date.parse(a.start)-Date.parse(b.start) || Date.parse(a.end)-Date.parse(b.end));
+  const timedKeys = new Set([...seen.values()].filter(({ end }) => end).map(({ start }) => Date.parse(start)));
+  return [...seen.values()].filter(({ start, end }) => end || !timedKeys.has(Date.parse(start)))
+    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start) || Date.parse(a.end) - Date.parse(b.end));
 }
 
 // Inputs to this module come exclusively from schema:Event entries and event-only feeds.
@@ -141,10 +148,12 @@ export function eventsByDay(items, days) {
 
 export function eventTime(item, selectedDay = '') {
   const time = (date) => clock.format(new Date(date));
+  const sessionTime = ({ start, end, day }) => end
+    ? time(start) + '–' + time(end) + (brusselsDay(end) > day ? ' (+1 dag)' : '')
+    : 'Start om ' + time(start);
   if (item.sessions && (selectedDay || item.sessions.length === 1)) {
     const sessions = selectedDay ? item.sessions.filter(({ day }) => day === selectedDay) : item.sessions;
-    return sessions.map(({ start, end, day }) => time(start) + '–' + time(end) +
-      (brusselsDay(end) > day ? ' (+1 dag)' : '')).join(' en ') || 'Uur niet vermeld';
+    return sessions.map(sessionTime).join(' en ') || 'Uur niet vermeld';
   }
   const timedStart = !dateOnly(item.start);
   const timedEnd = item.end && !dateOnly(item.end);
@@ -156,7 +165,7 @@ export function eventTime(item, selectedDay = '') {
     const spans = labelDay(item.day) + ' t/m ' + labelDay(item.last);
     return spans + (item.sessions ? ' · kies een dag voor de uren' : '');
   }
-  if (item.sessions) return item.sessions.map(({ start, end }) => time(start) + '–' + time(end)).join(' en ');
+  if (item.sessions) return item.sessions.map(sessionTime).join(' en ');
   if (timedStart && timedEnd) return time(item.start) + '–' + time(item.end);
   if (timedStart) return 'Vanaf ' + time(item.start);
   return 'Uur niet vermeld';

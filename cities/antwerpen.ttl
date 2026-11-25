@@ -22,8 +22,9 @@ wd:Q12892 a schema:City ;
     schema:location wd:Q12892 ;
     schema:startDate "2026-12-04"^^xsd:date ;
     schema:endDate "2027-01-03"^^xsd:date ;
-    schema:url <https://ebesluit.antwerpen.be/zittingen/25.0917.1953.6912/agendapunten/26.0312.2440.8914> ;
-    dcterms:source <https://ebesluit.antwerpen.be/zittingen/25.0917.1953.6912/agendapunten/26.0312.2440.8914> .
+    schema:url <https://www.winterinantwerpen.be/nl-BE/programma-2026> ;
+    dcterms:source <https://www.winterinantwerpen.be/nl-BE/programma-2026>,
+        <https://ebesluit.antwerpen.be/zittingen/25.0917.1953.6912/agendapunten/26.0312.2440.8914> .
 
 # Buitenstop uit de Inventaris Onroerend Erfgoed
 wd:Q2005868 a schema:LandmarksOrHistoricalBuildings ;
@@ -36,3 +37,51 @@ wd:Q2005868 a schema:LandmarksOrHistoricalBuildings ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.22131 ; schema:longitude 4.39916 ] ;
     schema:url <https://id.erfgoed.net/erfgoedobjecten/4032> ;
     dcterms:source <https://id.erfgoed.net/erfgoedobjecten/4032> .
+
+# Exacte publieksuren van de organisator; alleen voor deze editie.
+<#winter-natalia-2026> a schema:MusicEvent ;
+    schema:name "JOE Christmas House: Natalia"@nl ;
+    schema:description "Gratis optreden op de Grote Markt. Bron: Stad Antwerpen."@nl ;
+    schema:containedInPlace wd:Q12892 ;
+    schema:location [ a schema:Place ; schema:name "Grote Markt"@nl ] ;
+    schema:startDate "2026-12-04"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-04T18:55:00+01:00"^^xsd:dateTime ;
+        schema:endDate "2026-12-04T19:15:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.winterinantwerpen.be/nl-BE/programma-2026/Joe-christmas-house-Natalia> ;
+    dcterms:source <https://www.winterinantwerpen.be/nl-BE/programma-2026/Joe-christmas-house-Natalia> .
+
+# Exacte publieksuren van de organisator; alleen voor deze editie.
+<#winter-milk-inc-2026> a schema:MusicEvent ;
+    schema:name "JOE Christmas House: Milk Inc"@nl ;
+    schema:description "Gratis optreden op de Grote Markt. Bron: Stad Antwerpen."@nl ;
+    schema:containedInPlace wd:Q12892 ;
+    schema:location [ a schema:Place ; schema:name "Grote Markt"@nl ] ;
+    schema:startDate "2026-12-04"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-04T20:00:00+01:00"^^xsd:dateTime ;
+        schema:endDate "2026-12-04T21:00:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.winterinantwerpen.be/nl-BE/programma-2026/Joe-christmas-house-Milk-Inc> ;
+    dcterms:source <https://www.winterinantwerpen.be/nl-BE/programma-2026/Joe-christmas-house-Milk-Inc> .
+
+# Exacte publieksuren van de organisator; alleen voor deze editie.
+<#winter-ijsshow-2026> a schema:Event ;
+    schema:name "Dream the Night Away: openingsshow op het ijs"@nl ;
+    schema:description "Gratis schaatsshow op de Groenplaats. Bron: Stad Antwerpen."@nl ;
+    schema:containedInPlace wd:Q12892 ;
+    schema:location [ a schema:Place ; schema:name "Groenplaats"@nl ] ;
+    schema:startDate "2026-12-04"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-04T20:00:00+01:00"^^xsd:dateTime ;
+        schema:endDate "2026-12-04T21:00:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.winterinantwerpen.be/nl-BE/programma-2026/Ijspiste-openingsshow> ;
+    dcterms:source <https://www.winterinantwerpen.be/nl-BE/programma-2026/Ijspiste-openingsshow> .
+
+# Exacte publieksuren van de organisator; alleen voor deze editie.
+<#winterkasteel-merksem-2026> a schema:ChildrensEvent ;
+    schema:name "Winterkasteel in Merksem"@nl ;
+    schema:description "Gratis in het Bouckenborghpark, zonder inschrijving. Voor kinderen van 5 tot 12 jaar met een begeleider van minstens 16 jaar. Bron: Stad Antwerpen (district Merksem)."@nl ;
+    schema:containedInPlace wd:Q12892 ;
+    schema:location [ a schema:Place ; schema:name "Bouckenborghpark"@nl ] ;
+    schema:startDate "2026-12-16"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-16T13:30:00+01:00"^^xsd:dateTime ;
+        schema:endDate "2026-12-16T17:00:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.antwerpen.be/info/6540afd5a2cf4900eb6482e1/leef-je-deze-winter-uit-in-het-winterkasteel> ;
+    dcterms:source <https://www.antwerpen.be/info/6540afd5a2cf4900eb6482e1/leef-je-deze-winter-uit-in-het-winterkasteel> .

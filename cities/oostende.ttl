@@ -36,3 +36,22 @@ wd:Q2919977 a schema:LandmarksOrHistoricalBuildings ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.22962 ; schema:longitude 2.92129 ] ;
     schema:url <https://id.erfgoed.net/erfgoedobjecten/56586> ;
     dcterms:source <https://id.erfgoed.net/erfgoedobjecten/56586> .
+
+# Wedstrijdstarten zijn onder voorbehoud; geen gepubliceerde einduren of bezoekvensters.
+<#wk-veldrijden-2027> a schema:SportsEvent ;
+    schema:name "WK veldrijden 2027"@nl ;
+    schema:description "Publiekswedstrijden bij de Wellington Hippodroom en op het strand. De vertrekuren zijn onder voorbehoud. Raadpleeg de organisator voor het volledige programma en tickets."@nl ;
+    schema:containedInPlace wd:Q12996 ;
+    schema:location [ a schema:Place ; schema:name "Wellington Hippodroom en strand"@nl ] ;
+    schema:startDate "2027-01-29"^^xsd:date ;
+    schema:endDate "2027-01-31"^^xsd:date ;
+    schema:subEvent [ a schema:SportsEvent ; schema:name "Team Relay"@nl ; schema:startDate "2027-01-29T12:35:00+01:00"^^xsd:dateTime ],
+        [ a schema:SportsEvent ; schema:name "Junioren vrouwen"@nl ; schema:startDate "2027-01-30T11:05:00+01:00"^^xsd:dateTime ],
+        [ a schema:SportsEvent ; schema:name "U23 mannen"@nl ; schema:startDate "2027-01-30T13:10:00+01:00"^^xsd:dateTime ],
+        [ a schema:SportsEvent ; schema:name "Elite vrouwen"@nl ; schema:startDate "2027-01-30T15:10:00+01:00"^^xsd:dateTime ],
+        [ a schema:SportsEvent ; schema:name "Junioren mannen"@nl ; schema:startDate "2027-01-31T11:05:00+01:00"^^xsd:dateTime ],
+        [ a schema:SportsEvent ; schema:name "U23 vrouwen"@nl ; schema:startDate "2027-01-31T13:10:00+01:00"^^xsd:dateTime ],
+        [ a schema:SportsEvent ; schema:name "Elite mannen"@nl ; schema:startDate "2027-01-31T15:10:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.ostend2027.com/nl/programma> ;
+    dcterms:source <https://www.ostend2027.com/nl/programma>,
+        <https://www.ostend2027.com/nl/nieuws/strijd-om-regenboogtrui-van-uci-wereldkampioen-veldrijden-in-2027-op-wellington-hippodroom-en-strand-van-oostende> .

@@ -164,6 +164,41 @@ try {
       assert.equal(await match.count(), 0);
     }
   }
+  // Exact winter programme hours, separate from the umbrella festival entry.
+  await desktop.goto(origin + '/kalender/?stad=antwerpen&maand=2026-12');
+  await loaded(desktop);
+  await desktop.locator('[data-day="2026-12-04"]').click();
+  const winterCards = desktop.locator('.calendar-event');
+  for (const [name, time] of [
+    ['JOE Christmas House: Natalia', '18:55–19:15'],
+    ['JOE Christmas House: Milk Inc', '20:00–21:00'],
+    ['Dream the Night Away: openingsshow op het ijs', '20:00–21:00'],
+  ]) {
+    const link = desktop.getByRole('link', { name, exact: true });
+    assert.equal(await link.count(), 1);
+    assert.ok((await winterCards.filter({ has: link }).innerText()).includes(time));
+  }
+  await desktop.locator('[data-day="2026-12-16"]').click();
+  const castle = desktop.getByRole('link', { name: 'Winterkasteel in Merksem', exact: true });
+  assert.match(await winterCards.filter({ has: castle }).innerText(), /13:30–17:00[\s\S]*Bouckenborghpark/);
+  await desktop.locator('[data-day="2026-12-17"]').click();
+  assert.equal(await castle.count(), 0);
+
+  await phone.goto(origin + '/kalender/?stad=oostende&maand=2027-01');
+  await loaded(phone);
+  await phone.locator('#calendar-category').selectOption('Sport');
+  const cyclocross = phone.getByRole('link', { name: 'WK veldrijden 2027', exact: true });
+  const cyclocrossRow = phone.locator('.calendar-event').filter({ has: cyclocross });
+  assert.equal(await cyclocross.count(), 1);
+  await phone.locator('[data-day="2027-01-29"]').tap();
+  assert.match(await cyclocrossRow.innerText(), /Start om 12:35[\s\S]*onder voorbehoud/);
+  await phone.locator('[data-day="2027-01-31"]').tap();
+  const sundayRace = await cyclocrossRow.innerText();
+  assert.match(sundayRace, /Start om 11:05 en Start om 13:10 en Start om 15:10/);
+  assert.doesNotMatch(sundayRace, /Hele dag|15:10–/);
+  await phone.locator('[data-day="2027-01-28"]').tap();
+  assert.equal(await cyclocross.count(), 0);
+
   await phone.goto(origin + '/kalender/?stad=la-louviere&maand=2027-08');
   await loaded(phone);
   assert.match(await phone.locator('#calendar-status').innerText(), /tot 120 dagen vooruit/);

@@ -20,6 +20,12 @@ Interne werklijst voor de agenda, stadsfiches en fietsplanner. Niet gelinkt vanu
 | `chasseOnWeb` · actief | [Chasse – Territoires et dates (anonymisé)](https://geoportail.wallonie.be/catalogue/999ef018-235f-4a38-94c9-cc0c79da61b8.html) · vrijwillige controle bij een Waalse fietstrip | Service public de Wallonie / DNF, CC BY 4.0 | Actuele data, alleen na een klik en voor de gekozen dag. Overlap met het jachtterrein is geen vaststelling dat een individueel pad gesloten is. [Werking en test](route-forest-notices.md). |
 | `pinJePunt` · actief | [Pin je punt](https://toerismevlaanderen.be/nl/thema/fietsen/pinjepunt-output) · optionele fietsvoorzieningen | © OpenStreetMap-bijdragers (ODbL), via Toerisme Vlaanderen | Twee WFS-lagen (openbaar toilet, fietspomp/herstel); alleen na een klik. Functie, toegang en opening niet gegarandeerd. Zie [routevoorzieningen](route-services-sources.md). |
 
+## Gedateerde organisatorvermeldingen · Antwerpen en Oostende
+
+25 november 2026: vier netto Antwerpse agendakaarten en één in Oostende, elf onderliggende sessies, geen plannerbezoeken. [Winter in Antwerpen](https://www.winterinantwerpen.be/nl-BE/programma-2026) publiceert exacte uren voor twee optredens en een ijsshow; [district Merksem](https://www.antwerpen.be/info/6540afd5a2cf4900eb6482e1/leef-je-deze-winter-uit-in-het-winterkasteel) voor het Winterkasteel. Feitelijke velden met links en vermelding “bron stad Antwerpen” onder de [stedelijke voorwaarden](https://www.antwerpen.be/info/open-data-en-auteursrechten); geen foto’s of overgenomen programmabeschrijvingen. De bestaande Antwerpse festivalkaart linkt naar het actuele programma, zonder veronderstelde algemene openingsuren.
+
+In Oostende zijn alleen de zeven WK-wedstrijdstarten uit het [officiële programma](https://www.ostend2027.com/nl/programma) opgenomen, met uren onder voorbehoud en zonder einduren. Geen bulkinname uit de [Belgian Cycling-kalender](https://www.belgiancycling.be/fr/termes-conditions/) wegens voorbehouden hergebruiksrechten. Het Antwerpse festivalprogramma heeft geen gedocumenteerde, gelicentieerde gebeurtenis-API gevonden voor deze presentatie; de stadscredit geldt niet als toestemming voor willekeurige gesyndiceerde bronnen. Dit zijn eenmalige vermeldingen, geen jaarlijkse herhaling.
+
 ## Al actief
 
 | ID · status | Bron, gebruik en hergebruik | Wat ontbreekt / vervolg |

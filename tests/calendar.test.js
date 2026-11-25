@@ -162,3 +162,26 @@ test('an overnight session is listed on its start day and names the following-da
   assert.equal(eventTime(night), '18:00–01:00 (+1 dag)');
   assert.equal(eventsByDay([night], ['2026-12-04']).get('2026-12-04').length,0);
 });
+
+test('calendar lists actual starts without implying an end or an all-day slot', () => {
+  const start = '2027-01-29T12:35:00+01:00';
+  const item = calendarEvent({ name: 'WK veldrijden', start: '2027-01-29', end: '2027-01-31', sessions: [
+    { start },
+    { start: '2027-01-29T11:35:00Z' },
+    { start: '2027-01-31T11:05:00+01:00' },
+    { start: '2027-01-31T13:10:00+01:00' },
+    { start: '2027-01-31T15:10:00+01:00', end: 'not-a-time' },
+  ] }, 'oostende');
+  assert.equal(item.allDay, false);
+  assert.equal(item.sessions.length, 3);
+  assert.equal(eventTime(item, '2027-01-29'), 'Start om 12:35');
+  assert.equal(eventTime(item, '2027-01-31'), 'Start om 11:05 en Start om 13:10');
+  assert.deepEqual(eventsByDay([item], ['2027-01-30']).get('2027-01-30'), []);
+  assert.match(eventTime(item), /kies een dag voor de uren/);
+
+  const better = calendarEvent({ name: 'Wedstrijd', start: '2027-01-29', sessions: [
+    { start },
+    { start, end: '2027-01-29T13:10:00+01:00' },
+  ] }, 'oostende');
+  assert.equal(eventTime(better), '12:35–13:10');
+});
