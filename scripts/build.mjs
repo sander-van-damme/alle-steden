@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { Parser, Store } from 'n3';
 import { eligiblePublicLink } from '../functions/lib/link-check-policy.js';
 import { calendarPage, cityPage, indexPage, layout, plannerPage } from './pages.mjs';
+import { aboutPage, privacyPage, termsPage } from './info-pages.mjs';
 import { classifyRdfActivity } from '../site/assets/planner-activities.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -260,6 +261,9 @@ await Promise.all([
   writePage('.', indexPage(cities)),
   writePage('planner', plannerPage(plannerCities)),
   writePage('kalender', calendarPage(calendarCatalog)),
+  writePage('over', aboutPage(layout)),
+  writePage('privacy', privacyPage(layout)),
+  writePage('gebruiksvoorwaarden', termsPage(layout)),
   writeFile(resolve(output, 'calendar-data.json'), JSON.stringify(calendarCatalog)),
   writeFile(resolve(output, 'link-check-data.json'), JSON.stringify(linkCatalog)),
   writeFile(resolve(output, 'planner-data.json'), JSON.stringify(plannerCities)),

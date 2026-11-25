@@ -236,6 +236,29 @@ try {
   assert.ok(await fallback.getByText(/Je ziet hier een selectie van bezienswaardigheden/).isVisible());
   await fallback.goto(base + '/steden/andenne/');
   assert.ok(await fallback.locator('[data-local-routes]').getByRole('link',{name:/Alle routes bij Andenne Tourisme/}).isVisible());
+  // Public source and policy links stay understated and usable without client code.
+  for (const [p, pageWidth] of [[desktop, 1440], [fallback, 390]]) {
+    await p.goto(base + '/');
+    const footer = p.getByRole('navigation', { name:'Over de site' });
+    assert.deepEqual(await footer.getByRole('link').allTextContents(), ['Over', 'Privacy', 'Gebruiksvoorwaarden']);
+    await footer.getByRole('link', { name:'Over', exact:true }).press('Enter');
+    await p.waitForURL(base + '/over/');
+    assert.equal(await p.getByRole('heading', { level:1 }).innerText(), 'Over Alle Steden');
+    assert.equal(await footer.getByRole('link', { name:'Over', exact:true }).getAttribute('aria-current'), 'page');
+    assert.deepEqual(await p.locator('.info-page h3').allTextContents(),
+      ['Steden en bezienswaardigheden', 'Kalender en bezoekuren', 'Kaarten, fietsroutes en meldingen onderweg']);
+    assert.equal(await p.getByRole('main').getByRole('link', { name:'BRouter' }).count(), 1);
+    assert.equal(await p.getByRole('main').locator('button, a[href*="github.com"], a[href$=".ttl"]').count(), 0);
+    assert.doesNotMatch(await p.getByRole('main').innerText(), /UiTdatabank/);
+    await footer.getByRole('link', { name:'Privacy' }).click();
+    assert.equal(await p.getByRole('heading', { level:1 }).innerText(), 'Privacy');
+    assert.match(await p.getByRole('main').innerText(), /Cloudflare Web Analytics[\s\S]*BRouter[\s\S]*twaalf uur/);
+    assert.match(await p.getByRole('main').getByRole('link', { name:'Gegevensbeschermingsautoriteit' }).getAttribute('href'), /gegevensbeschermingsautoriteit.be/);
+    await footer.getByRole('link', { name:'Gebruiksvoorwaarden' }).click();
+    assert.equal(await p.getByRole('heading', { level:1 }).innerText(), 'Gebruiksvoorwaarden');
+    assert.match(await p.getByRole('main').innerText(), /volg de verkeersregels en borden ter plaatse/);
+    assert.equal(await p.evaluate(() => document.documentElement.scrollWidth), pageWidth);
+  }
   console.log('Chromium: toetsenbord, zoekfilters, navigatie, live inhoud, openingstijden, datums, mobiel, opnieuw proberen en zonder JavaScript geslaagd (voorspelbare bronantwoorden).');
 
   if (process.env.LIVE_BROWSER === '1') {

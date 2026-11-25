@@ -29,6 +29,7 @@ export function layout({ title, main, script = '', active = '' }) {
   ${main}
   <footer class="wrap footer">
     <a class="brand" href="/">Alle Steden</a>
+    <nav aria-label="Over de site"><a href="/over/"${active === 'about' ? ' aria-current="page"' : ''}>Over</a><a href="/privacy/"${active === 'privacy' ? ' aria-current="page"' : ''}>Privacy</a><a href="/gebruiksvoorwaarden/"${active === 'terms' ? ' aria-current="page"' : ''}>Gebruiksvoorwaarden</a></nav>
   </footer>
 </body>
 </html>`;
