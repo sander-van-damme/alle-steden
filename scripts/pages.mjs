@@ -51,7 +51,7 @@ export function plannerPage(cities) {
     main: `<main id="inhoud" class="wrap planner">
       <header class="planner-heading">
         <h1>Fietsplanner</h1>
-        <p>Combineer twee steden en bezoek onderweg een paar plekken.</p>
+        <p>Combineer twee of drie steden en kies wat je onderweg wilt bezoeken.</p>
       </header>
       <div class="planner-workspace">
         <form id="planner-form" class="planner-panel" aria-labelledby="planner-options-title">
