@@ -46,10 +46,15 @@ function eventCard(item, cities, selectedDay, month) {
     source.href = sourceLink;
     footer.append(source);
     if (provider?.license) {
-      const licence = node('a', 'calendar-event-source', provider.license.includes('/by/4.0/') ? 'CC BY 4.0'
-        : provider.license.includes('/zero/') ? 'CC0' : 'Licentie');
+      const licence = node('a', 'calendar-event-source', provider.licenseLabel ?? (provider.license.includes('/by/4.0/') ? 'CC BY 4.0'
+        : provider.license.includes('/zero/') ? 'CC0' : 'Licentie'));
       licence.href = provider.license;
       footer.append(licence);
+    }
+    if (item.sourceUpdated) {
+      const updated = node('time', 'calendar-event-source', 'Bron bijgewerkt op ' + item.sourceUpdated.split('-').reverse().join('/'));
+      updated.dateTime = item.sourceUpdated;
+      footer.append(updated);
     }
   }
   body.append(footer);

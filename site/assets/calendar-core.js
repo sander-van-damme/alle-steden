@@ -85,6 +85,7 @@ export function calendarEvent(item, city) {
     description: compact(item.description, 300), venue: compact(item.venue, 140),
     url: visitorUrl(item.website) ?? visitorUrl(item.url), source: sourceName(item.source),
     start, ...(end && { end }), day, last, allDay: item.allDay === true,
+    ...(dateOnly(item.sourceUpdated) && dateValue(item.sourceUpdated) && { sourceUpdated: item.sourceUpdated }),
     scheduleBased: item.scheduleBased === true, ...(sessions && { sessions }),
   };
 }

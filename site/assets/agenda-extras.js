@@ -8,6 +8,7 @@ import { antwerpMarketEventSource } from './antwerp-market-events.js';
 import { localMarketEventSource } from './local-market-events.js';
 import { fetchRandonneursEvents } from './randonneurs-events.js';
 import { fetchAdepsEvents } from './adeps-events.js';
+import { fetchMetroEvents, metroCities } from './eurometropolis-events.js';
 
 export { ideesFeedUrl };
 const snapshotLimit = ideesFeedMaxBytes;
@@ -63,7 +64,7 @@ function fetchIdees(cities, fetcher, from = localToday()) {
 const day = (value) => typeof value === 'string' && (dateOnly(value) ? value :
   Number.isFinite(Date.parse(value)) && localToday(new Date(value)));
 
-export function extraAgendaJobs(cities, { city, region, span, rawFetcher = globalThis.fetch, today, ...options }) {
+export function extraAgendaJobs(cities, { city, region, span, origin, rawFetcher = globalThis.fetch, today, ...options }) {
   const chosen = cities.filter((entry) => (!city || entry.slug === city) && (!region || entry.region === region));
   const allowed = new Set(chosen.map(({ slug }) => slug));
   const work = [];
@@ -78,6 +79,9 @@ export function extraAgendaJobs(cities, { city, region, span, rawFetcher = globa
       const response = await fetchRandonneursEvents({ ...options, cities: chosen, from: span.from, to: span.through });
       return Array.isArray(response) ? { items: response } : response;
     }]);
+    if (origin && chosen.some(({slug})=>metroCities.includes(slug))) work.push(['eurometropolis', () => fetchMetroEvents({
+      ...span, ...options, origin, cities:chosen,
+    })]);
     const adepsCities = chosen;
     if (adepsCities.length) work.push(['adeps', () => fetchAdepsEvents({ ...options, cities: adepsCities, from: span.from, to: span.through })]);
     for (const entry of chosen) {

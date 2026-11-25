@@ -8,6 +8,9 @@ const gent = 'https://data.stad.gent';
 const ccby = 'https://creativecommons.org/licenses/by/4.0/';
 
 export const sources = {
+  eurometropolis: { label: 'Eurometropolis Lille-Kortrijk-Tournai',
+    href: 'https://openagenda.com/fr/eurometropolis-lille-kortrijk-tournai',
+    license: 'https://www.data.gouv.fr/pages/legal/licences/etalab-2-0', licenseLabel: 'Licence Ouverte 2.0' },
   adeps: { label: 'Points verts de l’ADEPS', href: 'https://www.odwb.be/explore/dataset/points-verts-de-ladeps/information/',
     license: ccby, attribution: 'Fédération Wallonie-Bruxelles · ADEPS' },
   idees: { label: 'Idées de sorties', href: 'https://ideessorties.be/', terms: 'https://ideessorties.be/agenda' },

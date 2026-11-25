@@ -365,6 +365,41 @@ try {
   await desktop.locator('[data-day="2026-12-04"]').click();
   assert.equal(await desktop.getByRole('link',{name:'Kleinhandelsmarkt Mechelen', exact:true}).count(),1);
 
+  let metroCalls = 0;
+  for (const device of [desktop,phone]) {
+    await device.route(origin+'/api/eurometropolis',route=>{
+      metroCalls++;
+      return route.fulfill({json:{items:[{
+        id:'eurometropolis:123',city:'doornik',name:'Avondvoorstelling Doornik',category:'Theater of voorstelling',
+        website:'https://openagenda.com/eurometropolis-lille-kortrijk-tournai/events/123_test-event',
+        venue:'Tournai EXPO',source:'eurometropolis',sourceUpdated:'2026-11-18',
+        start:'2026-12-04T20:30:00+01:00',end:'2026-12-06T23:00:00+01:00',
+        sessions:[
+          {start:'2026-12-04T20:30:00+01:00',end:'2026-12-04T23:00:00+01:00'},
+          {start:'2026-12-06T20:30:00+01:00',end:'2026-12-06T23:00:00+01:00'},
+        ],
+      }]}});
+    });
+    await device.goto(origin+'/kalender/?stad=doornik&maand=2026-12');
+    await loaded(device);
+    const card = device.locator('[data-calendar-source=eurometropolis]');
+    assert.equal(await card.count(),1);
+    assert.match(await card.innerText(),/Tournai EXPO[\s\S]+Eurometropolis Lille-Kortrijk-Tournai[\s\S]+Licence Ouverte 2.0[\s\S]+18\/11\/2026/);
+    await device.locator('[data-day="2026-12-04"]').click();
+    assert.match(await card.innerText(),/20:30–23:00/);
+    await device.locator('[data-day="2026-12-05"]').click();
+    assert.equal(await card.count(),0);
+    await device.goto(origin+'/kalender/?stad=andenne&maand=2026-12');
+    await loaded(device);
+    assert.equal(await card.count(),0);
+  }
+  assert.equal(metroCalls,2);
+  await phone.route(origin+'/api/eurometropolis',route=>route.fulfill({status:502,json:{error:'niet beschikbaar'}}));
+  await phone.goto(origin+'/kalender/?stad=doornik&maand=2026-12');
+  await loaded(phone);
+  assert.match(await phone.locator('#calendar-status').innerText(),/Niet bereikbaar:.*Eurometropolis/);
+  assert.equal(await phone.locator('[data-calendar-source=eurometropolis]').count(),0);
+
   const offline = await browser.newPage({ javaScriptEnabled: false });
   await offline.goto(origin + '/kalender/');
   assert.equal(await offline.locator('#calendar-fallback').isVisible(), true);
