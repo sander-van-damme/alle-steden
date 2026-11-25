@@ -75,9 +75,16 @@ try {
   assert.match(await desktop.locator('.calendar-sources').innerText(), /Niet alle evenementen/);
   assert.ok(await desktop.locator('#calendar-sources a').count() > 0);
   assert.match(await desktop.locator('#calendar-status').textContent(), /Dit is een selectie/);
-  assert.ok(await desktop.getByRole('link', { name: fixture.title }).isVisible());
   const ideas = desktop.locator('.calendar-event[data-calendar-source=idees]');
-  await ideas.getByRole('link', {name:'Expo van ideeën'}).waitFor();
+  const fixtureLink = desktop.getByRole('link', { name: fixture.title });
+  const ideasLink = ideas.getByRole('link', {name:'Expo van ideeën'});
+  const more = desktop.locator('#calendar-more');
+  // The first national results page can fill up with other cities' market
+  // days. Use the visitor's own pagination rather than assume the order.
+  for (let i = 0; i < 10 && await more.isVisible() &&
+      (!await fixtureLink.isVisible() || !await ideasLink.isVisible()); i++) await more.click();
+  assert.ok(await fixtureLink.isVisible());
+  await ideasLink.waitFor();
   assert.equal(await ideas.getByRole('link', {name:'Idées de sorties'}).getAttribute('href'),'https://ideessorties.be/');
   assert.equal(await desktop.getByText('Verkeerde stad', { exact: true }).count(), 0);
   assert.equal(await desktop.getByText('Niet uitgewerkte herhaling', { exact: true }).count(), 0);
@@ -338,6 +345,25 @@ try {
   await phone.goto(origin + '/kalender/?stad=luik&maand=2026-12');
   await loaded(phone);
   assert.match(await phone.locator('#calendar-status').innerText(),/Niet bereikbaar:.*Ville de Liège · brocantes/su);
+
+  for (const [device, city, title, day, absent, hours, detail] of [
+    [desktop,'ronse','Wekelijkse markt Ronse','12','13','08:00–12:30',/marktopstelling.*aangepast/u],
+    [phone,'lokeren','Woensdagmarkt Lokeren','16','17','07:30–12:30',/eindejaarsactie tot 13:00.*afstappen/su],
+    [desktop,'mechelen','Zaterdagmarkt Mechelen','05','25','07:00–13:00',/Grote Markt/u],
+  ]) {
+    await device.goto(origin + '/kalender/?stad='+city+'&maand=2026-12');
+    await loaded(device);
+    await device.locator('#calendar-category').selectOption('Markt');
+    const card = device.locator('.calendar-event').filter({ has:device.getByRole('link',{name:title,exact:true}) });
+    await device.locator('[data-day="2026-12-'+day+'"]').click();
+    assert.equal(await card.count(),1);
+    assert.match(await card.innerText(),detail);
+    assert.match(await card.locator('.calendar-event-meta').innerText(),new RegExp(hours));
+    await device.locator('[data-day="2026-12-'+absent+'"]').click();
+    assert.equal(await card.count(),0);
+  }
+  await desktop.locator('[data-day="2026-12-04"]').click();
+  assert.equal(await desktop.getByRole('link',{name:'Kleinhandelsmarkt Mechelen', exact:true}).count(),1);
 
   const offline = await browser.newPage({ javaScriptEnabled: false });
   await offline.goto(origin + '/kalender/');

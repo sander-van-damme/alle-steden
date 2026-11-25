@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { calendarEvent, mergeCalendarEvents } from '../site/assets/calendar-core.js';
 import { getLocalMarketEvents, localMarketEventSource, localMarketSources } from '../site/assets/local-market-events.js';
 
 const window = (slug, from, through = from, more = {}) =>
@@ -74,11 +75,60 @@ test('bounded date windows, fixed jobs, no synthesized coordinates or planner el
   const request = { today: '2026-11-24', from: '2026-11-23', through: '2026-12-02' };
   const job = localMarketEventSource({ slug: 'dendermonde' }, { ...request, fetcher() { throw Error('No network'); } });
   assert.equal(job.key, 'dendermondeMarkets');
-  assert.equal(Object.keys(localMarketSources).length, 4);
+  assert.equal(Object.keys(localMarketSources).length, 7);
   const out = await job.run();
   assert.equal(out.limited, true);
   assert.ok(out.items.length > 0);
   assert.ok(out.items.every((e) => e.start >= '2026-11-24' && e.scheduleBased && !e.plannerEligible && !e.coordinates));
   assert.deepEqual((await localMarketEventSource({ slug: 'dendermonde' }, { ...request, planner: true }).run()).items, []);
   assert.deepEqual(items('ninove', '2027-04-01', '2027-04-10', { today: '2026-11-24' }), []);
+});
+
+test('Ronse has one twice-weekly series and changes the place only on city-confirmed dates', () => {
+  const normal = items('ronse','2026-12-01','2026-12-06');
+  assert.equal(new Set(normal.map(({sourceId}) => sourceId)).size,1);
+  assert.deepEqual(normal.map(({start,end,venue}) => [start,end,venue]), [
+    ['2026-12-02T08:00:00+01:00','2026-12-02T12:30:00+01:00','Grote Markt'],
+    ['2026-12-05T08:00:00+01:00','2026-12-05T12:30:00+01:00','Grote Markt'],
+  ]);
+  for (const day of ['2026-12-12','2027-01-09']) {
+    assert.match(items('ronse',day)[0].description,/marktopstelling.*aangepast/);
+    assert.equal(items('ronse',day)[0].venue,'Grote Markt');
+  }
+  const summer = items('ronse','2027-05-19','2027-06-02');
+  assert.deepEqual(summer.filter(({locationChanged}) => locationChanged)
+    .map(({start,venue}) => [start.slice(0,10),venue]), [
+    ['2027-05-22','Parking Portois'],['2027-05-26','Parking Portois'],['2027-05-29','Parking Portois'],
+  ]);
+  assert.equal(summer.at(-1).venue,'Grote Markt');
+});
+
+test('Lokeren links to seasonal action but does not treat promotion times as extended stalls', () => {
+  for (const day of ['2026-12-16','2026-12-23','2026-12-30']) {
+    const [market] = items('lokeren',day);
+    assert.match(market.description,/eindejaarsactie tot 13:00/);
+    assert.match(market.end,/T12:30:00/);
+    assert.match(market.accessNotice,/afstappen/);
+    assert.match(market.website,/eindejaarsactie-woensdagmarkt-lokeren/);
+  }
+  assert.doesNotMatch(items('lokeren','2027-01-06')[0].description,/eindejaarsactie/);
+  assert.deepEqual(items('lokeren','2026-12-17'),[]);
+});
+
+test('Mechelen has separate Saturday and small markets with no projections onto holidays or known changes', () => {
+  const dec = items('mechelen','2026-12-01','2026-12-31');
+  assert.equal(new Set(dec.map(({sourceId}) => sourceId)).size,2);
+  assert.equal(dec.length,15);
+  assert.match(dec.find(({sourceId}) => sourceId==='zaterdagmarkt').venue,/Grote Markt/);
+  assert.match(dec.find(({sourceId}) => sourceId==='kleinhandelsmarkt').venue,/Korte Pennincstraat/);
+  for (const day of ['2026-08-29','2026-12-25','2026-12-26','2027-01-01']) assert.deepEqual(items('mechelen',day),[]);
+  assert.ok(dec.every(({plannerEligible,scheduleBased,coordinates}) => !plannerEligible && scheduleBased && !coordinates));
+});
+
+test('an exact live edition and a municipal projection on the same instant do not create two cards', () => {
+  const [source] = items('ronse','2026-12-02');
+  const local = calendarEvent(source,'ronse');
+  const live = calendarEvent({...source, start:'2026-12-02T07:00:00Z', id:'live-same'},'ronse');
+  const otherDay = calendarEvent(items('ronse','2026-12-05')[0],'ronse');
+  assert.deepEqual(mergeCalendarEvents([live,local,otherDay]).map(({id})=>id), ['live-same',otherDay.id]);
 });
