@@ -1,5 +1,6 @@
 import { addCalendarDays, cityNames, fetchCityEvents, getGent, getJson, getNamur, localToday,
   walloonAgendaItems, walloonAgendaQuery } from './sources.js';
+import { preferStripmuseum } from './stripmuseum-events.js';
 import { preferAdeps } from './adeps-events.js';
 import { extraAgendaJobs } from './agenda-extras.js';
 import { maxCalendarEventDays } from './calendar-core.js';
@@ -85,7 +86,7 @@ export async function fetchCalendarMonth(cities, options) {
         count:value.items.length}];
     });
     return {
-      items:preferAdeps([...(local?.items ?? []).map((item)=>({...item,city})),...results.flatMap(result=>result?.value?.items ?? [])]),
+      items:preferStripmuseum(preferAdeps([...(local?.items ?? []).map((item)=>({...item,city})),...results.flatMap(result=>result?.value?.items ?? [])])),
       coverage:[...(local?.coverage ?? []),...coverage], ...(local && {scoped:true}),
     };
   }

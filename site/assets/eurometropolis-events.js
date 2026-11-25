@@ -1,5 +1,7 @@
 import { addCalendarDays, compact, dateOnly, dateValue, localToday, visitorUrl, getJson } from './sources.js';
 
+import {csvRecords,exactLocalTime,publishedDay} from './openagenda-csv.js';
+
 export const metroCsvUrl = 'https://openagenda.com/agendas/65924599/events.v2.csv?relative%5B0%5D=current&relative%5B1%5D=upcoming';
 export const metroName = 'Eurometropolis Lille-Kortrijk-Tournai';
 export const metroMaximumBytes = 2 * 1024 * 1024;
@@ -22,38 +24,6 @@ const fieldKeys = ['Identifiant','Titre - FR','Titre - NL','Horaires ISO','Derni
   'Catégories métropolitaines 2','Mode de participation','Lieu: Nom','Lieu: Ville',
   'Lieu: Code postal','Lieu: Latitude','Lieu: Longitude'];
 
-// The publisher's CSV contains quoted cells, embedded line breaks and escaped quotes.
-// Keep a strict small envelope and never interpret editorial cells as markup.
-function csvRows(input) {
-  const rows = [];
-  let row = [], cell = '', quoted = false, closed = false;
-  const field = () => {
-    if (row.length > 150) throw new Error('Ongeldige agendakolommen');
-    row.push(cell); cell = ''; closed = false;
-  };
-  const line = () => {
-    field();
-    if (row.length > 1 || row[0]) rows.push(row);
-    if (rows.length > 201) throw new Error('Te veel agendaregels');
-    row = [];
-  };
-  for (let i = Number(input.charCodeAt(0) === 0xFEFF); i < input.length; i++) {
-    const c = input[i];
-    if (quoted) {
-      if (c === '"' && input[i+1] === '"') { cell += '"'; i++; }
-      else if (c === '"') { quoted = false; closed = true; }
-      else cell += c;
-    } else if (c === ',') field();
-    else if (c === '\r' || c === '\n') { if (c === '\r' && input[i+1] === '\n') i++; line(); }
-    else if (c === '"' && !cell && !closed) quoted = true;
-    else if (closed || c === '"') throw new Error('Ongeldige agendacel');
-    else cell += c;
-  }
-  if (quoted) throw new Error('Agenda niet compleet');
-  if (row.length || cell || closed) line();
-  return rows;
-}
-
 function cityFor(name, zip, lat, lon) {
   if (!lat || !lon || !Number.isFinite(Number(lat)) || !Number.isFinite(Number(lon))) return '';
   return metroCities.find((slug) => {
@@ -71,21 +41,6 @@ function reviewedLink(value, id) {
       return visitorUrl(url.href);
     }
   } catch { /* No approved canonical source link. */ }
-}
-function publishedDay(label, today) {
-  const parsed = label.match(/^[A-Za-z]+ (\d{1,2}) (January|February|March|April|May|June|July|August|September|October|November|December) (20\d{2})$/);
-  if (!parsed) return;
-  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const date = parsed[3] + '-' + String(months.indexOf(parsed[2])+1).padStart(2,'0') + '-' + parsed[1].padStart(2,'0');
-  return dateValue(date) && date <= today ? date : undefined;
-}
-const wallClock = new Intl.DateTimeFormat('sv-SE', {
-  timeZone:'Europe/Brussels', year:'numeric',month:'2-digit',day:'2-digit',
-  hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23',
-});
-function exactLocalTime(value) {
-  return /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d[+-]\d\d:\d\d$/.test(value ?? '') &&
-    dateValue(value) && wallClock.format(new Date(value)).replace(' ','T') === value.slice(0,19);
 }
 function sessionsFor(raw) {
   const chunks = raw.split(' | ');
@@ -105,15 +60,10 @@ function sessionsFor(raw) {
 }
 
 export function parseMetroCsv(input, today = localToday()) {
-  if (typeof input !== 'string' || input.length > metroMaximumBytes || !dateOnly(today) || !dateValue(today)) throw new Error('Ongeldige agenda');
-  const [head,...rows] = csvRows(input);
-  if (!head || fieldKeys.some(key => !head.includes(key)) || new Set(head).size !== head.length ||
-      rows.some(row=> row.length !== head.length)) throw new Error('Ongeldig agendaformaat');
-  const indexes = Object.fromEntries(fieldKeys.map(key=>[key,head.indexOf(key)]));
+  if (!dateOnly(today) || !dateValue(today)) throw new Error('Ongeldige agenda');
   const output = new Map();
   const endOfWindow = addCalendarDays(today, 120);
-  for (const row of rows) {
-    const val = (key) => row[indexes[key]];
+  for (const val of csvRecords(input,fieldKeys,metroMaximumBytes)) {
     const id = val('Identifiant');
     if (!/^\d{1,12}$/.test(id)) continue;
     if (output.has(id)) { output.set(id,null); continue; }

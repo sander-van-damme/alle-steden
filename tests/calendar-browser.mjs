@@ -401,6 +401,35 @@ try {
   assert.match(await phone.locator('#calendar-status').innerText(),/Niet bereikbaar:.*Eurometropolis/);
   assert.equal(await phone.locator('[data-calendar-source=eurometropolis]').count(),0);
 
+  let comicsCalls=0;
+  for (const device of [desktop,phone]) {
+    await device.route(origin+'/api/stripmuseum',route=>{
+      comicsCalls++;
+      return route.fulfill({json:{items:[{
+        id:'stripmuseum:36325863',city:'brussel',name:'Lucky Luke op vrije voeten!',category:'Tentoonstelling',
+        website:'https://openagenda.com/centre-belge-de-la-bande-dessinee/events/36325863_lucky-luke-op-vrije-voeten',
+        venue:'Stripmuseum Brussel',source:'stripmuseum',sourceUpdated:'2026-11-18',start:'2026-12-24',end:'2026-12-31',
+        sessions:[
+          {start:'2026-12-24T10:00:00+01:00',end:'2026-12-24T16:00:00+01:00'},
+          {start:'2026-12-31T10:00:00+01:00',end:'2026-12-31T17:00:00+01:00'},
+        ],
+      }]}});
+    });
+    await device.goto(origin+'/kalender/?stad=brussel&maand=2026-12');
+    await loaded(device);
+    const comics=device.locator('[data-calendar-source=stripmuseum]');
+    assert.equal(await comics.count(),1);
+    await device.locator('[data-day="2026-12-24"]').click();
+    assert.match(await comics.innerText(),/10:00–16:00[\s\S]+Licence Ouverte 2.0/);
+    await device.locator('[data-day="2026-12-25"]').click();
+    assert.equal(await comics.count(),0);
+    await device.locator('[data-day="2026-12-31"]').click();
+    assert.match(await comics.innerText(),/10:00–17:00/);
+    await device.goto(origin+'/kalender/?stad=andenne&maand=2026-12');
+    await loaded(device);
+    assert.equal(await comics.count(),0);
+  }
+  assert.equal(comicsCalls,2);
   let releaseIdeas;
   const delayed = await browser.newPage({viewport:{width:390,height:844}});
   await install(delayed,{pauseIdeas:new Promise(resolve=>{ releaseIdeas=resolve; }),ideasStatus:502});

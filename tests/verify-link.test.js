@@ -122,5 +122,5 @@ test('deduplicates in-flight checks and cached checks; budget and timeouts give 
 
 test('Cloudflare publishes explicit Functions invocation routes, not a wildcard', async () => {
   const config = JSON.parse(await readFile(new URL('../site/_routes.json', import.meta.url)));
-  assert.deepEqual(config, { version: 1, include: ['/api/city-live', '/api/verify-link', '/api/eurometropolis'], exclude: [] });
+  assert.deepEqual(config, { version: 1, include: ['/api/city-live', '/api/verify-link', '/api/eurometropolis', '/api/stripmuseum'], exclude: [] });
 });

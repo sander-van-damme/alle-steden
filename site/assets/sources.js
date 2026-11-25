@@ -8,6 +8,10 @@ const gent = 'https://data.stad.gent';
 const ccby = 'https://creativecommons.org/licenses/by/4.0/';
 
 export const sources = {
+  stripmuseum: { label:'Centre Belge de la Bande Dessinée',
+    href:'https://openagenda.com/fr/centre-belge-de-la-bande-dessinee',
+    visitorHref:'https://www.comicscenter.net/en/practical-information/opening-hours-and-admission-fees',
+    license:'https://www.data.gouv.fr/pages/legal/licences/etalab-2-0', licenseLabel:'Licence Ouverte 2.0' },
   eurometropolis: { label: 'Eurometropolis Lille-Kortrijk-Tournai',
     href: 'https://openagenda.com/fr/eurometropolis-lille-kortrijk-tournai',
     license: 'https://www.data.gouv.fr/pages/legal/licences/etalab-2-0', licenseLabel: 'Licence Ouverte 2.0' },
