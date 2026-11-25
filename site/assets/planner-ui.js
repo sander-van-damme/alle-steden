@@ -83,12 +83,47 @@ function cityCoords(city) {
 }
 
 export function bindPlannerDistance(form) {
-  const slider = form.elements.maxKm;
-  const output = form.querySelector('#planner-distance-output');
-  if (!slider || !output) return;
-  const sync = () => { output.textContent = fmtNumber(Number(slider.value)) + ' km'; };
-  slider.addEventListener('input', sync);
-  slider.addEventListener('change', sync);
+  const min = form.elements.minKm;
+  const max = form.elements.maxKm;
+  const minOutput = form.querySelector('#planner-min-distance-output');
+  const maxOutput = form.querySelector('#planner-distance-output');
+  if (!max || !maxOutput) return;
+  const sync = (event) => {
+    if (min && Number(min.value) > Number(max.value)) {
+      if (event?.target === max) max.value = min.value;
+      else min.value = max.value;
+    }
+    if (min && minOutput) {
+      minOutput.textContent = fmtNumber(Number(min.value)) + ' km';
+      min.setAttribute('aria-valuetext', minOutput.textContent);
+    }
+    maxOutput.textContent = fmtNumber(Number(max.value)) + ' km';
+    max.setAttribute('aria-valuetext', maxOutput.textContent);
+  };
+  for (const slider of [min, max].filter(Boolean)) {
+    slider.addEventListener('input', sync);
+    slider.addEventListener('change', sync);
+  }
+  form.addEventListener('reset', () => queueMicrotask(sync));
+  sync();
+}
+
+export function bindPlannerActivities(form) {
+  const fields = [...form.querySelectorAll('input[name=activity]')];
+  if (!fields.length) return;
+  const message = form.querySelector('#planner-activities-error');
+  const sync = () => {
+    const error = fields.some((field) => field.checked) ? '' : 'Kies minstens één soort bezoek.';
+    fields[0].setCustomValidity(error);
+    if (error) fields[0].setAttribute('aria-invalid', 'true');
+    else fields[0].removeAttribute('aria-invalid');
+    if (message) {
+      message.hidden = !error;
+      message.textContent = error;
+    }
+  };
+  for (const field of fields) field.addEventListener('change', sync);
+  form.addEventListener('reset', () => queueMicrotask(sync));
   sync();
 }
 
@@ -453,7 +488,7 @@ function renderEditor(trip) {
     }
     const remove = button('Verwijder', 'tripRemove', index);
     remove.setAttribute('aria-label', `Verwijder bezoek ${index + 1}`);
-    remove.disabled = busy || slots.length <= 1 || editor.canRemove === false;
+    remove.disabled = busy || slots.length <= 1 || (editor.removableSlots?.[index] ?? editor.canRemove) === false;
     label.append(select);
     row.append(label, remove);
     list.append(row);
@@ -598,12 +633,23 @@ function renderTrip(trip, openRoute = false) {
   section.dataset.tripKey = trip.id ?? '';
   section.dataset.tripFrom = trip.cities[0]?.slug ?? '';
   section.dataset.tripTo = trip.cities.at(-1)?.slug ?? '';
+  section.dataset.tripCities = trip.cities.map(({ slug }) => slug).join(' ');
   section.dataset.selectedDate = trip.date ?? '';
   const heading = element('header', 'trip-heading');
   const title = element('h3');
   trip.cities.forEach((city, index) => {
-    if (index) title.append(element('span', 'trip-arrow', ' → '));
-    title.append(link(city.name, city.slug && `/steden/${encodeURIComponent(city.slug)}/`));
+    if (index) title.append(' ');
+    const cityLabel = element('span', 'trip-city');
+    if (index) {
+      const arrow = element('span', 'trip-arrow', '→ ');
+      arrow.setAttribute('aria-hidden', 'true');
+      cityLabel.append(arrow);
+      // The arrow stays with the next name on a narrow screen. Screen readers
+      // still get the connector as part of the ordered route heading.
+      cityLabel.append(element('span', 'visually-hidden', 'naar '));
+    }
+    cityLabel.append(link(city.name, city.slug && `/steden/${encodeURIComponent(city.slug)}/`));
+    title.append(cityLabel);
   });
   const date = renderTripDate(trip);
   heading.append(date, title);
@@ -671,7 +717,7 @@ export function disposePlannerResults(container) {
   }
 }
 
-export function renderPlannerResults(container, results, { mode = 'date', scheduledOnly = false } = {}) {
+export function renderPlannerResults(container, results, { mode = 'date', scheduledOnly = false, cityCount, activityCount } = {}) {
   const savedFocus = focusBeforeRender(container);
   const openRoutes = new Set([...container.querySelectorAll('[data-trip-route][open]')]
     .map((view) => view.closest('[data-trip-key]').dataset.tripKey));
@@ -690,7 +736,9 @@ export function renderPlannerResults(container, results, { mode = 'date', schedu
   }
   if (!trips.length) {
     const hint = scheduledOnly ? 'Laat ook buitenstops toe of probeer een andere datum.'
-      : 'Probeer een ruimere fietsafstand of een andere datum of vertrekplek.';
+      : Number(cityCount) === 3 ? 'Probeer met twee steden, een ruimere fietsafstand of een andere datum.'
+        : Number.isFinite(activityCount) && activityCount < 6 ? 'Probeer een ruimere fietsafstand, een andere datum of kies meer soorten bezoeken.'
+          : 'Probeer een ruimere fietsafstand of een andere datum of vertrekplek.';
     main.append(element('p', 'planner-empty', `Met de beschikbare gegevens kon de planner geen passende rit samenstellen. ${hint} Niet alle steden hebben evenveel bezoekgegevens.`));
   } else if (trips.some((trip) => Array.isArray(trip.alternatives))) {
     const section = element('section', 'planner-result-group');

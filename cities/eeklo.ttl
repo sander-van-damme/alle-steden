@@ -2,6 +2,7 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <> a schema:Dataset ;
     schema:about wd:Q12440 ;
@@ -27,3 +28,28 @@ wd:Q12440 a schema:City ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.18465 ; schema:longitude 3.56631 ] ;
     schema:url <https://id.erfgoed.net/erfgoedobjecten/50823> ;
     dcterms:source <https://id.erfgoed.net/erfgoedobjecten/50823> .
+
+# Dit is de Eeklose bezoekstart van het grotere domein, niet de coördinaat van het hele bos.
+<#het-leen-eeklose-toegang> a schema:Park ;
+    schema:name "Provinciaal domein Het Leen – Eeklose toegang"@nl ;
+    schema:description "Boswandeling vanaf de Eeklose bezoekersparking. In het weekend en op feestdagen mag je alleen op de centrale weg fietsen. Het domein opent om 9 uur; de sluitingstijd hangt af van de maand."@nl ;
+    schema:containedInPlace wd:Q12440, wd:Q2308342 ;
+    schema:address "Gentsesteenweg 80, Eeklo"@nl ;
+    schema:specialOpeningHoursSpecification [ a schema:OpeningHoursSpecification ; schema:validFrom "2026-11-01"^^xsd:date ; schema:validThrough "2027-01-31"^^xsd:date ; schema:opens "09:00" ; schema:closes "17:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-02-01"^^xsd:date ; schema:validThrough "2027-02-28"^^xsd:date ; schema:opens "09:00" ; schema:closes "18:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-03-01"^^xsd:date ; schema:validThrough "2027-03-31"^^xsd:date ; schema:opens "09:00" ; schema:closes "19:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-04-01"^^xsd:date ; schema:validThrough "2027-04-30"^^xsd:date ; schema:opens "09:00" ; schema:closes "20:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-05-01"^^xsd:date ; schema:validThrough "2027-08-31"^^xsd:date ; schema:opens "09:00" ; schema:closes "21:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-09-01"^^xsd:date ; schema:validThrough "2027-09-30"^^xsd:date ; schema:opens "09:00" ; schema:closes "20:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-10-01"^^xsd:date ; schema:validThrough "2027-10-31"^^xsd:date ; schema:opens "09:00" ; schema:closes "19:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-11-01"^^xsd:date ; schema:validThrough "2028-01-31"^^xsd:date ; schema:opens "09:00" ; schema:closes "17:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2028-02-01"^^xsd:date ; schema:validThrough "2028-02-29"^^xsd:date ; schema:opens "09:00" ; schema:closes "18:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2028-03-01"^^xsd:date ; schema:validThrough "2028-03-31"^^xsd:date ; schema:opens "09:00" ; schema:closes "19:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2028-04-01"^^xsd:date ; schema:validThrough "2028-04-30"^^xsd:date ; schema:opens "09:00" ; schema:closes "20:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2028-05-01"^^xsd:date ; schema:validThrough "2028-08-31"^^xsd:date ; schema:opens "09:00" ; schema:closes "21:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2028-09-01"^^xsd:date ; schema:validThrough "2028-09-30"^^xsd:date ; schema:opens "09:00" ; schema:closes "20:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2028-10-01"^^xsd:date ; schema:validThrough "2028-10-31"^^xsd:date ; schema:opens "09:00" ; schema:closes "19:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2028-11-01"^^xsd:date ; schema:validThrough "2028-12-31"^^xsd:date ; schema:opens "09:00" ; schema:closes "17:00" ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.1670832 ; schema:longitude 3.573504 ] ;
+    schema:url <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/het-leen/praktisch/openingsuren-en-toegang.html> ;
+    dcterms:source <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/het-leen/praktisch/openingsuren-en-toegang.html>, <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/het-leen/praktisch/bereikbaarheid.html>, <https://www.openstreetmap.org/node/1212451377> .

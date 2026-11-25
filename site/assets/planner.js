@@ -2,8 +2,9 @@ import { safeUrl, dateValue, getJson } from './sources.js';
 import * as sources from './sources.js';
 import { calendarDay, advanceDay, datesFor, approxKm, departureRadius, planTrips, validRoute, editVisitOptions,
   canScheduleEditedSlots, recalculateItinerary, tripLimits } from './planner-core.js';
-import { fetchRoute, findRoutePois, fetchPoiDetour } from './planner-routing.js';
-import { bindPlannerDistance, disposePlannerResults, renderCityMap, renderPlannerResults, setPlannerStatus } from './planner-ui.js';
+import { fetchRoute, findRoutePois, fetchPoiDetour, distanceToRoute } from './planner-routing.js';
+import { matchesActivity, plannerActivityIds } from './planner-activities.js';
+import { bindPlannerDistance, bindPlannerActivities, disposePlannerResults, renderCityMap, renderPlannerResults, setPlannerStatus } from './planner-ui.js';
 
 const formEl = document.querySelector('#planner-form');
 const mapEl = document.querySelector('#planner-map');
@@ -33,16 +34,24 @@ let activeFilters;
 const derived = new Map();
 const editorRuns = new Map();
 
-const options = () => ({
-  mode: formEl.elements.mode.value,
-  date: dateField.value,
-  weekend: formEl.elements.weekend.checked,
-  city: cityField.value,
-  region: regionField.value,
-  maxKm: Number(formEl.elements.maxKm.value),
-  roundtrip: formEl.elements.roundtrip.checked,
-  scheduledOnly: formEl.elements.scheduledOnly?.checked ?? false,
-});
+function options() {
+  const checked = [...formEl.querySelectorAll('input[name="activity"]:checked')].map(({ value }) => value);
+  const include = plannerActivityIds.filter((id) => checked.includes(id));
+  return {
+    mode: formEl.elements.mode.value,
+    date: dateField.value,
+    weekend: formEl.elements.weekend.checked,
+    city: cityField.value,
+    region: regionField.value,
+    minKm: Number(formEl.elements.minKm.value),
+    maxKm: Number(formEl.elements.maxKm.value),
+    cityCount: Number(formEl.elements.cityCount.value),
+    include,
+    exclude: plannerActivityIds.filter((id) => !include.includes(id)),
+    roundtrip: formEl.elements.roundtrip.checked,
+    scheduledOnly: formEl.elements.scheduledOnly?.checked ?? false,
+  };
+}
 
 function refreshMap() {
   const { mode, city, region } = options();
@@ -87,7 +96,7 @@ function normalizedEvent(event) {
   if (typeof name !== 'string' || !dateValue(start)?.includes('T') || !dateValue(end)?.includes('T') || cancelled) return null;
   const url = safeUrl(event.website ?? event.url);
   const point = event.coordinates ?? {};
-  return { id, name, start, end, url, lat: Number(point.latitude ?? point.lat ?? NaN),
+  return { id, name, start, end, url, category: event.category, activitySource: source, lat: Number(point.latitude ?? point.lat ?? NaN),
     lon: Number(point.longitude ?? point.lon ?? NaN), live: true, source: source ? (sources.sources[source]?.href ?? url) : url };
 }
 
@@ -105,7 +114,7 @@ function plannedAgendas(options, catalog) {
 }
 
 async function openCalendars(catalog, filters, days, signal) {
-  if (typeof sources.fetchCityEvents !== 'function' || !days.length) return { catalog, failed: 0, count: 0 };
+  if (typeof sources.fetchCityEvents !== 'function' || !days.length || filters.exclude.includes('event')) return { catalog, failed: 0, count: 0 };
   const dates = days.map(({ date }) => date).sort();
   const from = dates[0], through = dates.at(-1);
   const possible = plannedAgendas(filters, catalog);
@@ -134,19 +143,31 @@ async function openCalendars(catalog, filters, days, signal) {
 }
 
 async function stopsFor(trip, signal) {
-  const potential = await findRoutePois(trip.route, { signal });
+  const filters = activeFilters;
+  const potential = await findRoutePois(trip.route, { signal, activityFilters: filters });
   signal.throwIfAborted();
   const items = [];
-  for (const point of potential.slice(0, maxDetours)) {
+  const legs = trip.route.legs ?? [trip.route];
+  for (const point of potential.filter((item) => matchesActivity(item, 'place', filters)).slice(0, maxDetours)) {
     let detour;
-    try { if (!trip.edited) detour = await fetchPoiDetour(trip.route, point, { signal }); }
-    catch { signal.throwIfAborted(); }
+    try {
+      if (!trip.edited) {
+        // Measure against the closest leg; a single via point would replace the
+        // other city stops if routed between the start and end of a three-city trip.
+        const nearest = legs.reduce((best, leg) => {
+          const distance = distanceToRoute([point.lon, point.lat], leg.coordinates).distanceToRouteKm;
+          return !best || distance < best.distance ? { leg, distance } : best;
+        }, null);
+        if (nearest) detour = await fetchPoiDetour(nearest.leg, point, { signal });
+      }
+    } catch { signal.throwIfAborted(); }
     const measured = validRoute(detour?.route) && Number.isFinite(detour.extraKm) && Number.isFinite(detour.extraMinutes);
+    const totalKm = trip.km + (detour?.extraKm ?? 0);
     items.push({ ...point,
       ...(measured ? {
         detourKm: detour.extraKm, detourMinutes: detour.extraMinutes,
         snapMetres: detour.snapMetres, visitMinutes,
-        fits: Math.ceil(detour.extraMinutes) + visitMinutes <= trip.slackMinutes,
+        fits: Math.ceil(detour.extraMinutes) + visitMinutes <= trip.slackMinutes && totalKm >= filters.minKm && totalKm <= filters.maxKm,
       } : {}),
     });
   }
@@ -192,7 +213,8 @@ async function loadServices(trip, current) {
 }
 
 function renderResults() {
-  renderPlannerResults(resultEl, shown, { mode: activeMode, scheduledOnly: activeScheduledOnly });
+  renderPlannerResults(resultEl, shown, { mode: activeMode, scheduledOnly: activeScheduledOnly,
+    cityCount: activeFilters?.cityCount, activityCount: activeFilters?.include.length });
 }
 
 function tripKey(trip) { return `${trip.id}\0${trip.selectedTripId ?? trip.id}`; }
@@ -222,8 +244,12 @@ function selectDate(trip, selectedTripId) {
 
 function editFlags(editor) {
   const options = editor.options;
-  return { ...editor, canRemove: editor.slots.length > 1,
-    canSave: canScheduleEditedSlots(editor.slots, options),
+  const required = activeFilters?.cityCount === 3 ? 3 : 1;
+  const count = (keys) => new Set(keys.map((key) => options.find((option) => option.key === key)?.city?.slug).filter(Boolean)).size;
+  const removableSlots = editor.slots.map((_, index) => editor.slots.length > 1 &&
+    count(editor.slots.filter((_, i) => index !== i)) >= required);
+  return { ...editor, canRemove: removableSlots.some(Boolean), removableSlots,
+    canSave: count(editor.slots) >= required && canScheduleEditedSlots(editor.slots, options),
     canAdd: editor.slots.length < tripLimits.editStops && options.some(({ key, unroutable }) => !unroutable && !editor.slots.includes(key)) };
 }
 
@@ -261,6 +287,7 @@ async function saveEditor(trip) {
 }
 
 bindPlannerDistance(formEl);
+bindPlannerActivities(formEl);
 formEl.elements.maxKm.addEventListener('input', () => {
   // Keep the area estimate in sync while dragging, without rebuilding/focusing the map.
   if (options().mode === 'place' && cityField.value) {
@@ -287,10 +314,17 @@ async function startSearch(withUpcoming = false) {
     cityField.focus();
     return;
   }
-  if (filters.maxKm < 15 || filters.maxKm > 160) {
-    setPlannerStatus(statusEl, 'Kies een fietsafstand tussen 15 en 160 km.', 'error');
+  if (!Number.isFinite(filters.minKm) || !Number.isFinite(filters.maxKm) ||
+      filters.minKm < 0 || filters.maxKm < 15 || filters.maxKm > 160 || filters.minKm > filters.maxKm) {
+    setPlannerStatus(statusEl, 'Kies een minimumafstand die niet hoger is dan je maximum (15 tot 160 km).', 'error');
     return;
   }
+  if (!filters.include.length) {
+    setPlannerStatus(statusEl, 'Kies minstens één soort activiteit.', 'error');
+    formEl.querySelector('input[name="activity"]')?.focus();
+    return;
+  }
+  if (![2, 3].includes(filters.cityCount)) return;
   job?.abort();
   for (const run of editorRuns.values()) run.abort();
   editorRuns.clear();
@@ -319,6 +353,8 @@ async function startSearch(withUpcoming = false) {
     const message = result.trips.length ? result.trips.length + (result.trips.length === 1 ? ' rit past' : ' ritten passen') + ' binnen de getoonde dagplanning.'
       : result.failedRoutes ? 'Geen passende rit kunnen bevestigen. Niet alle routes waren bereikbaar.'
         : filters.scheduledOnly ? 'Geen passende rit met gepubliceerde bezoekuren gevonden. Laat buitenstops toe om meer te zien.'
+          : filters.exclude.length ? 'Geen passende rit met deze activiteiten gevonden. Vink meer soorten aan of kies een andere datum.'
+          : filters.minKm > 0 || filters.cityCount === 3 ? 'Geen passende rit binnen deze afstand en dit aantal steden. Verruim de afstand of kies twee steden.'
           : anchor && !anchor.places.length && !anchor.events.length ? 'Te weinig gedocumenteerde plekken voor ' + anchor.name + '. Kies een andere vertrekstad of het hele gewest.'
             : 'Geen passende rit voor deze instellingen gevonden.';
     setPlannerStatus(statusEl, message, 'ready');
@@ -354,6 +390,7 @@ resultEl.addEventListener('click', (event) => {
   if ('tripSave' in button.dataset) return saveEditor(trip);
   if ('tripRemove' in button.dataset && trip.editor.canRemove) {
     const index = Number(button.dataset.tripRemove);
+    if (!trip.editor.removableSlots[index]) return;
     return updateEditor(trip, trip.editor.slots.filter((_, i) => i !== index));
   }
   if ('tripAdd' in button.dataset && trip.editor.canAdd) {

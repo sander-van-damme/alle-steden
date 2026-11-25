@@ -41,3 +41,18 @@ wd:Q2215500 a schema:Museum ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.98427 ; schema:longitude 3.52747 ] ;
     schema:url <https://id.erfgoed.net/erfgoedobjecten/38016> ;
     dcterms:source <https://id.erfgoed.net/erfgoedobjecten/38016> .
+
+# Seizoensvensters volgens de provinciale domeinuren; geen uren afgeleid buiten dit bereik.
+wd:Q2438902 a schema:Park ;
+    schema:name "De Brielmeersen"@nl ;
+    schema:description "Provinciaal groendomein met wandelpaden en een siervijver. Start buiten bij het Brielpaviljoen. Dagelijks open vanaf 8 uur, tot 18 uur van november tot maart en tot 22 uur van april tot oktober."@nl ;
+    schema:containedInPlace wd:Q499313 ;
+    schema:address "Bij het Brielpaviljoen, Lucien Matthyslaan 15, Deinze"@nl ;
+    schema:specialOpeningHoursSpecification [ a schema:OpeningHoursSpecification ; schema:validFrom "2026-11-01"^^xsd:date ; schema:validThrough "2027-03-31"^^xsd:date ; schema:opens "08:00" ; schema:closes "18:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-04-01"^^xsd:date ; schema:validThrough "2027-10-31"^^xsd:date ; schema:opens "08:00" ; schema:closes "22:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2027-11-01"^^xsd:date ; schema:validThrough "2028-03-31"^^xsd:date ; schema:opens "08:00" ; schema:closes "18:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2028-04-01"^^xsd:date ; schema:validThrough "2028-10-31"^^xsd:date ; schema:opens "08:00" ; schema:closes "22:00" ],
+        [ a schema:OpeningHoursSpecification ; schema:validFrom "2028-11-01"^^xsd:date ; schema:validThrough "2028-12-31"^^xsd:date ; schema:opens "08:00" ; schema:closes "18:00" ] ;
+    schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.9780913 ; schema:longitude 3.5226142 ] ;
+    schema:url <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/de-brielmeersen/praktisch/openingsuren-en-toegang.html> ;
+    dcterms:source <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/de-brielmeersen/praktisch/openingsuren-en-toegang.html>, <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/de-brielmeersen/ontspannen/wandelen.html>, <https://www.openstreetmap.org/node/1606417362> .

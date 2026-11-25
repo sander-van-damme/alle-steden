@@ -25,7 +25,7 @@
 .planner-panel { min-width: 0; border-top: 1px solid var(--planner-rule); padding: clamp(.7rem, 1.5vw, 1.05rem) 0 0; }
 .planner-panel h2 { font-size: clamp(1.5rem, 2.55vw, 2.1rem); line-height: 1.12; }
 .planner-mode { padding: 0; margin: .68rem 0; min-width: 0; border: 0; }
-.planner-mode legend, .planner-controls label {
+.planner-mode legend, .planner-distance legend, .planner-activities legend, .planner-controls label {
   color: var(--ink);
   font-size: 0.86rem;
   font-weight: 650;
@@ -66,7 +66,18 @@
 .planner select, .planner input[type="date"] {
   border: 1px solid #89968b; border-radius: 3px; background: #fffcf6; padding: .48rem .57rem;
 }
+.planner-distance, .planner-activities {
+  min-width: 0;
+  border: 0;
+  border-top: 1px solid var(--planner-rule);
+  padding: 0;
+  margin: .95rem 0 0;
+}
+.planner-distance legend, .planner-activities legend { padding: 0 .42em 0 0; }
+.planner-range-controls { margin-top: .14rem; }
 .planner-distance .planner-slider-label {
+  display: grid;
+  min-width: 0;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.2rem 0.4rem;
@@ -90,7 +101,17 @@
 }
 .planner-check { display: flex; gap: 0.45rem; min-height: 2.75rem; align-items: center; cursor: pointer; }
 .planner-check input { width: 1.15rem; height: 1.15rem; flex: 0 0 auto; padding: 0; accent-color: var(--accent); margin: 0; }
-.planner-visit-options { margin-top: .56rem; padding-top: .3rem; border-top: 1px solid var(--planner-rule); }
+.planner-ride-options { margin-top: .72rem; }
+.planner-activities > .planner-hint { margin-top: .22rem; }
+.planner-activity-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 .65rem;
+}
+.planner-activity-options .planner-check { font-size: .855rem; overflow-wrap: anywhere; }
+.planner-check input:focus-visible, .planner-distance input:focus-visible { outline: 2px solid var(--planner-focus); outline-offset: 2px; }
+#planner-activities-error { color: var(--planner-focus); font-weight: 670; }
+.planner-visit-options { margin-top: .48rem; padding-top: .32rem; border-top: 1px solid var(--planner-rule); }
 .planner-visit-options .planner-check { font-size: 0.86rem; font-weight: 650; }
 .planner-visit-options .planner-hint { margin: 0 0 0 1.6rem; }
 .planner-hint { color: var(--muted); margin: .3rem 0 0; font-size: .84rem; line-height: 1.42; }
@@ -167,7 +188,8 @@
 .trip-heading h3 { font: 500 clamp(1.65rem, 3.65vw, 2.85rem)/1.13 var(--display); letter-spacing: -0.035em; overflow-wrap: anywhere; }
 .trip-heading h3 a { text-decoration: none; color: var(--ink); }
 .trip-heading h3 a:hover { text-decoration: underline; }
-.trip-arrow { display: inline; color: var(--planner-focus); }
+.trip-city { display: inline-block; max-width: 100%; }
+.trip-arrow { color: var(--planner-focus); }
 .trip-date { display: block; color: var(--muted); font-size: .82rem; font-weight: 650; margin-bottom: .16rem; }
 .trip-heading:has(.trip-date-select) {
   display: grid;
@@ -293,4 +315,5 @@
 }
 @media (max-width: 25rem) {
   .planner-mode-options span { font-size: 0.79rem; }
+  .planner-activity-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

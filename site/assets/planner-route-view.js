@@ -50,7 +50,7 @@ export function createRouteGpx(trip) {
   const legs = legsFor(trip);
   if (!routeParts(trip.route).length || trip.returnRoute && !routeParts(trip.returnRoute).length) return null;
   const name = (trip.cities ?? []).map((c) => c.name).filter(Boolean).join(' → ') || 'Fietsroute';
-  const waypoints = trip.edited === true ? (trip.visits ?? []).flatMap((visit) => {
+  const waypoints = (trip.edited === true || trip.exactStops === true) ? (trip.visits ?? []).flatMap((visit) => {
     const p = stopPoint(visit);
     return p && visit.name ? [`<wpt lat="${p[1].toFixed(7)}" lon="${p[0].toFixed(7)}"><name>${xml(visit.name)}</name></wpt>`] : [];
   }) : [];
@@ -276,7 +276,7 @@ function stopPoint(place) {
 function routeMarkers(trip, outbound) {
   const selected = trip.selectedPoi ?? null;
   let cities;
-  if (trip.edited === true) {
+  if (trip.edited === true || trip.exactStops === true) {
     const start = stopPoint(trip.startCity ?? trip.cities?.[0]) ?? outbound[0].coordinates[0];
     cities = [{ point: start, name: 'Vertrek', icon: 'S', type: 'city' }];
   } else {
@@ -574,7 +574,7 @@ export function renderRouteView(trip, { document: doc = globalThis.document } = 
   const label = 'Fietsroute ' + (trip.cities ?? []).map(({name}) => name).join(' naar ') + (inbound.length ? ' en terug' : '');
   const charts = node(doc, 'div', 'route-insights');
   charts.append(renderSurface(doc, trip), renderElevation(doc, elevationProfile(trip)));
-  const map = createMap(doc, outbound, inbound, routeMarkers(trip, outbound), label, trip.edited === true);
+  const map = createMap(doc, outbound, inbound, routeMarkers(trip, outbound), label, trip.edited === true || trip.exactStops === true);
   view.append(header, charts, map.figure);
   view.dismissRouteView = map.dispose;
   if (trip.returnRoute && !inbound.length) view.append(node(doc, 'p', 'route-view-hint', 'Geometrie voor de terugrit ontbreekt; de kaart toont alleen de heenrit.'));

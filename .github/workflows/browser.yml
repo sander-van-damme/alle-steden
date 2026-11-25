@@ -30,6 +30,7 @@ jobs:
       - run: node tests/route-view-browser.mjs
       - run: node tests/surface-browser.mjs
       - run: node tests/planner-ui-browser.mjs
+      - run: node tests/planner-options-browser.mjs
       - run: node tests/link-check-browser.mjs
       - run: node tests/planner-browser.mjs
       - run: node tests/exterior-browser.mjs

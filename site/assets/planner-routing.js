@@ -1,3 +1,5 @@
+import { matchesActivity } from './planner-activities.js';
+
 const brouterUrl = 'https://brouter.de/brouter';
 const wikidataUrl = 'https://query.wikidata.org/sparql';
 const osmCopyright = 'https://www.openstreetmap.org/copyright';
@@ -369,7 +371,9 @@ export function createPoiQuery(coordinates, radiusKm = 0.8) {
   const position = (lon, lat) => `"Point(${lon.toFixed(5)} ${lat.toFixed(5)})"^^geo:wktLiteral`;
   // A single fixed bounding box is fast and reliable on the public endpoint.
   // Every resulting coordinate is still checked against the actual route geometry.
-  return `SELECT ?item ?itemLabel ?coord ?kind ?links WHERE {
+  // Check museum ancestry after the bounded candidate query, independently of
+  // the kind that got the candidate into the corridor (e.g. a castle museum).
+  return `SELECT ?item ?itemLabel ?coord ?kind ?links ?isMuseum WHERE {
   { SELECT DISTINCT ?item ?coord ?kind ?links WHERE {
     SERVICE wikibase:box {
       ?item wdt:P625 ?coord.
@@ -381,6 +385,7 @@ export function createPoiQuery(coordinates, radiusKm = 0.8) {
     ?item wdt:P31 ?kind; wikibase:sitelinks ?links.
     FILTER(?links > 2 || ?kind IN (wd:Q33506, wd:Q23413, wd:Q167346, wd:Q1007870))
   } ORDER BY DESC(?links) ?item LIMIT 180 }
+  BIND(EXISTS { ?item wdt:P31/wdt:P279* wd:Q33506 } AS ?isMuseum)
   SERVICE wikibase:label { bd:serviceParam wikibase:language "nl,fr,de,en". }
 }`;
 }
@@ -392,7 +397,7 @@ function parsePoiCoordinate(value) {
 }
 const wikiId = (value) => /^https?:\/\/www\.wikidata\.org\/entity\/(Q[1-9]\d*)$/.exec(value ?? '')?.[1];
 
-export function normalizeRoutePois(data, coordinates, radiusKm = 0.8) {
+export function normalizeRoutePois(data, coordinates, radiusKm = 0.8, { limit = 12 } = {}) {
   const records = data?.results?.bindings;
   if (!Array.isArray(records) || records.length > 1200) throw new Error('Onverwacht antwoord van Wikidata.');
   const seen = new Map();
@@ -408,21 +413,26 @@ export function normalizeRoutePois(data, coordinates, radiusKm = 0.8) {
     const links = validMeasure(row.links?.value, 10_000) ?? 0;
     const identityUrl = 'https://www.wikidata.org/wiki/' + id;
     const existing = seen.get(id);
+    const flag = row.isMuseum?.value;
+    const wikidataKinds = [...new Set([...(existing?.wikidataKinds ?? []), kind])];
+    const wikidataMuseum = kind === 'Q33506' || flag === 'true' || flag === '1' || existing?.wikidataMuseum === true
+      ? true : flag === 'false' || flag === '0' || existing?.wikidataMuseum === false ? false : undefined;
     const item = {
       id, name: label.slice(0, 160), lon: point[0], lat: point[1],
       type: poiTypes.get(kind), url: identityUrl, identityUrl,
       ...location, source: poiSource, links,
     };
-    if (!existing || existing.distanceToRouteKm > item.distanceToRouteKm) seen.set(id, item);
+    const closest = !existing || existing.distanceToRouteKm > item.distanceToRouteKm ? item : existing;
+    seen.set(id, { ...closest, wikidataKinds, wikidataMuseum });
   }
   const unique = [...seen.values()].sort((a, b) => {
     const rank = (item) => item.distanceToRouteKm - 0.08 * Math.log1p(item.links);
     return rank(a) - rank(b) || a.id.localeCompare(b.id);
   });
-  return unique.slice(0, 12);
+  return unique.slice(0, limit);
 }
 
-export async function findRoutePois(route, { signal, fetcher = defaultFetch, radiusKm = 0.8 } = {}) {
+export async function findRoutePois(route, { signal, fetcher = defaultFetch, radiusKm = 0.8, activityFilters } = {}) {
   signal?.throwIfAborted();
   if (!Number.isFinite(route?.km) || route.km <= 0 || route.km > 125) {
     throw new RangeError('Zoeken naar stops kan alleen langs ritten tot 125 km.');
@@ -432,17 +442,19 @@ export async function findRoutePois(route, { signal, fetcher = defaultFetch, rad
   const key = query + '|' + JSON.stringify(route.coordinates);
   const url = new URL(wikidataUrl);
   url.search = new URLSearchParams({ query, format: 'json', origin: '*' });
+  const select = (poi) => poi.filter((item) => matchesActivity(item, 'place', activityFilters)).slice(0, 12);
   const run = async (queue) => {
     const cached = fetcher === defaultFetch && memoGet(poiCache, key);
-    if (cached) return cached;
+    if (cached) return select(cached);
     const data = await readJson(url, {
       signal, timeout: 18000, fetcher, queue, accept: 'application/sparql-results+json',
     });
-    const poi = normalizeRoutePois(data, route.coordinates, radiusKm);
+    const poi = normalizeRoutePois(data, route.coordinates, radiusKm, { limit: 180 });
     if (fetcher === defaultFetch) memoSet(poiCache, key, poi);
-    return poi;
+    return select(poi);
   };
-  return fetcher === defaultFetch ? memoGet(poiCache, key) ?? limited('poi', run, signal) : run();
+  const cached = fetcher === defaultFetch && memoGet(poiCache, key);
+  return cached ? select(cached) : fetcher === defaultFetch ? limited('poi', run, signal) : run();
 }
 
 export async function fetchPoiDetour(baseRoute, poi, options) {

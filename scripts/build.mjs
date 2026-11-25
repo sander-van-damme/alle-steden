@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { Parser, Store } from 'n3';
 import { eligiblePublicLink } from '../functions/lib/link-check-policy.js';
 import { calendarPage, cityPage, indexPage, layout, plannerPage } from './pages.mjs';
+import { classifyRdfActivity } from '../site/assets/planner-activities.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const source = resolve(root, 'cities');
@@ -124,6 +125,13 @@ function readCity(filename, turtle) {
         point: entryGeo(entity),
         description: text(entity, 'description'),
         category: text(entity, 'genre') ?? text(entity, 'category') ?? kinds(entity).map((type) => eventKinds.get(type)).find(Boolean),
+        activity: classifyRdfActivity({
+          types: kinds(entity), additionalTypes: objects(entity, 'additionalType').map(({ value }) => value),
+          locationTypes: objects(entity, 'location').flatMap(kinds),
+          locationAdditionalTypes: objects(entity, 'location').flatMap((venue) => objects(venue, 'additionalType').map(({ value }) => value)),
+          category: text(entity, 'genre') ?? text(entity, 'category'),
+          exterior: exteriorView(entity) && Boolean(entrySource(entity)), event: isEvent(entity),
+        }),
         edition: isEdition(entity),
         start: text(entity, 'startDate'),
         end: text(entity, 'endDate'),
@@ -200,9 +208,9 @@ const plannerCities = cities.filter(({ coordinates }) => coordinates).map(({ slu
   slug, name, names, region, qid: cityUrl.split('/').at(-1),
   lat: Number(coordinates.latitude), lon: Number(coordinates.longitude),
   places: places.filter(({ openingHours, specialHours, exterior }) => openingHours.length || specialHours.length || exterior)
-    .map(({ id, name, openingHours, specialHours, url, source, point, exterior }) => ({ id, name, openingHours, specialHours, url, source, exterior, ...point })),
+    .map(({ id, name, openingHours, specialHours, url, source, point, exterior, activity }) => ({ id, name, openingHours, specialHours, url, source, exterior, ...point, ...activity })),
   events: events.filter(({ edition, start, end }) => edition && start?.includes('T') && end?.includes('T'))
-    .map(({ id, name, start, end, url, source, point }) => ({ id, name, start, end, url, source, ...point })),
+    .map(({ id, name, start, end, url, source, point, category, activity }) => ({ id, name, start, end, url, source, category, ...point, ...activity })),
 }));
 
 const calendarCatalog = {

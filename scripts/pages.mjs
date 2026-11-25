@@ -76,13 +76,42 @@ export function plannerPage(cities) {
               <select name="city" id="planner-city"><option value="">Geen voorkeur</option>${citiesByRegion}</select>
             </label>
           </div>
-          <div class="planner-controls planner-distance">
-            <label class="planner-slider-label" for="planner-max-km"><span>Maximale fietsafstand</span> <output for="planner-max-km" id="planner-distance-output">85 km</output>
-              <input id="planner-max-km" name="maxKm" type="range" min="15" max="160" step="5" value="85" aria-describedby="planner-distance-hint">
+          <fieldset class="planner-distance" aria-describedby="planner-distance-hint">
+            <legend>Fietsafstand</legend>
+            <div class="planner-controls planner-range-controls">
+              <div class="planner-slider-label">
+                <label for="planner-min-km">Minimaal</label> <output for="planner-min-km" id="planner-min-distance-output" aria-hidden="true">0 km</output>
+                <input id="planner-min-km" name="minKm" aria-label="Minimale fietsafstand" type="range" min="0" max="160" step="5" value="0" aria-describedby="planner-distance-hint">
+              </div>
+              <div class="planner-slider-label">
+                <label for="planner-max-km">Maximaal</label> <output for="planner-max-km" id="planner-distance-output" aria-hidden="true">85 km</output>
+                <input id="planner-max-km" name="maxKm" aria-label="Maximale fietsafstand" type="range" min="15" max="160" step="5" value="85" aria-describedby="planner-distance-hint">
+              </div>
+            </div>
+            <p class="planner-hint" id="planner-distance-hint">Totale afstand van de rit, inclusief de terugweg bij een lusrondrit.</p>
+          </fieldset>
+          <div class="planner-controls planner-ride-options">
+            <label>Aantal steden
+              <select id="planner-city-count" name="cityCount">
+                <option value="2" selected>2 steden</option><option value="3">3 steden</option>
+              </select>
             </label>
-            <label class="planner-check"><input type="checkbox" name="roundtrip"> Lusrondrit</label>
+            <label class="planner-check"><input type="checkbox" name="roundtrip" aria-describedby="planner-loop-hint"> Lusrondrit</label>
           </div>
-          <p class="planner-hint" id="planner-distance-hint">Bij een lus kunnen heen- en terugweg overlappen.</p>
+          <p class="planner-hint" id="planner-loop-hint">Bij een lus kunnen heen- en terugweg overlappen.</p>
+          <fieldset class="planner-activities" aria-describedby="planner-activities-hint">
+            <legend>Wat wil je bezoeken?</legend>
+            <p class="planner-hint" id="planner-activities-hint">Vink af wat je niet wilt bezoeken.</p>
+            <div class="planner-activity-options">
+              <label class="planner-check"><input type="checkbox" name="activity" value="museum" checked> Musea</label>
+              <label class="planner-check"><input type="checkbox" name="activity" value="heritage" checked> Erfgoed</label>
+              <label class="planner-check"><input type="checkbox" name="activity" value="nature" checked> Natuur</label>
+              <label class="planner-check"><input type="checkbox" name="activity" value="culture" checked> Cultuur</label>
+              <label class="planner-check"><input type="checkbox" name="activity" value="event" checked> Evenementen</label>
+              <label class="planner-check"><input type="checkbox" name="activity" value="other" checked> Overige</label>
+            </div>
+            <p id="planner-activities-error" class="planner-hint" role="status" hidden></p>
+          </fieldset>
           <div class="planner-visit-options">
             <label class="planner-check"><input type="checkbox" name="scheduledOnly" aria-describedby="planner-visit-hint"> Alleen met bevestigde bezoekuren of evenementen</label>
             <p class="planner-hint" id="planner-visit-hint">Buitenstops tellen standaard mee, ook zonder toegang tot het gebouw.</p>

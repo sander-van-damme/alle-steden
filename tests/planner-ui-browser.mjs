@@ -39,7 +39,7 @@ const alternatives = [trip('2026-11-28', ['town-hall','church'], 'a'), trip('202
 
 const shellHtml = plannerPage(cities).replace('/assets/planner.js', '/assets/planner-ui-fixture.js');
 const fixtureModule = `
-import {bindPlannerDistance, renderCityMap, renderPlannerResults, disposePlannerResults} from '/assets/planner-ui.js';
+import {bindPlannerDistance, bindPlannerActivities, renderCityMap, renderPlannerResults, disposePlannerResults} from '/assets/planner-ui.js';
 const form = document.querySelector('#planner-form');
 const output = document.querySelector('#planner-results');
 const alternatives = ${JSON.stringify(alternatives)};
@@ -78,11 +78,20 @@ output.addEventListener('click',(event)=>{
   render();
 });
 bindPlannerDistance(form);
+bindPlannerActivities(form);
 renderCityMap(document.querySelector('#planner-map'), ${JSON.stringify(mapCities)}, {
   onCity: (slug) => { window.selectedFixtureCity = slug; },
 });
 render();
 window.disposeFixture = () => disposePlannerResults(output);
+window.threeCityFixture = () => {
+  const third = { slug:'oudenaarde', name:'Oudenaarde', lon:3.6, lat:50.84 };
+  const visit = { key:'square', name:'Oudenaarde Markt', cityName:third.name, kind:'exterior', lon:third.lon, lat:third.lat };
+  const items = [...alternatives[0].visits, visit];
+  renderPlannerResults(output, {trips:[{...alternatives[0], id:'three-cities', cities:[...alternatives[0].cities,third],
+    visits:items, editor:{slots:items.map(({key})=>key),options:[...choices,visit],removableSlots:[false,true,false]}}]}, {cityCount:3});
+};
+window.emptyFixture = (params) => renderPlannerResults(output, {trips:[]}, params);
 `;
 
 const browser = await chromium.launch(launch);
@@ -122,6 +131,41 @@ try {
   await slider.focus();
   await slider.press('ArrowRight');
   assert.equal(await page.locator('#planner-distance-output').innerText(), '90 km');
+  const minimum = page.getByRole('slider', {name:'Minimale fietsafstand'});
+  await minimum.focus();
+  await minimum.press('End');
+  assert.equal(await minimum.inputValue(), '90', 'the minimum cannot go past current maximum');
+  assert.equal(await minimum.getAttribute('aria-valuetext'), '90 km');
+  await slider.focus();
+  await slider.press('Home');
+  assert.equal(await slider.inputValue(), '90', 'the maximum cannot go below current minimum');
+  await minimum.focus();
+  await minimum.press('ArrowLeft');
+  assert.equal(await page.locator('#planner-min-distance-output').innerText(), '85 km');
+
+  const form = page.locator('#planner-form');
+  const count = page.getByLabel('Aantal steden');
+  assert.equal(await count.inputValue(), '2');
+  await count.selectOption('3');
+  const visits = page.getByRole('group', {name:'Wat wil je bezoeken?'});
+  assert.equal(await visits.getByRole('checkbox', {checked:true}).count(), 6);
+  await visits.getByRole('checkbox', {name:'Musea'}).uncheck();
+  assert.deepEqual(await form.evaluate((el) => new FormData(el).getAll('activity')), ['heritage','nature','culture','event','other']);
+  assert.equal(await form.evaluate((el) => new FormData(el).get('cityCount')), '3');
+  await page.locator('#planner-date').fill('2026-11-28');
+  for (const name of ['Erfgoed','Natuur','Cultuur','Evenementen','Overige']) {
+    await visits.getByRole('checkbox', {name,exact:true}).uncheck();
+  }
+  assert.equal(await form.evaluate((el) => el.checkValidity()), false);
+  assert.equal(await page.locator('#planner-activities-error').innerText(), 'Kies minstens één soort bezoek.');
+  await visits.getByRole('checkbox', {name:'Natuur'}).check();
+  assert.equal(await form.evaluate((el) => el.checkValidity()), true);
+  assert.equal(await page.locator('#planner-activities-error').isVisible(), false);
+  await form.evaluate((el) => el.reset());
+  assert.equal(await minimum.getAttribute('aria-valuetext'), '0 km');
+  assert.equal(await slider.getAttribute('aria-valuetext'), '85 km');
+  assert.equal(await visits.getByRole('checkbox', {checked:true}).count(), 6);
+
   assert.equal(await card.locator('[data-trip-date] option').count(), 2);
   assert.equal(await card.locator('[data-route-detail] [download]').count(), 0, 'map only mounts on expansion');
 
@@ -167,12 +211,30 @@ try {
   await card.locator('[data-trip-save]').click();
   assert.ok(await card.locator('.trip-timeline').getByText('Park bij de Leie', { exact: true }).isVisible());
   assert.equal(await card.locator('[data-trip-visit]').count(), 0);
+  await page.evaluate(() => window.threeCityFixture());
+  assert.equal(await card.getAttribute('data-trip-cities'), 'gent deinze oudenaarde');
+  assert.deepEqual(await card.locator('h3 a').allTextContents(), ['Gent','Deinze','Oudenaarde']);
+  assert.match(await card.getByRole('heading', { level: 3 }).ariaSnapshot(), /Gent naar Deinze naar Oudenaarde/);
+  assert.equal(await card.locator('[data-trip-remove="0"]').isDisabled(), true);
+  assert.equal(await card.locator('[data-trip-remove="1"]').isEnabled(), true);
+  assert.equal(await card.locator('[data-trip-remove="2"]').isDisabled(), true);
+  assert.equal(await card.locator('.trip-map-stop').count(), 3);
+  await page.setViewportSize({ width: 320, height: 780 });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 320);
+  if (process.env.PLANNER_UI_SCREENSHOT) {
+    await card.locator('.trip-heading').screenshot({ path: process.env.PLANNER_UI_SCREENSHOT + '-three-city-320.png' });
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.emptyFixture({cityCount:3}));
+  assert.match(await page.locator('.planner-empty').innerText(), /Probeer met twee steden/);
+  await page.evaluate(() => window.emptyFixture({cityCount:2, activityCount:2}));
+  assert.match(await page.locator('.planner-empty').innerText(), /kies meer soorten bezoeken/);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);
   await page.setViewportSize({ width: 1440, height: 900 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 1440);
   await page.evaluate(() => window.disposeFixture());
   assert.deepEqual(errors, []);
-  console.log('Planner UI: slider, gegroepeerde datums, kaart/GPX, toegankelijke focus, bewerken en mobiel.');
+  console.log('Planner UI: min/max, activiteiten, drie steden, gegroepeerde datums, kaart/GPX, toegankelijke focus, bewerken en mobiel.');
 } finally {
   await browser.close();
 }
