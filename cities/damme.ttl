@@ -2,6 +2,7 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <> a schema:Dataset ;
     schema:about wd:Q323408 ;
@@ -27,3 +28,29 @@ wd:Q2437059 a schema:LandmarksOrHistoricalBuildings ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.25170 ; schema:longitude 3.28171 ] ;
     schema:url <https://id.erfgoed.net/erfgoedobjecten/78719> ;
     dcterms:source <https://id.erfgoed.net/erfgoedobjecten/78719> .
+
+# Uren per kalenderdag uit de officiële expopagina. Niet de kerstmarkt in Sijsele.
+<#wintersfeer-damme-2026> a schema:ExhibitionEvent ;
+    schema:name "Wintersfeer in Damme"@nl ;
+    schema:description "Winterexpo op drie locaties: Sint-Janshospitaal, Onze-Lieve-Vrouw-Hemelvaartkerk en va’ART. Raadpleeg Visit Damme voor tickets."@nl ;
+    schema:location wd:Q323408 ;
+    schema:startDate "2026-12-19"^^xsd:date ;
+    schema:endDate "2027-01-03"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-19T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-19T21:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-20T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-20T19:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-21T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-21T19:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-22T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-22T19:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-23T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-23T19:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-24T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-24T16:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-25T14:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-25T19:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-26T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-26T21:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-27T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-27T19:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-28T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-28T19:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-29T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-29T19:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-30T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-30T19:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-31T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-31T16:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2027-01-01T14:00:00+01:00"^^xsd:dateTime ; schema:endDate "2027-01-01T19:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2027-01-02T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2027-01-02T19:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2027-01-03T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2027-01-03T19:00:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.visitdamme.be/wintersfeerindamme> ;
+    dcterms:source <https://www.visitdamme.be/openingsuren>, <https://www.visitdamme.be/wintersfeerindamme> .

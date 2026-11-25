@@ -127,3 +127,28 @@ test('calendar city scope retains verified overnight iMio timestamps and does no
   assert.equal(result.items[0].start, overnight.start);
   assert.match(eventTime(calendarEvent(result.items[0], 'verviers')), /23:30.*01:30/);
 });
+
+test('a visitor edition with exact date sessions appears only on those dates and keeps one card per edition', () => {
+  const website = 'https://example.test/winter';
+  const v = calendarEvent({
+    name: 'Winterbezoek', start:'2026-12-24', end:'2027-01-02', website,
+    sessions: [
+      { start:'2026-12-24T10:00:00Z', end:'2026-12-24T15:00:00Z' },
+      { start:'2026-12-24T11:00:00+01:00', end:'2026-12-24T16:00:00+01:00' },
+      { start:'2027-01-01T14:00:00+01:00', end:'2027-01-01T19:00:00+01:00' },
+      { start:'2026-12-23T14:00:00+01:00', end:'2026-12-23T19:00:00+01:00' },
+      { start:'2027-01-02T23:00:00+01:00', end:'2027-01-03T04:00:00+01:00' },
+      { start:'2027-01-02', end:'2027-01-02' },
+    ],
+  }, 'damme');
+  assert.equal(v.sessions.length,2);
+  assert.equal(eventTime(v,'2026-12-24'),'11:00–16:00');
+  assert.equal(eventTime(v,'2027-01-01'),'14:00–19:00');
+  assert.match(eventTime(v),/kies een dag voor de uren/);
+  assert.equal(eventsByDay([v], ['2026-12-24','2026-12-25']).get('2026-12-25').length,0);
+  assert.equal(scopeDates([v], {first:'2026-12-25',last:'2026-12-31'}).length,0);
+  const duplicate = calendarEvent({name:v.name, start:'2026-12-25T11:00:00+01:00', end:'2026-12-25T19:00:00+01:00', website}, 'damme');
+  const laterEdition = calendarEvent({name:v.name, start:'2027-12-25T11:00:00+01:00', website}, 'damme');
+  assert.deepEqual(mergeCalendarEvents([duplicate,v,laterEdition]),[v,laterEdition]);
+  assert.equal(calendarEvent({name:'Ongeldige sessies',start:'2026-12-24',sessions:[]},'damme'),null);
+});

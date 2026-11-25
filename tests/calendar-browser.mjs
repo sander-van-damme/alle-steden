@@ -245,6 +245,40 @@ try {
   assert.equal(plannerCatalogue.filter(({slug})=>['eupen','sankt-vith'].includes(slug)).flatMap(({events})=>events).length,0);
   assert.equal(await phone.evaluate(() => document.documentElement.scrollWidth),390);
 
+  await desktop.goto(origin + '/kalender/?stad=brugge&maand=2026-12');
+  await loaded(desktop);
+  const makers = desktop.locator('.calendar-event').filter({ hasText: 'Handmade in Brugge MAKERSmarkt' });
+  assert.equal(await makers.count(),1);
+  assert.match(await makers.innerText(), /kies een dag voor de uren.*Jan Garemijnzaal/su);
+  assert.equal(await desktop.getByRole('link',{name:'Kerstmarkten Wintergloed 2026'}).count(),1);
+  for (const [day, hours] of [['18','16:00–20:00'],['19','11:00–18:00'],['20','11:00–18:00']]) {
+    await desktop.locator('[data-day="2026-12-' + day + '"]').click();
+    assert.equal(await makers.count(),1);
+    assert.match(await makers.locator('.calendar-event-meta').innerText(), new RegExp(hours));
+  }
+  await desktop.locator('[data-day="2026-12-21"]').click();
+  assert.equal(await makers.count(),0);
+
+  await phone.goto(origin + '/kalender/?stad=damme&maand=2026-12');
+  await loaded(phone);
+  const expo = phone.locator('.calendar-event').filter({ hasText: 'Wintersfeer in Damme' });
+  await phone.locator('#calendar-category').selectOption('Tentoonstelling');
+  assert.equal(await expo.count(),1);
+  for (const [day, hours] of [['19','11:00–21:00'],['20','11:00–19:00'],['24','11:00–16:00'],['25','14:00–19:00'],['31','11:00–16:00']]) {
+    await phone.locator('[data-day="2026-12-' + day + '"]').tap();
+    assert.equal(await expo.count(),1);
+    assert.match(await expo.locator('.calendar-event-meta').innerText(), new RegExp(hours));
+  }
+  await phone.locator('#calendar-next').tap();
+  await loaded(phone);
+  assert.equal(await expo.locator('time').getAttribute('datetime'),'2027-01-01');
+  await phone.locator('[data-day="2027-01-01"]').tap();
+  assert.match(await expo.locator('.calendar-event-meta').innerText(), /14:00–19:00/);
+  await phone.locator('[data-day="2027-01-04"]').tap();
+  assert.equal(await expo.count(),0);
+  assert.ok(!plannerCatalogue.flatMap(({events})=>events).some(({id})=>/makersmarkt-brugge|wintersfeer-damme/u.test(id)));
+  assert.equal(await phone.evaluate(() => document.documentElement.scrollWidth),390);
+
   const offline = await browser.newPage({ javaScriptEnabled: false });
   await offline.goto(origin + '/kalender/');
   assert.equal(await offline.locator('#calendar-fallback').isVisible(), true);

@@ -43,6 +43,21 @@ function sourceName(value) {
   return compact(value, 100);
 }
 
+function visitSessions(entries, day, last) {
+  if (!Array.isArray(entries) || entries.length > 366) return undefined;
+  const seen = new Map();
+  for (const row of entries) {
+    const start = dateValue(row?.start), end = dateValue(row?.end);
+    if (!start || !end || dateOnly(start) || dateOnly(end)) continue;
+    const sessionDay = brusselsDay(start);
+    const duration = Date.parse(end) - Date.parse(start);
+    if (sessionDay < day || sessionDay > last || brusselsDay(end) !== sessionDay ||
+      duration <= 0 || duration > 18 * 60 * 60_000) continue;
+    seen.set(new Date(start).toISOString() + '|' + new Date(end).toISOString(), { day: sessionDay, start, end });
+  }
+  return [...seen.values()].sort((a, b) => Date.parse(a.start)-Date.parse(b.start) || Date.parse(a.end)-Date.parse(b.end));
+}
+
 // Inputs to this module come exclusively from schema:Event entries and event-only feeds.
 // A date-only end is inclusive. A timed end is exclusive at exactly local midnight
 // unless the event has zero duration. We never put a place's opening hours on the calendar.
@@ -63,12 +78,14 @@ export function calendarEvent(item, city) {
   // even though their actual individual sessions are absent. Do not mark
   // every day of that period as scheduled.
   if (last < day || last > addCalendarDays(day, maxCalendarEventDays)) return null;
+  const sessions = visitSessions(item.sessions, day, last);
+  if (Object.hasOwn(item, 'sessions') && !sessions?.length) return null;
   return {
     city, id: compact(item.id, 350), name: compact(item.name), category: compact(item.category, 60) || categoryOther,
     description: compact(item.description, 300), venue: compact(item.venue, 140),
     url: visitorUrl(item.website) ?? visitorUrl(item.url), source: sourceName(item.source),
     start, ...(end && { end }), day, last, allDay: item.allDay === true,
-    scheduleBased: item.scheduleBased === true,
+    scheduleBased: item.scheduleBased === true, ...(sessions && { sessions }),
   };
 }
 
@@ -83,10 +100,20 @@ function canonicalUrl(url) {
 
 export function mergeCalendarEvents(items) {
   const distinct = new Map();
+  const editionKey = (item) => item.city + '|' + nameKey(item.name) + '|' + canonicalUrl(item.url);
+  const officialSchedules = new Map();
   for (const item of items) {
+    if (!item.sessions?.length || !item.url) continue;
+    const key = editionKey(item);
+    officialSchedules.set(key, [...(officialSchedules.get(key) ?? []), item]);
+  }
+  for (const item of items) {
+    if (!item.sessions && item.url && officialSchedules.get(editionKey(item))
+      ?.some((edition) => edition.day <= item.day && edition.last >= item.last)) continue;
     const slot = dateOnly(item.start) ? item.day : new Date(item.start).toISOString();
     const key = item.city + '|' + nameKey(item.name) + '|' + slot;
-    const better = (a, b) => (!a.end && b.end) || (a.category === categoryOther && b.category !== categoryOther) || (!a.url && b.url);
+    const better = (a, b) => Boolean(a.sessions) !== Boolean(b.sessions) ? Boolean(b.sessions)
+      : (!a.end && b.end) || (a.category === categoryOther && b.category !== categoryOther) || (!a.url && b.url);
     if (!distinct.has(key) || better(distinct.get(key), item)) distinct.set(key, item);
   }
   const result = [...distinct.values()];
@@ -94,23 +121,29 @@ export function mergeCalendarEvents(items) {
   // timed live record, keep the timed edition, without collapsing distinct sessions.
   const timed = new Set(result.filter(({ start, url }) => !dateOnly(start) && url)
     .map((item) => item.city + '|' + item.day + '|' + nameKey(item.name) + '|' + canonicalUrl(item.url)));
-  return result.filter((item) => !dateOnly(item.start) || !item.url ||
+  return result.filter((item) => item.sessions || !dateOnly(item.start) || !item.url ||
     !timed.has(item.city + '|' + item.day + '|' + nameKey(item.name) + '|' + canonicalUrl(item.url)))
     .sort((a, b) => a.day.localeCompare(b.day) || (+new Date(a.start) - +new Date(b.start)) || a.name.localeCompare(b.name, 'nl-BE'));
 }
 
 export function scopeDates(items, { first, last }, { city = '', region = '', category = '' } = {}, catalogCities = {}) {
   return items.filter((item) => item.last >= first && item.day <= last &&
+    (!item.sessions || item.sessions.some(({ day }) => day >= first && day <= last)) &&
     (!city || item.city === city) && (!region || catalogCities[item.city]?.region === region) &&
     (!category || item.category === category));
 }
 
 export function eventsByDay(items, days) {
-  return new Map(days.map((day) => [day, items.filter((item) => item.day <= day && item.last >= day)]));
+  return new Map(days.map((day) => [day, items.filter((item) => item.sessions
+    ? item.sessions.some((session) => session.day === day) : item.day <= day && item.last >= day)]));
 }
 
-export function eventTime(item) {
+export function eventTime(item, selectedDay = '') {
   const time = (date) => clock.format(new Date(date));
+  if (item.sessions && (selectedDay || item.sessions.length === 1)) {
+    const sessions = selectedDay ? item.sessions.filter(({ day }) => day === selectedDay) : item.sessions;
+    return sessions.map(({ start, end }) => time(start) + '–' + time(end)).join(' en ') || 'Uur niet vermeld';
+  }
   const timedStart = !dateOnly(item.start);
   const timedEnd = item.end && !dateOnly(item.end);
   if (item.allDay) return item.day === item.last ? 'Hele dag' : 'Meerdere dagen · hele dag';
@@ -119,8 +152,9 @@ export function eventTime(item) {
       return labelDay(item.day) + ' ' + time(item.start) + ' – ' + labelDay(item.last) + ' ' + time(item.end);
     }
     const spans = labelDay(item.day) + ' t/m ' + labelDay(item.last);
-    return spans;
+    return spans + (item.sessions ? ' · kies een dag voor de uren' : '');
   }
+  if (item.sessions) return item.sessions.map(({ start, end }) => time(start) + '–' + time(end)).join(' en ');
   if (timedStart && timedEnd) return time(item.start) + '–' + time(item.end);
   if (timedStart) return 'Vanaf ' + time(item.start);
   return 'Uur niet vermeld';

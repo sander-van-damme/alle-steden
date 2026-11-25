@@ -13,10 +13,10 @@ const node = (tag, className = '', content = '') => {
 const addOption = (field, value, name) => field.append(new Option(name, value));
 const shortDay = new Intl.DateTimeFormat('nl-BE', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
-function eventCard(item, cities, selectedDay) {
+function eventCard(item, cities, selectedDay, month) {
   const article = node('article', 'calendar-event');
   article.dataset.calendarSource = item.source;
-  const date = item.day;
+  const date = item.sessions?.find(({ day }) => day.startsWith(month))?.day ?? item.day;
   const heading = node('h3');
   if (item.url) {
     const a = node('a', '', item.name);
@@ -30,7 +30,7 @@ function eventCard(item, cities, selectedDay) {
   const place = node('a', 'calendar-event-city', cities[item.city].name);
   place.href = '/steden/' + item.city + '/';
   const meta = node('p', 'calendar-event-meta');
-  meta.append(place, ' · ' + eventTime(item));
+  meta.append(place, ' · ' + eventTime(item, selectedDay));
   body.append(heading, meta);
   if (item.venue && item.venue !== cities[item.city].name) body.append(node('p', 'calendar-event-venue', item.venue));
   if (item.scheduleBased && !item.description) body.append(node('p', 'calendar-event-venue',
@@ -183,7 +183,7 @@ async function start() {
     find('calendar-status').textContent = statusText(live.coverage, liveCalendarSpan(span, today), selection.length, pending, scope);
     const itemList = find('calendar-events');
     if (selection.length) {
-      itemList.replaceChildren(...selection.slice(0, agendaLimit).map((item) => eventCard(item, byCity, selectedDay)));
+      itemList.replaceChildren(...selection.slice(0, agendaLimit).map((item) => eventCard(item, byCity, selectedDay, month)));
     } else {
       const panel = node('div', 'calendar-empty');
       if (!pending) panel.append(node('p', '', selectedDay ? 'Kies een andere dag of bekijk de hele maand.'

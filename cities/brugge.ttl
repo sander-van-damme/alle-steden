@@ -67,3 +67,16 @@ wd:Q1108949 a schema:Museum ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.20798 ; schema:longitude 3.22504 ] ;
     schema:url <https://id.erfgoed.net/erfgoedobjecten/29457> ;
     dcterms:source <https://id.erfgoed.net/erfgoedobjecten/29457> .
+
+# Aparte MAKERSmarkt binnen Wintergloed; gepubliceerde inlooptijden, geen vaste bezoekduur.
+<#makersmarkt-brugge-2026> a schema:SaleEvent ;
+    schema:name "Handmade in Brugge MAKERSmarkt"@nl ;
+    schema:description "Gratis toegang in de Jan Garemijnzaal, Markt 7."@nl ;
+    schema:location wd:Q12994 ;
+    schema:startDate "2026-12-18"^^xsd:date ;
+    schema:endDate "2026-12-20"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-18T16:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-18T20:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-19T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-19T18:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-20T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-20T18:00:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.visitbruges.be/nl/wintergloed/handmade-in-brugge-makersmarkt> ;
+    dcterms:source <https://www.visitbruges.be/nl/wintergloed/handmade-in-brugge-makersmarkt> .

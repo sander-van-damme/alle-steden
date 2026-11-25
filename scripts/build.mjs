@@ -135,6 +135,9 @@ function readCity(filename, turtle) {
         edition: isEdition(entity),
         start: text(entity, 'startDate'),
         end: text(entity, 'endDate'),
+        sessions: objects(entity, 'subEvent').filter(isEvent).map((session) => ({
+          start: text(session, 'startDate'), end: text(session, 'endDate'),
+        })),
         openingHours: labels(entity, 'openingHours').map((term) => term.value),
         specialHours: objects(entity, 'specialOpeningHoursSpecification').map((spec) => ({
           from: text(spec, 'validFrom'), through: text(spec, 'validThrough'),
@@ -219,7 +222,9 @@ const calendarCatalog = {
     ...(coordinates && { lat: Number(coordinates.latitude), lon: Number(coordinates.longitude) }),
   })),
   events: cities.flatMap(({ slug, events }) => events.filter(({ edition, start }) => edition && /^\d{4}-\d{2}-\d{2}(?:T.+)?$/.test(start ?? ''))
-    .map(({ id, name, description, category, start, end, url, source }) => ({ city: slug, id, name, description, category, start, end, url, source }))),
+    .map(({ id, name, description, category, start, end, url, source, sessions }) => ({
+      city: slug, id, name, description, category, start, end, url, source, ...(sessions.length && { sessions }),
+    }))),
 };
 
 const catalogCoverage = {
