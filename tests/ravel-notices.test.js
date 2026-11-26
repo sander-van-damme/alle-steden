@@ -74,7 +74,7 @@ test('the fixed edge integration reads only two bounded public projections and r
   const data=await readRavelNotices(async(url,init)=>{
     fetched.push(url);
     assert.equal(init.credentials,'omit');
-    assert.equal(init.redirect,'error');
+    assert.equal(init.redirect,'manual');
     assert.equal(init.signal.aborted,false);
     if (url === ravelNoticeSource.overview) return new Response(html(warning(title)),{headers:{'Content-Type':'text/html'}});
     const req = new URL(url);
@@ -88,6 +88,7 @@ test('the fixed edge integration reads only two bounded public projections and r
   assert.equal(data.items.length,1);
   assert.equal(fetched.length,2);
   await assert.rejects(readRavelNotices(()=>new Response(null,{status:502})),/Bron niet beschikbaar/);
+  await assert.rejects(readRavelNotices(()=>Response.redirect('https://example.com/')),/Bron niet beschikbaar/);
   await assert.rejects(readRavelNotices(()=>new Response('x'.repeat(300_001),{headers:{'Content-Type':'text/html'}})),/groot|niet beschikbaar/);
   for(const [suffix,method,status] of [['?url=https://example.com','GET',400],['?date=2026-11-26','GET',400],['','POST',405]]){
     const res=await onRequest({request:new Request('https://example.test'+ravelNoticePath+suffix,{method})});

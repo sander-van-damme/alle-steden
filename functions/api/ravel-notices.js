@@ -83,7 +83,9 @@ export function joinRavelNotices(html, map) {
 }
 
 async function boundedText(fetcher,url,type,maxBytes,signal) {
-  const result = await fetcher(url,{headers:{Accept:type},credentials:'omit',redirect:'error',signal});
+  // Workers supports manual (not Fetch's error mode). The non-2xx branch
+  // rejects every redirect without following its target.
+  const result = await fetcher(url,{headers:{Accept:type},credentials:'omit',redirect:'manual',signal});
   const reader = result.body?.getReader();
   try {
     const responseType = result.headers.get('content-type')?.split(';')[0].trim().toLowerCase();
