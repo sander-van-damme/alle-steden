@@ -60,3 +60,18 @@ wd:Q2742228 a schema:LandmarksOrHistoricalBuildings ;
     schema:startDate "2027-12-05"^^xsd:date ;
     schema:url <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> ;
     dcterms:source <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> .
+
+# Alleen de aangekondigde kerstconcerten, geen doorlopende of jaarlijkse openstelling.
+<#kerstbeiaard-2026> a schema:MusicEvent ;
+    schema:name "Kerstconcerten op de beiaard van Doornik"@nl, "Concert de carillon spécial Noël"@fr ;
+    schema:description "Luister buiten op de Grote Markt of in de tuin van het MuFIm. Je hoeft het belfort daarvoor niet binnen."@nl ;
+    schema:location wd:Q2742228 ;
+    schema:startDate "2026-12-10"^^xsd:date ;
+    schema:endDate "2026-12-24"^^xsd:date ;
+    schema:subEvent [ a schema:MusicEvent ; schema:startDate "2026-12-10T17:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:MusicEvent ; schema:startDate "2026-12-13T13:30:00+01:00"^^xsd:dateTime ],
+        [ a schema:MusicEvent ; schema:startDate "2026-12-20T13:30:00+01:00"^^xsd:dateTime ],
+        [ a schema:MusicEvent ; schema:startDate "2026-12-24T12:00:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.visittournai.be/agenda/concert-de-carillon-special-noel-tournai-24decembre2026/> ;
+    dcterms:source <https://www.visittournai.be/agenda/concert-de-carillon-special-noel-tournai-24decembre2026/>,
+        <https://www.tournai.be/actualites/tournai-dhiver-2026-decouvrez-le-programme-des-festivites> .

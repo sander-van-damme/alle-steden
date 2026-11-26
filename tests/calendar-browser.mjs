@@ -138,8 +138,9 @@ try {
   await phone.locator('[data-day="2026-12-20"]').tap();
   assert.match(await phone.locator('#calendar-agenda-title').innerText(), /20 december/);
   await phone.locator('#calendar-category').selectOption('Muziek');
-  assert.equal(await phone.locator('.calendar-event').count(), 1);
-  assert.match(await phone.locator('.calendar-event').innerText(), /Kerstconcert/);
+  assert.deepEqual((await phone.locator('.calendar-event h3').allTextContents()).sort(), [
+    'Kerstconcert in Sint-Gillis', 'Kerstconcerten op de beiaard van Doornik',
+  ]);
   assert.equal(await phone.evaluate(() => document.documentElement.scrollWidth), 390);
   await phone.goto(origin + '/kalender/?maand=2027-05');
   await loaded(phone);
@@ -324,6 +325,26 @@ try {
   assert.equal(await expo.count(),0);
   assert.ok(!plannerCatalogue.flatMap(({events})=>events).some(({id})=>/makersmarkt-brugge|wintersfeer-damme/u.test(id)));
   assert.equal(await phone.evaluate(() => document.documentElement.scrollWidth),390);
+
+  await phone.goto(origin + '/kalender/?stad=doornik&maand=2026-12');
+  await loaded(phone);
+  await phone.locator('#calendar-category').selectOption('Muziek');
+  const carillon = phone.locator('.calendar-event').filter({ hasText: 'Kerstconcerten op de beiaard van Doornik' });
+  assert.equal(await carillon.count(), 1);
+  assert.match(await carillon.innerText(), /kies een dag voor de uren.*Grote Markt/su);
+  for (const [day, start] of [['10','17:00'],['13','13:30'],['20','13:30'],['24','12:00']]) {
+    await phone.locator('[data-day="2026-12-' + day + '"]').tap();
+    assert.equal(await carillon.count(), 1);
+    assert.equal(await carillon.locator('.calendar-event-meta').textContent(), 'Doornik · Start om ' + start);
+  }
+  for (const day of ['11','14','25']) {
+    await phone.locator('[data-day="2026-12-' + day + '"]').tap();
+    assert.equal(await carillon.count(), 0, 'No open-ended, daily or renewed edition.');
+  }
+  const carillonData = museumCatalogue.events.find(({ id }) => id.endsWith('#kerstbeiaard-2026'));
+  assert.equal(carillonData.sessions.length, 4);
+  assert.ok(carillonData.sessions.every(({ end }) => end === undefined));
+  assert.ok(!plannerCatalogue.flatMap(({events})=>events).some(({id})=>id.endsWith('#kerstbeiaard-2026')));
 
   // The mirror will begin returning the same editions when they are underway.
   // Keep the organizer's visit sessions, not the mirror's continuous date range.

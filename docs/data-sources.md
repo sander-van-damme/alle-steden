@@ -116,6 +116,11 @@ Vooraf hadden de drie gefilterde productieweergaven geen kaart voor deze edities
 - Deze toevoegingen gebruiken afzonderlijke `schema:subEvent`-tijden uit de officiële edities, geen gekopieerd programma of media. De maand toont één kaart per editie. Een gekozen dag toont alleen de daarvoor gepubliceerde uren, geen veronderstelde uren tussen sessies. De data stellen geen bezoekduur vast en zijn geen automatische vaste stops in de fietsplanner.
 - Vooraf bevatte de live kalender in december 3 Brugse kaarten en geen voor Damme. Idées de sorties, ADEPS en Randonneurs antwoordden zonder overlap. De gekoppelde UiT-productiebron was niet geconfigureerd. Beide nieuwe edities vullen dus afzonderlijke gaten; de zestien expo-uren zijn niet zestien nieuwe evenementen.
 
+## Kerstbeiaard Doornik · 26 november 2026
+
+- [Visit Tournai](https://www.visittournai.be/agenda/concert-de-carillon-special-noel-tournai-24decembre2026/) bevestigt op 10 december om 17.00 uur, op 13 en 20 december om 13.30 uur en op 24 december om 12.00 uur. De [stad](https://www.tournai.be/actualites/tournai-dhiver-2026-decouvrez-le-programme-des-festivites) bevestigt de concerten binnen het winterprogramma. Luisteren kan buiten, ook zonder het belfort te betreden. Geen einduren, opening van de toren, jaarlijks patroon of gegarandeerd fietsbezoek afgeleid.
+- Alleen één editie met vier startmomenten in Turtle. Geen gekopieerde programmatekst, media of kalender; geen gedocumenteerde herbruikbare Visit Tournai-agendafeed gevonden. In de voorafgaande productiesteekproef stonden in december acht Doornikse kaarten, waaronder de aparte kerstmarkt. De beiaardconcerten stonden er op geen van de vier datums tussen.
+
 ## Brocantes Luik · 25 november 2026
 
 - De [gemeentelijke API-metadata](https://www.odwb.be/api/explore/v2.1/catalog/datasets/brocantes) noemt Ville de Liège en CC BY 4.0. Lees alleen ID, titel, straat, geo-/gemeentevelden, rooster en officiële URL; geen beschrijvingen, beelden of contactgegevens.
