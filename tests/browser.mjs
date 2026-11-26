@@ -271,6 +271,43 @@ try {
   assert.equal(await historyHouse.locator('[data-hours]').count(),0);
   assert.equal(historiaRequests,2);
 
+  let diestRequests=0, diestLimited=false;
+  const museumHours={hours:'di, do en vr 11:00–17:00 · za–zo 13:00–18:00',
+    hoursNote:'Gesloten op ma en wo, nieuwjaarsdag, tijdens de carnavalstoet, op paaszondag en Kerstmis.'};
+  await routePhone.route(base+'/api/visit-diest',route=>{
+    diestRequests++;
+    return route.fulfill({json:{places:{hofstadt:museumHours,...(!diestLimited&&{infokantoor:{
+      hours:'apr–sep di–zo en feestdagen: 10:00–12:00 en 13:00–17:00 · okt–mrt di–za buiten feestdagen: 10:00–12:00 en 13:00–17:00',
+      hoursNote:'Maandag gesloten.',
+    }})}}});
+  });
+  await routePhone.route('https://query.wikidata.org/sparql?**',route=>json(route,{results:{bindings:[{
+    item:{value:'http://www.wikidata.org/entity/Q63120118'},name:{value:'Stadsmuseum De Hofstadt'},
+    site:{value:'http://www.toerismediest.be/'},
+  }]}}));
+  await routePhone.route('**/api/city-live?city=diest&source=flanders',route=>json(route,{items:[{
+    id:'http://linked.toerismevlaanderen.be/id/tourist-attractions/2e0c5530-ea78-11ef-bcf2-d5dfdc1cec94',
+    name:'Stadsmuseum De Hofstadt',source:'flanders',hours:'incorrect claimed hours',website:'https://www.diest.be/stadsmuseum-de-hofstadt',
+  }]}));
+  assert.equal(diestRequests,0);
+  await routePhone.goto(base+'/steden/diest/');
+  const hofstadt=routePhone.locator('[data-live-places] li')
+    .filter({has:routePhone.getByRole('heading',{name:'Stadsmuseum De Hofstadt',exact:true})});
+  const desk=routePhone.locator('[data-live-places] li')
+    .filter({has:routePhone.getByRole('heading',{name:'Infokantoor Visit Diest',exact:true})});
+  await hofstadt.locator('[data-hours]').waitFor();
+  assert.equal(await hofstadt.count(),1);
+  assert.match(await hofstadt.innerText(),/13:00–18:00[\s\S]*paaszondag/u);
+  assert.doesNotMatch(await hofstadt.innerText(),/incorrect claimed hours/u);
+  assert.match(await desk.innerText(),/okt–mrt di–za buiten feestdagen: 10:00–12:00 en 13:00–17:00/u);
+  assert.equal(await routePhone.locator('[data-live-events]').getByText('Stadsmuseum De Hofstadt',{exact:true}).count(),0);
+  diestLimited=true;
+  await routePhone.reload();
+  await desk.waitFor();
+  assert.equal(await desk.locator('[data-hours]').count(),0);
+  assert.equal(await hofstadt.locator('[data-hours]').count(),1);
+  assert.equal(diestRequests,2);
+
   const fallback = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   pages.push(fallback);
   await fallback.goto(base + city);

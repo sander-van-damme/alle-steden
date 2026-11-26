@@ -8,6 +8,8 @@ const gent = 'https://data.stad.gent';
 const ccby = 'https://creativecommons.org/licenses/by/4.0/';
 
 export const sources = {
+  visitDiest: { label: 'Visit Diest · Stad Diest', href: 'https://visitdiest.be/nl/plan-je-bezoek/infokantoor-visit-diest',
+    license: 'https://visitdiest.be/nl/algemene-voorwaarden' },
   historiaVisit: { label: 'Europees Parlement · Huis van de Europese geschiedenis',
     href: 'https://historia.europa.eu/en/visit', visitorHref: 'https://historia.europa.eu/nl/bezoek',
     license: 'https://historia.europa.eu/en/legal-notice' },

@@ -3,6 +3,7 @@ import { getBrusselsPlaces, getFlemishHeritage, getJson, getWallonia, getWikidat
 
 import { fwbMuseumQuery } from './fwb-museums.js';
 import { getHistoriaVisit, historiaId, isHistoriaVenue } from './historia-visit.js';
+import { getVisitDiest, visitDiestIdentity } from './visit-diest.js';
 
 const ready = (items) => ({ items });
 export const placeViewLimit = (city, expanded = true) =>
@@ -43,7 +44,9 @@ export function placeProviders(city, { expanded = true, origin = globalThis.loca
   } }, ...(expanded && city.slug === 'marche-en-famenne' ? ['marcheHeritage','marcheArt'].map((key) => ({
     key, added: true, run: async () => (await loadMarche()).find((entry) => entry.key === key).run(),
   })) : []), ...museumSource, ...outdoorArt, ...publicParks];
-  return [wikidata, { key: 'flanders', run: async () => {
+  return [...(expanded && city.slug==='diest' && origin ? [
+    {key:'visitDiest',added:true,run:()=>getVisitDiest({origin,...options})},
+  ] : []), wikidata, { key: 'flanders', run: async () => {
     if (!origin) throw new Error('Herkomst ontbreekt');
     const url = new URL('/api/city-live', origin);
     url.searchParams.set('city', city.slug);
@@ -118,10 +121,19 @@ function unifyMuseumIdentities(city, records) {
 }
 export function displayedPlaces(city, stored, groups, expanded = true) {
   const records = [...stored, ...interleavePlaceSources(groups)];
+  const diest = expanded && city.slug==='diest' && new Map(records.filter(item=>item.source==='visitDiest' && visitDiestIdentity(item))
+    .map(item=>[visitDiestIdentity(item),item]));
+  const exactDiest = item => diest ? diest.get(visitDiestIdentity(item)) : undefined;
   const historia = expanded && city.slug==='brussel' && records.find(item=>item.source==='historiaVisit');
-  const trusted = historia ? records.map(item=>item!==historia && isHistoriaVenue(item)
-    ? {...item,id:historiaId,hours:undefined} : item) : records;
-  return mergePlaces(unifyMuseumIdentities(city, trusted), placeViewLimit(city, expanded)).map(item =>
-    historia && isHistoriaVenue(item) ? {...item,website:historia.website,
-      hours:historia.hours,hoursNote:historia.hoursNote,hoursSource:'historiaVisit'} : item);
+  const consolidated = diest ? records.map(item=>{
+    const primary=exactDiest(item);
+    return primary && primary!==item ? {...item,id:primary.id,hours:undefined} : item;
+  }) : records;
+  const trusted = historia ? consolidated.map(item=>item!==historia && isHistoriaVenue(item)
+    ? {...item,id:historiaId,hours:undefined} : item) : consolidated;
+  return mergePlaces(unifyMuseumIdentities(city, trusted), placeViewLimit(city, expanded)).map(item=>{
+    const authority=exactDiest(item) ?? (historia && isHistoriaVenue(item) ? historia : undefined);
+    return authority ? {...item,website:authority.website,hours:authority.hours,hoursNote:authority.hoursNote,
+      hoursSource:authority.source} : item;
+  });
 }

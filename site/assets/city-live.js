@@ -78,13 +78,14 @@ function appendVisitNotice(card, item) {
 
 function appendHours(card, item) {
   if (appendVisitNotice(card, item)) return;
-  if (item.hoursSource==='historiaVisit') {
-    card.querySelectorAll('[data-hours], [data-historia-note], .entry-meta:has(strong)').forEach(node=>node.remove());
+  const officialHours = ['historiaVisit','visitDiest'].includes(item.hoursSource);
+  if (officialHours) {
+    card.querySelectorAll('[data-hours], [data-official-hours-note], .entry-meta:has(strong)').forEach(node=>node.remove());
   }
   if (!item.hours || card.querySelector('[data-hours], .entry-meta strong')) return;
   const row = el('p', '', 'entry-meta');
   row.dataset.hours = '';
-  row.append(el('strong', item.hoursSource==='historiaVisit'?'Gewone openingsuren: ':'Openingsuren: '), item.hours);
+  row.append(el('strong', officialHours?'Gewone openingsuren: ':'Openingsuren: '), item.hours);
   if (item.hoursSource === 'osm') {
     row.append(' · ', link('Bekijk op de kaart', item.hoursUrl), ' · ',
       link('© OpenStreetMap-bijdragers (ODbL)', sources.osm.href));
@@ -92,8 +93,8 @@ function appendHours(card, item) {
   card.append(row);
   if (item.hoursNote) {
     const note = el('p',item.hoursNote,'entry-meta');
-    note.dataset.historiaNote = '';
-    if (item.card) note.append(' ',link(sources.historiaVisit.label,sources.historiaVisit.visitorHref));
+    note.dataset.officialHoursNote = '';
+    if (item.card && officialHours) note.append(' ',link(sources[item.hoursSource].label,item.website));
     card.append(note);
   }
 }
@@ -286,7 +287,7 @@ function enhanceSection(section, city, type) {
     }));
     if (revision !== requestId || type !== 'places') return;
     render(true);
-    extraHours = await getOsmHours(mappedPlaces.filter((item) => item.category !== 'Buitenkunst' && !isHistoriaVenue(item) && !visitNotice(item)));
+    extraHours = await getOsmHours(mappedPlaces.filter((item) => item.category !== 'Buitenkunst' && !isHistoriaVenue(item) && item.hoursSource!=='visitDiest' && !visitNotice(item)));
     if (revision !== requestId || !extraHours.size) return;
     render();
   };
