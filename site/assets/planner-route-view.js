@@ -1,4 +1,6 @@
 import { ravelNoticeSource } from './ravel-source.js';
+import { regions } from './planner-regions.js';
+import { dateValue, localToday } from './sources.js';
 
 const svgNs = 'http://www.w3.org/2000/svg';
 const tileUrl = 'https://tile.openstreetmap.org';
@@ -52,7 +54,8 @@ export function createRouteGpx(trip) {
   const legs = legsFor(trip);
   if (!routeParts(trip.route).length || trip.returnRoute && !routeParts(trip.returnRoute).length) return null;
   const name = (trip.cities ?? []).map((c) => c.name).filter(Boolean).join(' → ') || 'Fietsroute';
-  const waypoints = (trip.edited === true || trip.exactStops === true) ? (trip.visits ?? []).flatMap((visit) => {
+  const waypoints = (trip.edited === true || trip.exactStops === true || trip.distanceDriven === true) ? (trip.visits ?? []).flatMap((visit) => {
+    if (visit.kind === 'through') return [];
     const p = stopPoint(visit);
     return p && visit.name ? [`<wpt lat="${p[1].toFixed(7)}" lon="${p[0].toFixed(7)}"><name>${xml(visit.name)}</name></wpt>`] : [];
   }) : [];
@@ -278,7 +281,14 @@ function stopPoint(place) {
 function routeMarkers(trip, outbound) {
   const selected = trip.selectedPoi ?? null;
   let cities;
-  if (trip.edited === true || trip.exactStops === true) {
+  if (trip.distanceDriven === true) {
+    const start=outbound[0].coordinates[0], end=outbound.at(-1).coordinates.at(-1);
+    cities=[{ point:start,name:trip.startCity?.name?'Vertrek · '+trip.startCity.name:'Vertrek',icon:'S',type:'city' }];
+    if (Math.abs(start[0]-end[0])+Math.abs(start[1]-end[1])>.00005) {
+      const role=trip.returnRoute?'Keerpunt':'Aankomst';
+      cities.push({point:end,name:trip.destinationCity?.name?role+' · '+trip.destinationCity.name:role,icon:'E',type:'city'});
+    }
+  } else if (trip.edited === true || trip.exactStops === true) {
     const start = stopPoint(trip.startCity ?? trip.cities?.[0]) ?? outbound[0].coordinates[0];
     cities = [{ point: start, name: 'Vertrek', icon: 'S', type: 'city' }];
   } else {
@@ -288,10 +298,12 @@ function routeMarkers(trip, outbound) {
       return { point: validPoint(anchor) ? anchor : stopPoint(city), name: city.name, icon: String(i + 1), type: 'city' };
     });
   }
-  const visits = (trip.visits ?? []).slice(0, 8);
-  const visitMarkers = visits.map((visit, i) => ({
-    point: stopPoint(visit), name: visit.name, icon: 'B' + (i + 1), type: 'visit',
-  }));
+  const visits=(trip.visits??[]).filter(({kind})=>kind!=='through').slice(0,12);
+  const byKind={pause:0,visit:0};
+  const visitMarkers=visits.map((visit)=>{
+    const type=visit.kind==='pause'?'pause':'visit';
+    return {point:stopPoint(visit),name:visit.name,icon:(type==='pause'?'R':'B')+(++byKind[type]),type};
+  });
   const pois = (trip.pois?.items ?? []).slice(0, 12);
   if (selected && !pois.some((poi) => poi === selected || selected.id && selected.id === poi.id)) pois.unshift(selected);
   const poiMarkers = pois.filter((poi) => !visits.some((visit) => poi.id && poi.id === visit.id
@@ -307,7 +319,7 @@ function routeMarkers(trip, outbound) {
   return [...cities, ...visitMarkers, ...poiMarkers, ...services].filter((marker) => marker.point && marker.name);
 }
 
-function createMap(doc, outbound, inbound, markers, label, edited) {
+function createMap(doc, outbound, inbound, markers, label, edited, compact = false) {
   const win = doc.defaultView;
   const figure = node(doc, 'figure', 'route-map');
   const viewport = node(doc, 'div', 'route-map-viewport');
@@ -328,6 +340,8 @@ function createMap(doc, outbound, inbound, markers, label, edited) {
   live.setAttribute('role', 'status');
   const caption = node(doc, 'figcaption', 'route-map-caption');
   const markerList = node(doc, 'ul', 'route-map-marker-list');
+  const markerDetails = compact ? node(doc, 'details', 'route-map-marker-details') : null;
+  if (markerDetails) markerDetails.append(node(doc, 'summary', '', 'Kaartpunten'), markerList);
   const entries = new Map();
   const projected = [...outbound, ...inbound].map((leg) => leg.coordinates.map(project));
   let west = Infinity, east = -Infinity, north = Infinity, south = -Infinity;
@@ -354,7 +368,9 @@ function createMap(doc, outbound, inbound, markers, label, edited) {
   let width = 0, height = 0, center = [...origin];
   let zoom = 10, fitted = true, enabled = false, renderId = 0, selected = null;
   const drag = new Map();
-  const markerNodes = markers.map((marker) => {
+  let markerNodes=[];
+  const markerKey=({type,point,name})=>[type,...point,name].join('\u001f');
+  function makeMarker(marker) {
     const mark = svg(doc, 'g', { class: `route-pin route-pin-${marker.type}`, 'data-route-marker': marker.icon });
     mark.append(svg(doc, 'circle', { r: marker.type === 'city' ? 12 : 10 }),
       svg(doc, 'text', { 'text-anchor': 'middle', y: 4 }, marker.icon));
@@ -373,7 +389,7 @@ function createMap(doc, outbound, inbound, markers, label, edited) {
     item.append(markerButton);
     markerList.append(item);
     return { node: mark, marker, button: markerButton, projected: project(marker.point) };
-  });
+  }
 
   const zoomIn = button(doc, '+', () => adjustZoom(1), 'Inzoomen');
   const zoomOut = button(doc, '−', () => adjustZoom(-1), 'Uitzoomen');
@@ -381,14 +397,25 @@ function createMap(doc, outbound, inbound, markers, label, edited) {
   controls.append(zoomIn, zoomOut, reset);
   viewport.append(tiles, overlay);
   frame.append(viewport, controls, credit, tileStatus);
-  caption.append(node(doc, 'p', '', inbound.length ? 'Volle lijn: heen · gestreepte lijn: terug' : 'Volle lijn: fietsroute'));
-  if (markers.some(({type}) => type === 'visit')) caption.append(node(doc, 'p', '',
-    edited ? 'B = geplande bezoekstop' : 'B = bezoeklocatie; het fietstraject toont de rit tussen de stadsankers.'));
-  if (markers.some(({type}) => type === 'poi')) caption.append(node(doc, 'p', '', 'P = mogelijke stop; niet automatisch in de fietsroute.'));
-  if (markers.some(({type}) => type.startsWith('service-'))) caption.append(node(doc, 'p', '',
-    'T = toilet · F = fietshulp. Deze punten zijn geen geplande stops.'));
-  if (markerList.children.length) caption.append(markerList);
   figure.append(frame, caption, live);
+  function setMarkers(next) {
+    const previous=selected?markerKey(selected):null;
+    const focused=markerNodes.find(({button})=>doc.activeElement===button)?.marker;
+    for (const {node:pin} of markerNodes) pin.remove();
+    markerList.replaceChildren();
+    markerNodes=next.map(makeMarker);
+    caption.replaceChildren(node(doc,'p','',inbound.length?'Volle lijn: heen · gestreepte lijn: terug':'Volle lijn: fietsroute'));
+    if (next.some(({type})=>type==='visit')) caption.append(node(doc,'p','',
+      edited?'B = geplande bezoekstop':'B = bezoeklocatie; het fietstraject toont de rit tussen de stadsankers.'));
+    if (next.some(({type})=>type==='pause')) caption.append(node(doc,'p','','R = pauze'));
+    if (next.some(({type})=>type==='poi')) caption.append(node(doc,'p','','P = mogelijke stop'));
+    if (next.some(({type})=>type.startsWith('service-'))) caption.append(node(doc,'p','','T = toilet · F = fietshulp'));
+    if (markerList.children.length) caption.append(markerDetails ?? markerList);
+    selectMarker(previous?next.find(marker=>markerKey(marker)===previous)??null:null);
+    if (focused) (markerNodes.find(({marker})=>markerKey(marker)===markerKey(focused))?.button??viewport).focus({preventScroll:true});
+    schedule();
+  }
+  setMarkers(markers);
 
   function selectMarker(marker) {
     selected = marker;
@@ -547,150 +574,154 @@ function createMap(doc, outbound, inbound, markers, label, edited) {
     if (renderId) win.cancelAnimationFrame(renderId);
     entries.clear();
   }
-  return { figure, dispose };
+  return { figure, dispose, setMarkers };
 }
 
-function forestNotices(doc, trip, outbound, inbound) {
-  if (!trip.cities?.some(({ region }) => region === 'Wallonië') || !/^\d{4}-\d{2}-\d{2}$/.test(trip.date ?? '')) return null;
-  const area = node(doc, 'section', 'route-insight route-forest-notices');
-  area.append(node(doc, 'h5', '', 'Waalse bosmeldingen'));
-  const sources = node(doc, 'p', 'route-view-hint');
-  const mapLink = node(doc, 'a', '', 'Officiële kaart ChasseOnWeb');
-  mapLink.href = 'https://www.chasseonweb.be/';
-  sources.append('Controleer de officiële kaart vóór vertrek en volg de borden ter plaatse. ', mapLink);
-  const control = node(doc, 'button', 'button secondary', 'Controleer jachtmeldingen');
-  control.type = 'button';
-  const status = node(doc, 'p', 'route-view-hint');
-  status.setAttribute('role', 'status');
-  const credit = node(doc, 'p', 'route-view-hint');
-  const stamp = new Date(trip.date + 'T12:00:00Z');
-  if (!Number.isFinite(+stamp)) return null;
-  const date = new Intl.DateTimeFormat('nl-BE', { day: 'numeric', month: 'long', timeZone: 'UTC' })
-    .format(stamp);
-  area.append(sources, control, status, credit);
-  const run = new AbortController();
-  let loading = false;
-  control.addEventListener('click', async () => {
-    if (loading || run.signal.aborted) return;
-    loading = true;
-    control.setAttribute('aria-disabled', 'true');
-    status.textContent = 'Meldingen voor ' + date + ' opzoeken…';
-    credit.replaceChildren();
-    try {
-      if (trip.returnRoute && !inbound.length) throw new RangeError('Geen volledig traject.');
-      const { findForestNotices, forestNoticeSource } = await import('./route-forest-notices.js');
-      if (run.signal.aborted || !area.isConnected) return;
-      const result = await findForestNotices([...outbound, ...inbound], trip.date, { signal: run.signal });
-      if (run.signal.aborted || !area.isConnected) return;
-      const { state, count, kinds = [] } = result;
-      if (state === 'outside') status.textContent = 'Geen broncontrole beschikbaar voor ' + date + '.';
-      else if (count) status.textContent = date + ': de route raakt ' + count + (count === 1 ? ' jachtterrein' : ' jachtterreinen')
-        + ' waarvoor een aanvraag tot tijdelijke afsluiting van boswegen is goedgekeurd.'
-        + (kinds.length ? ' ' + kinds.join(', ') + '.' : '')
-        + ' De melding vermeldt niet welk pad op jouw route afgesloten is.'
-        + (state === 'limited' ? ' De broncontrole was onvolledig.' : '');
-      else status.textContent = state === 'limited' ? 'Voor ' + date + ' was alleen een onvolledige controle mogelijk.'
-        : 'Voor ' + date + ' geen overlappende meldingen in deze bron gevonden. Afsluitingen kunnen ontbreken.';
-      if (state !== 'outside') {
-        const source = node(doc, 'a', '', forestNoticeSource.credit);
-        source.href = forestNoticeSource.metadata;
-        const license = node(doc, 'a', '', 'CC BY 4.0');
-        license.href = forestNoticeSource.license;
-        credit.append(source, ' · ', license);
-      }
-    } catch (error) {
-      if (run.signal.aborted || !area.isConnected) return;
-      status.textContent = error instanceof RangeError ? 'Deze route kon niet volledig worden gecontroleerd.'
-        : 'De bron voor bosmeldingen is niet bereikbaar. Er is geen controle uitgevoerd.';
-    } finally {
-      loading = false;
-      control.removeAttribute('aria-disabled');
+const noticeDates = new Intl.DateTimeFormat('nl-BE', { day:'numeric', month:'long', timeZone:'UTC' });
+const noticeDay = day => noticeDates.format(new Date(day + 'T12:00:00Z'));
+const box = ([x,y],[a,b]) => [Math.min(x,a),Math.min(y,b),Math.max(x,a),Math.max(y,b)];
+const boxesTouch = (a,b) => a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3];
+const turn = (a,b,c) => (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+const edgesTouch = (a,b,c,d) => boxesTouch(box(a,b),box(c,d)) &&
+  turn(a,b,c)*turn(a,b,d) <= 0 && turn(c,d,a)*turn(c,d,b) <= 0;
+const walloonRings = regions.find(({name})=>name==='Wallonië')?.polygons.map(([ring]) => ({
+  ring, bounds:ring.reduce(([w,s,e,n],[a,b])=>[Math.min(w,a),Math.min(s,b),Math.max(e,a),Math.max(n,b)],
+    [Infinity,Infinity,-Infinity,-Infinity]),
+})) ?? [];
+
+function ringContains(ring,[x,y]) {
+  let inside = false;
+  for (let i=1;i<ring.length;i++) {
+    const [a,b] = ring[i-1], [c,d] = ring[i];
+    if ((b>y)!==(d>y) && x < (c-a)*(y-b)/(d-b)+a) inside = !inside;
+  }
+  return inside;
+}
+
+// No end-point guess and no external boundary call: even legs with both ends
+// outside Wallonia are considered if their actual track crosses the region.
+export function relevantWalloonRoute(legs) {
+  return walloonRings.some(({ring,bounds})=>legs.some(({coordinates})=>{
+    const first = coordinates[0];
+    if (boxesTouch(box(first,first),bounds) && ringContains(ring,first)) return true;
+    for (let i=1;i<coordinates.length;i++) {
+      const a=coordinates[i-1], b=coordinates[i];
+      if (!boxesTouch(box(a,b),bounds)) continue;
+      if (ring.some((c,j)=>j && edgesTouch(a,b,c,ring[j-1]))) return true;
     }
-  });
-  return { area, close: () => run.abort() };
+    return false;
+  }));
 }
 
-function ravelNotices(doc, trip, outbound, inbound) {
-  if (!trip.cities?.some(({ region }) => region === 'Wallonië') || !/^\d{4}-\d{2}-\d{2}$/.test(trip.date ?? '')) return null;
-  const area = node(doc, 'section', 'route-insight route-ravel-notices');
-  area.append(node(doc, 'h5', '', 'RAVeL-meldingen'));
-  const hint = node(doc, 'p', 'route-view-hint');
-  const overview = node(doc, 'a', '', 'Officiële RAVeL-meldingen en omleidingen');
-  overview.href = ravelNoticeSource.overview;
-  hint.append('Controleer de actuele omleidingen vóór vertrek en volg de borden ter plaatse. ', overview);
-  const control = node(doc, 'button', 'button secondary', 'Zoek meldingen nabij de route');
-  control.type = 'button';
-  const status = node(doc, 'p', 'route-view-hint');
-  status.setAttribute('role','status');
-  const list = node(doc, 'ul', 'route-ravel-list');
-  list.hidden = true;
-  const credit = node(doc, 'p', 'route-view-hint');
-  area.append(hint, control, status, list, credit);
-  const format = new Intl.DateTimeFormat('nl-BE', {day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
-  const dateLabel = (day) => format.format(new Date(day+'T12:00:00Z'));
-  const run = new AbortController();
-  let pending = false;
-  control.addEventListener('click',async()=>{
-    if (pending || run.signal.aborted) return;
-    pending = true;
-    control.setAttribute('aria-disabled','true');
-    status.textContent = 'RAVeL-meldingen opzoeken…';
-    list.hidden = true;
-    list.replaceChildren();
-    credit.replaceChildren();
-    try {
-      if (trip.returnRoute && !inbound.length) throw new RangeError('Geen volledig traject');
-      const {findRavelNotices} = await import('./route-ravel-notices.js');
-      if (run.signal.aborted || !area.isConnected) return;
-      const result = await findRavelNotices([...outbound,...inbound],trip.date,{ signal:run.signal });
-      if (run.signal.aborted || !area.isConnected) return;
-      status.textContent = result.count
-        ? (result.count === 1 ? 'Eén gepubliceerde melding' : result.count + ' gepubliceerde meldingen')
-          + ' nabij deze route. De door de bron geplande periode omvat ' + dateLabel(trip.date)
-          + '. Dat zegt niet of jouw traject op die dag open of dicht is.'
-        : 'Geen overeenkomende meldingen nabij deze route gevonden voor ' + dateLabel(trip.date)
-          + '. Meldingen of afsluitingen kunnen ontbreken.';
-      if (result.limited) status.append(' De controle was onvolledig.');
-      if (result.count > result.items.length) status.append(' De dichtstbijzijnde meldingen staan hieronder.');
-      for (const item of result.items) {
-        const li = node(doc, 'li');
-        const title = node(doc, 'a', '', item.name);
-        title.href = item.url;
-        title.lang = 'fr';
-        const type = item.kind === 'CHT' ? 'Werken' : 'Incident';
-        li.append(title, node(doc, 'span', '', type + ' · gemeld van ' + dateLabel(item.from)
-          + ' tot ' + dateLabel(item.through) + ' (voorziene einddatum)'));
-        list.append(li);
-      }
-      list.hidden = !result.items.length;
-      const source = node(doc, 'a', '', ravelNoticeSource.credit);
-      source.href = ravelNoticeSource.metadata;
-      const licence = node(doc, 'a', '', 'CC BY 4.0');
-      licence.href = ravelNoticeSource.license;
-      credit.append(source,' · ',licence,' · selectie op datum en afstand (ongeveer 150 m).');
-    } catch (error) {
-      if (run.signal.aborted || !area.isConnected) return;
-      status.textContent = error instanceof RangeError ? 'Deze route kon niet volledig worden gecontroleerd.'
-        : 'De bron voor RAVeL-meldingen is niet bereikbaar. Er is geen controle uitgevoerd.';
-    } finally {
-      pending = false;
-      control.removeAttribute('aria-disabled');
+const forestMap = {href:'https://www.chasseonweb.be/',label:'ChasseOnWeb'};
+const ravelMap = {href:ravelNoticeSource.overview,label:'RAVeL'};
+
+function noticeLink(doc,href,text) {
+  const a=node(doc,'a','',text);
+  a.href=href;
+  return a;
+}
+function noticeSourceLinks(doc,source,map) {
+  const p=node(doc,'p','route-notice-credit');
+  const credit=noticeLink(doc,source.metadata, map===forestMap?'SPW · DNF':'SPW');
+  credit.title=source.credit;
+  p.append(noticeLink(doc,map.href,map.label),' · ',credit,' · ',noticeLink(doc,source.license,'CC BY 4.0'));
+  return p;
+}
+function forestMatch(doc,result,source,date) {
+  const row=node(doc,'li','route-forest-notices');
+  row.append(node(doc,'strong','',result.count===1?'Eén jachtterrein':result.count+' jachtterreinen'),
+    node(doc,'p','','De route raakt op '+noticeDay(date)+' '+(result.count===1?'een terrein':'terreinen')+
+      ' met goedgekeurde aanvragen voor tijdelijke afsluiting van boswegen. Welke paden eventueel dicht zijn, staat er niet bij.'),
+    noticeSourceLinks(doc,source,forestMap));
+  return row;
+}
+function ravelMatch(doc,result) {
+  const row=node(doc,'li','route-ravel-notices');
+  row.append(node(doc,'strong','',result.count===1?'Eén RAVeL-melding nabij de route':result.count+' RAVeL-meldingen nabij de route'));
+  const list=node(doc,'ul','route-ravel-list');
+  for (const item of result.items) {
+    const li=node(doc,'li');
+    const a=noticeLink(doc,item.url,item.name);
+    a.lang='fr';
+    li.append(a,node(doc,'span','',(item.kind==='CHT'?'Werken':'Incident')+' · '+noticeDay(item.from)+'–'+noticeDay(item.through)+' (voorzien)'));
+    list.append(li);
+  }
+  row.append(list,noticeSourceLinks(doc,ravelNoticeSource,ravelMap));
+  return row;
+}
+
+export function renderRouteNotices(trip,{document:doc=globalThis.document}={}) {
+  const outbound=routeParts(trip.route), inbound=routeParts(trip.returnRoute);
+  const legs=[...outbound,...inbound], day=trip.date;
+  if (!doc || !/^\d{4}-\d{2}-\d{2}$/.test(day) || !dateValue(day) || day<localToday() ||
+      !outbound.length || (trip.returnRoute && !inbound.length) || !relevantWalloonRoute(legs)) return null;
+  const area=node(doc,'div','route-notices');
+  const matches=node(doc,'ul','route-notice-matches');
+  const footer=node(doc,'p','route-notice-foot');
+  const run=new AbortController();
+  let started=false;
+  matches.hidden=footer.hidden=true;
+  area.setAttribute('aria-live','polite');
+  area.setAttribute('aria-atomic','true');
+  area.append(matches,footer);
+  const checkConnected=()=>{
+    run.signal.throwIfAborted();
+    if (!area.isConnected) throw new DOMException('Route verwijderd','AbortError');
+  };
+  area.startRouteNotices=async()=>{
+    if (started || run.signal.aborted || !area.isConnected) return;
+    started=true;
+    const [forest,ravel]=await Promise.allSettled([
+      import('./route-forest-notices.js').then(async module=>{
+        checkConnected();
+        return {result:await module.findForestNotices(legs,day,{signal:run.signal}),source:module.forestNoticeSource};
+      }),
+      import('./route-ravel-notices.js').then(module=>{
+        checkConnected();
+        return module.findRavelNotices(legs,day,{signal:run.signal});
+      }),
+    ]);
+    if (run.signal.aborted || !area.isConnected) return;
+    const missing=[];
+    if (forest.status==='fulfilled') {
+      const {result,source}=forest.value;
+      if (result.count) matches.append(forestMatch(doc,result,source,day));
+      if (result.state!=='ok') missing.push(forestMap);
+    } else missing.push(forestMap);
+    if (ravel.status==='fulfilled') {
+      if (ravel.value.count) matches.append(ravelMatch(doc,ravel.value));
+      if (ravel.value.limited) missing.push(ravelMap);
+    } else missing.push(ravelMap);
+    matches.hidden=!matches.childElementCount;
+    if (missing.length) {
+      footer.append('Controle niet volledig: ');
+      missing.forEach(({href,label},i)=>{
+        if (i) footer.append(' en ');
+        footer.append(noticeLink(doc,href,label));
+      });
+      footer.append('.');
     }
-  });
-  return { area, close:()=>run.abort() };
+    if (!matches.hidden) footer.append((missing.length?' ':'')+'Check vóór vertrek de actuele omleidingen en volg de borden ter plaatse.');
+    footer.hidden=!footer.childNodes.length;
+    area.dataset.routeNoticeState=missing.length?'partial':'ready';
+  };
+  area.dismissRouteNotices=()=>{run.abort();area.hidden=true;};
+  return area;
 }
 
-export function renderRouteView(trip, { document: doc = globalThis.document } = {}) {
+export function renderRouteView(trip, { document: doc = globalThis.document, routeNotices = true } = {}) {
   const outbound = routeParts(trip.route), inbound = routeParts(trip.returnRoute);
   if (!outbound.length || !doc?.defaultView) return null;
   const view = node(doc, 'section', 'route-view');
   const header = node(doc, 'header', 'route-view-header');
   header.append(node(doc, 'h4', '', 'Fietsroute'));
-  const gpx = createRouteGpx(trip);
+  let gpx = createRouteGpx(trip), currentTrip = trip;
   if (gpx) {
     const download = node(doc, 'a', 'route-view-gpx', 'Download GPX');
     download.href = '#download-gpx';
-    download.addEventListener('click', () => {
+    download.addEventListener('click', (event) => {
+      if (!gpx) {event.preventDefault();return;}
       const url = doc.defaultView.URL.createObjectURL(new doc.defaultView.Blob([gpx], { type: 'application/gpx+xml' }));
       download.href = url;
       doc.defaultView.setTimeout(() => {
@@ -706,13 +737,38 @@ export function renderRouteView(trip, { document: doc = globalThis.document } = 
   const label = 'Fietsroute ' + (trip.cities ?? []).map(({name}) => name).join(' naar ') + (inbound.length ? ' en terug' : '');
   const charts = node(doc, 'div', 'route-insights');
   charts.append(renderSurface(doc, trip), renderElevation(doc, elevationProfile(trip)));
-  const map = createMap(doc, outbound, inbound, routeMarkers(trip, outbound), label, trip.edited === true || trip.exactStops === true);
-  view.append(header, charts, map.figure);
-  const notices = forestNotices(doc, trip, outbound, inbound);
-  const ravel = ravelNotices(doc, trip, outbound, inbound);
-  if (notices) view.append(notices.area);
-  if (ravel) view.append(ravel.area);
-  view.dismissRouteView = () => { notices?.close(); ravel?.close(); map.dispose(); };
+  const map = createMap(doc, outbound, inbound, routeMarkers(trip, outbound), label, trip.edited === true || trip.exactStops === true || trip.distanceDriven === true, trip.distanceDriven === true);
+  view.updateRouteViewMarkers=(next)=>{
+    if (next?.route!==trip.route || next.returnRoute!==trip.returnRoute) return false;
+    if (next.visits!==currentTrip.visits) gpx=createRouteGpx(next);
+    currentTrip=next;
+    map.setMarkers(routeMarkers(next,outbound));
+    return true;
+  };
+  view.append(header, ...(trip.distanceDriven ? [map.figure, charts] : [charts, map.figure]));
+  const notices = routeNotices ? renderRouteNotices(trip,{document:doc}) : null;
+  let details, disposed = false;
+  const start = () => {
+    if (disposed || !view.isConnected) return;
+    for (let parent = view.parentElement; parent; parent = parent.parentElement) {
+      if (parent.tagName === 'DETAILS' && !parent.open) {
+        details = parent;
+        details.addEventListener('toggle',start,{once:true});
+        return;
+      }
+    }
+    notices?.startRouteNotices();
+  };
+  if (notices) {
+    view.append(notices);
+    queueMicrotask(start);
+  }
+  view.dismissRouteView = () => {
+    disposed=true;
+    details?.removeEventListener('toggle',start);
+    notices?.dismissRouteNotices();
+    map.dispose();
+  };
   if (trip.returnRoute && !inbound.length) view.append(node(doc, 'p', 'route-view-hint', 'Geometrie voor de terugrit ontbreekt; de kaart toont alleen de heenrit.'));
   return view;
 }

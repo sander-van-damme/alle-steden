@@ -280,6 +280,17 @@ for (const city of cities) {
   }
 }
 
+const boundarySnapshot = JSON.parse(await readFile(resolve(root, 'data', 'route-boundaries.json'), 'utf8'));
+if (boundarySnapshot.version !== 1 || Object.keys(boundarySnapshot.municipalities ?? {}).length !== cities.length ||
+    cities.some(({ code }) => !boundarySnapshot.municipalities[code])) {
+  throw new Error('Gemeentegrenzen komen niet overeen met de NIS-codes uit cities/. Werk de grenssnapshot bij.');
+}
+const routeCityBoundaries = {
+  version: boundarySnapshot.version, sourceDate: boundarySnapshot.sourceDate,
+  municipalities: cities.map(({ code, slug, name }) => [code, slug, name, boundarySnapshot.municipalities[code]]),
+  regions: Object.entries(boundarySnapshot.regions),
+};
+
 await Promise.all([
   cp(source, resolve(output, 'data'), { recursive: true, filter: (path) => path === source || path.endsWith('.ttl') }),
   writePage('.', indexPage(cities)),
@@ -291,6 +302,7 @@ await Promise.all([
   writeFile(resolve(output, 'calendar-data.json'), JSON.stringify(calendarCatalog)),
   writeFile(resolve(output, 'link-check-data.json'), JSON.stringify(linkCatalog)),
   writeFile(resolve(output, 'planner-data.json'), JSON.stringify(plannerCities)),
+  writeFile(resolve(output, 'assets', 'city-municipal-boundaries.json'), JSON.stringify(routeCityBoundaries)),
   writeFile(resolve(output, 'coverage.json'), JSON.stringify(catalogCoverage, null, 2) + '\n'),
   writeFile(resolve(output, 'data', 'cities.json'), JSON.stringify(Object.fromEntries(cities.map(({ slug, name, names, region, cityUrl }) =>
     [slug, { name, names, region, qid: cityUrl.split('/').at(-1) }])))),

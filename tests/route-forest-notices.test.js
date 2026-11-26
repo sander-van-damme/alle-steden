@@ -31,6 +31,7 @@ test('approved anonymous polygons are geographically queried, exact-crossing det
     assert.doesNotMatch(url.href,/VISITEUR|LISTOFDATEBATTUEOPEN|requested/i);
     assert.deepEqual([credentials,redirect],['omit','error']);
     assert.ok(rest.signal);
+    assert.equal(rest.referrerPolicy,'no-referrer');
     return fixture(rows)();
   }});
   assert.deepEqual(res,{state:'ok', count:1, kinds:['Drukjacht','Jacht vanuit een schuilplaats'], updated:'2026-11-24T20:00:41.000Z'});
@@ -68,4 +69,8 @@ test('do not query before today, after the current season, for invalid dates, or
     assert.deepEqual(await findForestNotices(path,date,{now,fetcher:fail}),{state:'outside',count:0});
   }
   await assert.rejects(findForestNotices(leg([3,49.6],[6,51.5]),day,{now,fetcher:fail}),RangeError);
+  await assert.rejects(findForestNotices(Array(17).fill(path[0]),day,{now,fetcher:fail}),RangeError);
+  const abort = new AbortController();
+  abort.abort();
+  await assert.rejects(findForestNotices(path,day,{now,fetcher:fail,signal:abort.signal}),{name:'AbortError'});
 });

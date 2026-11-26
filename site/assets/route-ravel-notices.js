@@ -6,15 +6,16 @@ import { ravelNoticeSource, ravelNoticePath, ravelNoticeLimit, ravelNoticeCorrid
 
 const day = (value) => dateOnly(dateValue(value));
 
-export function matchRavelNotices(doc, legs, date, today = localToday()) {
-  if (!Array.isArray(doc?.items) || doc.items.length > ravelNoticeLimit
-      || typeof doc.limited !== 'boolean') throw new Error('Ongeldige RAVeL-meldingen');
-  if (!day(date) || !day(today) || !legs.length) throw new RangeError('Geen volledig traject');
-  const boxes = legs.map(({ coordinates }) => {
+function ravelBoxes(legs, date, today) {
+  if (!day(date) || !day(today) || !Array.isArray(legs) || !legs.length || legs.length > 16) throw new RangeError('Geen volledig traject');
+  let total=0;
+  return legs.map(({ coordinates } = {}) => {
     if (!Array.isArray(coordinates) || coordinates.length < 2 || coordinates.length > 25_000
         || coordinates.some((p) => !Array.isArray(p) || !Number.isFinite(p[0]) || !Number.isFinite(p[1]))) {
       throw new RangeError('Geen volledig traject');
     }
+    total += coordinates.length;
+    if (total > 25_000) throw new RangeError('Traject te lang voor een meldingencontrole');
     let west = Infinity, east = -Infinity, south = Infinity, north = -Infinity;
     for (const [lon,lat] of coordinates) {
       west = Math.min(west,lon); east = Math.max(east,lon);
@@ -23,6 +24,11 @@ export function matchRavelNotices(doc, legs, date, today = localToday()) {
     const padding = 0.004; // Conservative degree envelope for the 150 m corridor in Belgium.
     return { coordinates, bounds:[west-padding,south-padding,east+padding,north+padding] };
   });
+}
+
+function matchInBoxes(doc, boxes, date, today) {
+  if (!Array.isArray(doc?.items) || doc.items.length > ravelNoticeLimit
+      || typeof doc.limited !== 'boolean') throw new Error('Ongeldige RAVeL-meldingen');
   const matches = [];
   let limited = doc.limited;
   for (const item of doc.items) {
@@ -50,13 +56,20 @@ export function matchRavelNotices(doc, legs, date, today = localToday()) {
   return { items:matches.slice(0,6), count:matches.length, limited };
 }
 
+export function matchRavelNotices(doc, legs, date, today = localToday()) {
+  return matchInBoxes(doc,ravelBoxes(legs,date,today),date,today);
+}
+
 export async function findRavelNotices(legs, date, { signal, fetcher = fetch } = {}) {
   signal?.throwIfAborted();
+  const today=localToday();
+  const boxes=ravelBoxes(legs,date,today);
+  if (date<today) return {items:[],count:0,limited:false};
   const doc = await getJson(ravelNoticePath, {
     timeout:9500,
     fetcher:(url,request) => fetcher(url, { ...request, referrerPolicy:'no-referrer',
       signal:signal ? AbortSignal.any([signal,request.signal]) : request.signal }),
   });
   signal?.throwIfAborted();
-  return matchRavelNotices(doc, legs, date);
+  return matchInBoxes(doc,boxes,date,today);
 }

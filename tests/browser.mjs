@@ -103,7 +103,10 @@ try {
   await mobile.goto(base + city);
   assert.equal(await mobile.getByRole('heading', { level: 1 }).innerText(), 'Gent');
   assert.ok((await mobile.getByRole('heading', { name: 'Bezienswaardigheden' }).boundingBox()).y < 435);
-  assert.match(await mobile.getByRole('link', { name: 'Plan een rit bij Gent' }).getAttribute('href'), /city=gent$/);
+  const gentRoute = new URL(await mobile.getByRole('link', { name: 'Route maken', exact:true }).getAttribute('href'), base);
+  assert.equal(gentRoute.pathname, '/planner/');
+  assert.equal(gentRoute.searchParams.get('city'), 'gent');
+  assert.equal(gentRoute.searchParams.get('route'), '1');
   await mobile.getByRole('heading', { name: 'Tweede bron' }).waitFor();
   const retry = mobile.locator('[data-live-places] [data-retry]');
   await retry.waitFor();

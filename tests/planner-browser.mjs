@@ -1,244 +1,71 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import { once } from 'node:events';
-import { readFile } from 'node:fs/promises';
-import { advanceDay, calendarDay, weekendStart } from '../site/assets/planner-core.js';
-
-const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? 'playwright');
-const port = process.env.PLANNER_PREVIEW_PORT ?? '4173';
-const local = 'http://127.0.0.1:' + port;
-const base = process.env.PLANNER_PREVIEW_URL ?? local;
-const server = base === local ? spawn(process.execPath, ['scripts/preview.mjs'], { stdio: ['ignore', 'pipe', 'inherit'], env: { ...process.env, PORT: port } }) : null;
-const modules = process.env.PLANNER_HEADLESS_MODULE;
-const shell = modules ? (await import(modules)).default : null;
-const httpProxy = process.env.PLANNER_CHROMIUM_PROXY;
-const launchOptions = {
-  headless: true,
-  ...(shell ? { executablePath: await shell.executablePath(), args: shell.args.filter(arg=>!['--disable-web-security','--allow-running-insecure-content'].includes(arg)) } : {}),
-  ...(httpProxy ? { proxy: { server: httpProxy, bypass: 'localhost,127.0.0.1' } } : {}),
-};
-const weekend = weekendStart(advanceDay(calendarDay(), 4));
-const cors = { 'access-control-allow-origin': '*' };
-const errors = [];
-let browser;
-let storedPoi;
-let missing = false;
-let serviceRequests = 0;
-let directions = [];
-const mocksEnabled = process.env.LIVE_PLANNER !== '1';
-const iframeSafe = (page) => page.on('pageerror', (error) => errors.push(error.message));
-const renderedDates = (page) => page.locator('.trip-card[data-selected-date], [data-trip-date] option').evaluateAll(
-  (nodes) => [...new Set(nodes.map((node) => node.dataset.selectedDate || node.value?.split(':')[0]).filter(Boolean))].sort(),
-);
-
-async function installFixtures(context) {
-  if (!mocksEnabled) return;
-  await context.route('https://tile.openstreetmap.org/**', route => route.abort());
-  await context.route('**/planner-data.json', async (route) => {
-    const original = await route.fetch();
-    const catalog = await original.json();
-    // Installed for smoke testing only: fixture maps the few real-hour examples without a
-    // precise point, so the edited itinerary must route every fixture stop rather than guess.
-    for (const city of catalog) for (const [index, place] of city.places.entries()) {
-      if (!Number.isFinite(place.lat) || !Number.isFinite(place.lon)) {
-        place.lat = city.lat + .001 + index * .0003;
-        place.lon = city.lon + .002;
-      }
+import {withPlanner,desktop,phone,loc,cityEntry,openAdvanced,build,selected,parsedKm,downloadGpx,
+  wirePage,points,near,chosenDate,gotoPlanner,setRange,activate} from './planner-browser-support.mjs';
+const corridor=[points.lessen,points.geraardsbergen,points.ninove];
+const names=['Aat','Lessen','Geraardsbergen','Ninove','Aalst'];
+const live=process.env.LIVE_PLANNER==='1';
+await withPlanner(process.env.PLANNER_PREVIEW_PORT??4173,async(browser,origin)=>{
+  for(const device of [desktop,phone]){
+    const page=await browser.newPage(device);
+    const calls=await wirePage(page,{live,poiPoint:points.ninove,servicePoint:points.ninove,
+      travel:({via})=>via.length===2&&near(via[0],points.aat)&&near(via.at(-1),points.aalst)
+        ? {points:[via[0],...corridor,via.at(-1)],length:42_600} : {length:48_000}});
+    await cityEntry(page,origin);
+    assert.equal(await page.locator('[name=cityCount], #planner-city-count').count(),0);
+    assert.doesNotMatch(await page.locator(loc.form).innerText(),/Aantal steden|2 steden|3 steden/);
+    assert.equal(await page.locator(loc.min).inputValue(),'15');
+    assert.equal(await page.locator(loc.max).inputValue(),'45');
+    for(const values of [calls.routes,calls.services,calls.pois,calls.notices])assert.equal(values.length,0);
+    await openAdvanced(page);
+    if(!live)await page.locator(loc.date).fill(chosenDate);
+    await page.locator(loc.end).selectOption('aalst');
+    await build(page);
+    const trip=selected(page); await trip.waitFor({timeout:65_000});
+    const km=await parsedKm(page); assert.ok(km>=15&&km<=45);
+    const track=await downloadGpx(page);
+    // Live BRouter may snap to a nearby street instead of the exact city point.
+    const tolerance=live?.004:.0003;
+    assert.ok(near(track.points[0],points.aat,tolerance));
+    assert.ok(near(track.points.at(-1),points.aalst,tolerance));
+    assert.ok(await trip.locator('.route-view svg [data-route-marker]').count()>=2);
+    assert.match(await trip.locator('.route-view').innerText(),/OpenStreetMap/);
+    if(!live){
+      assert.equal(km,42.6);
+      assert.ok(calls.routes.some(({via})=>via.length===2&&near(via[0],points.aat)&&near(via.at(-1),points.aalst)));
+      assert.ok(corridor.every(p=>track.points.some(q=>near(p,q))));
+      const through=trip.locator(loc.cities); await through.waitFor({timeout:15_000});
+      const labels=await through.innerText();
+      for(const name of names)assert.match(labels,new RegExp('\\b'+name+'\\b'));
+      assert.deepEqual(names.toSorted((a,b)=>labels.indexOf(a)-labels.indexOf(b)),names);
+      assert.doesNotMatch(labels,/Gent|Oudenaarde|Ronse/);
+      assert.equal(await trip.locator(loc.stops+' [data-itinerary-role=activity]').count(),0);
     }
-    const gent = catalog.find(city=>city.slug==='gent');
-    gent.places.push({ id:'https://example.com/nog-een-stop', name:'Extra proefstop aan het water',
-      lat: 51.061, lon: 3.716, openingHours:[], exterior:true, source:'https://example.com/gent' });
-    await route.fulfill({ response:original, json:catalog });
-  });
-  await context.route('https://brouter.de/brouter?**', async (route) => {
-    if (missing) return route.fulfill({ status: 503, headers: cors });
-    const points = new URL(route.request().url()).searchParams.get('lonlats').split('|').map((pair) => pair.split(',').map(Number));
-    directions.push(points);
-    if (points.length === 2 && !storedPoi) {
-      storedPoi = [(points[0][0] + points[1][0]) / 2 + 0.001, (points[0][1] + points[1][1]) / 2];
-    }
-    const length = points.length === 3 ? 21_300 : 20_000;
-    const duration = points.length === 3 ? 3900 : 3600;
-    return route.fulfill({ headers: cors, json: { features: [{
-      geometry: { type: 'LineString', coordinates: points }, properties: {
-        'track-length': length, 'total-time': duration,
-        messages: [['Distance', 'WayTags'], [10000, 'highway=cycleway surface=asphalt'], [10000, 'highway=residential']],
-      },
-    }] } });
-  });
-  await context.route('https://query.wikidata.org/sparql?**', async (route) => route.fulfill({ headers: cors, json: {
-    results: { bindings: storedPoi ? [{
-      item: { value: 'http://www.wikidata.org/entity/Q999' }, itemLabel: { value: 'Testkasteel halverwege' },
-      kind: { value: 'http://www.wikidata.org/entity/Q23413' }, coord: { value: 'Point(' + storedPoi.join(' ') + ')' }, links: { value: '8' },
-    }] : [] },
-  } }));
-  await context.route('https://geodata.toerismevlaanderen.be/geoserver/poi/wfs?**', async (route) => {
-    serviceRequests++;
-    const layer = new URL(route.request().url()).searchParams.get('typeNames').split(':').at(-1);
-    const [lon,lat] = storedPoi;
-    return route.fulfill({ headers:cors, json:{ type:'FeatureCollection',
-      crs:{ properties:{ name:'urn:ogc:def:crs:CRS::84' } }, numberMatched:1, features:[{
-        id:layer+'.101', geometry:{type:'Point',coordinates:[lon,lat]},
-        properties:{ objectid:101, lon, lat, access:'yes', servicebicyclepump:'yes' },
-      }], } });
-  });
-  await context.route('**/api/city-live?**', (route) => route.fulfill({ json: { state:'not-configured', items:[] } }));
-  for (const host of ['data.stad.gent', 'www.odwb.be']) {
-    await context.route('https://' + host + '/api/**', (route) => route.fulfill({ headers:cors, json:{ results:[], total_count:0 } }));
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),device.viewport.width);
+    assert.deepEqual(calls.errors,[]);
+    if(process.env.PLANNER_SCREENSHOT)await page.screenshot({path:process.env.PLANNER_SCREENSHOT+'-'+device.viewport.width+'.png'});
+    await page.close();
   }
-}
-
-try {
-  if (server) await Promise.race([once(server.stdout,'data'),once(server,'exit').then(([code])=>assert.fail('Preview exit: '+code))]);
-  browser = await chromium.launch(launchOptions);
-  const desktop = await browser.newContext({ viewport:{ width:1440, height:900 } });
-  await installFixtures(desktop);
-  const page = await desktop.newPage();
-  iframeSafe(page);
-  const response = await page.goto(base + '/planner/');
-  assert.equal(response.status(),200);
-  await page.locator('#planner-submit:enabled').waitFor();
-  assert.deepEqual(await page.locator('input[type=radio][name=mode]').evaluateAll(nodes=>nodes.map(n=>n.value)), ['date','place']);
-  assert.equal(await page.locator('input[name=mode]:checked').inputValue(), 'date');
-  assert.ok(await page.locator('[data-mode-date]').isVisible());
-  assert.ok(await page.locator('#planner-upcoming').isVisible());
-  assert.ok(!(await page.locator('#planner-map').isVisible()));
-  await page.locator('#planner-date').fill(weekend);
-  await page.locator('#planner-city').selectOption('gent');
-  await page.locator('#planner-submit').click();
-  await page.locator('.trip-card').first().waitFor({ timeout:48_000 });
-  assert.deepEqual(await renderedDates(page), [weekend]);
-  assert.equal(await page.locator('.planner-run-meta').count(), 0);
-  assert.doesNotMatch(await page.locator('#planner-results').textContent(), /kandidaatcombinaties|agenda’s bevraagd/);
-  assert.match(await page.locator('#planner-results > .planner-limits').textContent(), /Ritvoorstellen zijn een selectie/i);
-  const card = page.locator('.trip-card[data-trip-from=gent]').first();
-  assert.match(await card.innerText(), /Gent/);
-  await card.locator('[data-trip-route-summary]').click();
-  await card.locator('.route-view').waitFor().catch(async error => {
-    console.error('Map detail:', await card.locator('[data-trip-route]').textContent(), 'page errors:', errors);
-    throw error;
-  });
-  assert.ok(await card.locator('.route-view svg [data-route-marker]').count() >= 2);
-  const [file] = await Promise.all([page.waitForEvent('download'), card.getByRole('link', {name:'Download GPX'}).click()]);
-  assert.match(file.suggestedFilename(), /\.gpx$/);
-  const xml = await readFile(await file.path(), 'utf8');
-  const track = await page.evaluate(source => {
-    const doc = new DOMParser().parseFromString(source, 'application/xml');
-    return { valid: !doc.querySelector('parsererror'), n: doc.querySelectorAll('trkpt').length,
-      ele: doc.querySelectorAll('trkpt ele').length };
-  }, xml);
-  assert.ok(track.valid && track.n >= (mocksEnabled ? 2 : 25));
-  if (!mocksEnabled) assert.ok(track.ele > 0);
-  assert.ok(await card.locator('[data-kind=visit]').count() === 2);
-  assert.match(await card.innerText(), /BRouter/);
-  if (mocksEnabled) {
-    assert.match(await card.innerText(), /fietspad/);
-    // Reset the fixture's point for the actually ranked first card instead of the first sent pair.
-    const destination = await card.getAttribute('data-trip-to');
-    const coordinates = await page.evaluate(async (slug) => {
-      const list = await (await fetch('/planner-data.json')).json();
-      return ['gent',slug].map((name)=>list.find((item)=>item.slug===name));
-    }, destination);
-    storedPoi = [(coordinates[0].lon + coordinates[1].lon)/2 + 0.001,(coordinates[0].lat + coordinates[1].lat)/2];
-    await card.locator('[data-trip-pois]').click();
-    await card.locator('.trip-poi-name').filter({ hasText:'Testkasteel halverwege' }).waitFor({ timeout:20_000 });
-    assert.ok(directions.some((points)=>points.length===3));
-    assert.match(await card.innerText(), /omweg over fietsroutes/);
-    assert.equal(serviceRequests, 0);
-    await card.locator('[data-trip-services]').click();
-    await card.getByRole('link',{name:'Fietspomp'}).waitFor({timeout:15000});
-    assert.equal(serviceRequests, 2);
-    assert.match(await card.locator('.trip-services').innerText(), /Niet ingepland als stop/);
-    await card.locator('.route-pin-service-repair').waitFor();
-    await card.locator('[data-trip-edit]').click();
-    const extra = card.locator('[data-trip-add-choice] option').filter({hasText:'Extra proefstop'});
-    assert.equal(await extra.count(),1);
-    await card.locator('[data-trip-add-choice]').selectOption(await extra.getAttribute('value'));
-    await card.locator('[data-trip-add]').click();
-    assert.equal(await card.locator('[data-trip-visit]').count(),3);
-    await card.locator('[data-trip-save]').click({timeout:5000}).catch(async error => { console.error(await card.locator('[data-trip-visit] option:checked').allTextContents()); throw error; });
-    await card.locator('[data-kind=visit]').filter({hasText:'Extra proefstop'}).waitFor({timeout:20000});
-    assert.equal(await card.locator('[data-kind=visit]').count(),3);
-    await card.locator('.route-view').waitFor();
-    assert.equal(await card.locator('.route-pin-service-repair').count(), 0);
-    assert.equal(serviceRequests, 2);
-    const [editedFile] = await Promise.all([page.waitForEvent('download'), card.getByRole('link',{name:'Download GPX'}).click()]);
-    const editedXml = await readFile(await editedFile.path(), 'utf8');
-    assert.notEqual(editedXml, xml);
-    assert.match(editedXml,/lat="51\.0610000" lon="3\.7160000"/);
-    assert.ok(await card.locator('.route-view svg [data-route-marker]').count() >= 3);
-    // Selecting round-trip makes two distinct routed directions relevant.
-    await page.locator('[name=roundtrip]').check();
-    await page.locator('#planner-submit').click();
-    await page.locator('.trip-card [data-kind=return]').first().waitFor({timeout:30_000});
+  if(!live){
+    const page=await browser.newPage(phone);
+    const calls=await wirePage(page,{travel:()=>({length:32_400}),pois:()=>({empty:true}),services:()=>({empty:true})});
+    await gotoPlanner(page,origin,'/planner/?city=aat');
+    await page.locator(loc.type).selectOption('loop');
+    await setRange(page,25,40);
+    await build(page);
+    await selected(page).waitFor({timeout:35_000});
+    assert.equal(await parsedKm(page),32.4);
+    assert.match(await selected(page).innerText(),/Lus/i);
+    const track=await downloadGpx(page);
+    assert.ok(near(track.points[0],points.aat)&&near(track.points.at(-1),points.aat));
+    assert.ok(calls.routes.length<=9&&calls.routes.every(({via})=>near(via[0],via.at(-1))));
+    assert.ok(track.points.length>5);
+    const alternatives=page.locator(loc.choice);
+    assert.ok(await alternatives.count()>1);
+    await activate(page,alternatives.last());
+    assert.notDeepEqual((await downloadGpx(page)).points,track.points);
+    assert.deepEqual(calls.errors,[]);
+    await page.close();
   }
-  if (!mocksEnabled) console.log('Live voorbeeld:', (await card.innerText()).split('\n').slice(0,15).join(' | '));
-  console.log('Planner desktop: date, source-backed visits, actual bike geometry and attribution' + (mocksEnabled ? ', fixture POI detour and return' : '') + ' passed.');
-  if (process.env.PLANNER_SCREENSHOT) await page.screenshot({ path:process.env.PLANNER_SCREENSHOT + '-desktop.png' });
-
-  const phone = await browser.newContext({ viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true });
-  await installFixtures(phone);
-  const p = await phone.newPage();
-  iframeSafe(p);
-  await p.goto(base + '/planner/');
-  await p.locator('#planner-submit:enabled').waitFor();
-  const width = await p.evaluate(()=>[innerWidth,document.documentElement.scrollWidth]);
-  assert.equal(width[0],width[1]);
-  assert.deepEqual(await p.locator('input[type=radio][name=mode]').evaluateAll(nodes=>nodes.map(n=>n.value)), ['date','place']);
-  assert.ok(!(await p.locator('#planner-map').isVisible()));
-  await p.locator('input[name=mode][value=place]').check();
-  assert.ok(await p.locator('#planner-map').isVisible());
-  assert.ok(!(await p.locator('[data-mode-date]').isVisible()));
-  assert.ok(!(await p.locator('#planner-upcoming').isVisible()));
-  assert.equal(await p.locator('#planner-map .planner-region').count(),3);
-  assert.equal(await p.locator('#planner-map .planner-map-city').count(),138);
-  await p.locator('#planner-map .planner-region').filter({has:p.locator('title',{hasText:'Vlaanderen'})}).dispatchEvent('click');
-  assert.equal(await p.locator('#planner-region').inputValue(),'Vlaanderen');
-  assert.equal(await p.locator('input[name=mode]:checked').inputValue(),'place');
-  await p.locator('#planner-map .planner-map-city').filter({has:p.locator('title',{hasText:/^Gent$/})}).dispatchEvent('click');
-  assert.equal(await p.locator('#planner-city').inputValue(),'gent');
-  await p.locator('#planner-submit').click();
-  await p.locator('.planner-result-group .trip-card').first().waitFor({timeout:48_000});
-  assert.ok(await p.locator('[data-trip-date]').count());
-  await p.locator('input[name=mode][value=date]').check();
-  assert.ok(!(await p.locator('#planner-map').isVisible()));
-  const weekday = advanceDay(weekend, -2);
-  await p.locator('#planner-date').fill(weekday);
-  await p.locator('input[name=weekend]').check();
-  await p.locator('#planner-submit').click();
-  await p.locator('.planner-result-group .trip-card').first().waitFor({timeout:48_000});
-  if (mocksEnabled) {
-    assert.deepEqual(await renderedDates(p), [weekend, advanceDay(weekend,1)]);
-  }
-  await p.locator('#planner-upcoming').click();
-  await p.locator('.planner-result-group .trip-card').first().waitFor({timeout:48_000});
-  assert.equal(await p.locator('input[name=mode]:checked').inputValue(), 'date');
-  assert.equal(await p.locator('#planner-date').inputValue(), weekday);
-  assert.ok(await p.locator('input[name=weekend]').isChecked());
-  const groupedDate = p.locator('select[data-trip-date]').first();
-  if (mocksEnabled) {
-    assert.ok((await renderedDates(p)).some(day => day > advanceDay(weekend,1)));
-    assert.ok(await groupedDate.count());
-    const before = await groupedDate.inputValue();
-    const options = await groupedDate.locator('option').evaluateAll(nodes=>nodes.map(node=>node.value));
-    assert.ok(options.length > 1);
-    await groupedDate.selectOption(options.find(value=>value !== before));
-    assert.notEqual(await groupedDate.inputValue(), before);
-  }
-  if (process.env.PLANNER_SCREENSHOT) await p.screenshot({ path:process.env.PLANNER_SCREENSHOT + '-mobile.png' });
-  console.log('Planner telefoon 390px: twee zoekmodi, kaart in locatiezoekmodus, datumweekend, optionele komende weekenden en geen horizontale overflow: geslaagd.');
-
-  if (mocksEnabled) {
-    missing = true;
-    const out = await browser.newContext();
-    await installFixtures(out);
-    const p = await out.newPage();
-    await p.goto(base+'/planner/?city=gent');
-    await p.locator('#planner-submit:enabled').waitFor();
-    await p.locator('#planner-submit').click();
-    await p.getByText(/Niet alle routes waren bereikbaar/).waitFor({timeout:30000});
-    assert.equal(await p.locator('.trip-card').count(),0);
-    assert.deepEqual(errors,[]);
-    console.log('Uitval router verbergt oncontroleerbare voorstellen: geslaagd.');
-  }
-} finally { await browser?.close(); server?.kill(); }
+  console.log(live?'Live city entry, measured result, map and GPX on desktop and touch.':
+    'Built city entry, exact routed fixture through five municipalities, bounded loop alternatives, map and GPX on desktop and touch.');
+});

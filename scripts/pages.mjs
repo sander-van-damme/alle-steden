@@ -41,10 +41,9 @@ export function calendarPage(catalog) {
 
 export function plannerPage(cities) {
   const regions = [...new Set(cities.map((city) => city.region))].sort((a, b) => a.localeCompare(b, 'nl-BE'));
-  const citiesByRegion = regions.map((region) => `<optgroup label="${escapeHtml(region)}">${cities
+  const cityOptions = regions.map((region) => `<optgroup label="${escapeHtml(region)}">${cities
     .filter((city) => city.region === region)
-    .map((city) => `<option value="${escapeHtml(city.slug)}" data-region="${escapeHtml(region)}">${escapeHtml(city.name)}</option>`).join('')}</optgroup>`).join('');
-  const regionOptions = regions.map((region) => `<option>${escapeHtml(region)}</option>`).join('');
+    .map((city) => `<option value="${escapeHtml(city.slug)}">${escapeHtml(city.name)}</option>`).join('')}</optgroup>`).join('');
   return layout({
     title: 'Fietsplanner · Alle Steden',
     active: 'planner',
@@ -52,90 +51,74 @@ export function plannerPage(cities) {
     main: `<main id="inhoud" class="wrap planner">
       <header class="planner-heading">
         <h1>Fietsplanner</h1>
-        <p>Combineer twee of drie steden en kies wat je onderweg wilt bezoeken.</p>
+        <p>Kies waar je vertrekt en hoe ver je wilt fietsen.</p>
       </header>
-      <div class="planner-workspace">
-        <form id="planner-form" class="planner-panel" aria-labelledby="planner-options-title">
-          <h2 id="planner-options-title" class="visually-hidden">Zoek een fietsrit</h2>
-          <fieldset class="planner-mode">
-            <legend class="visually-hidden">Zoeken op datum of locatie</legend>
-            <div class="planner-mode-options">
-              <label><input type="radio" name="mode" value="date" checked><span>Op datum</span></label>
-              <label><input type="radio" name="mode" value="place"><span>In de buurt van</span></label>
-            </div>
-          </fieldset>
-          <div class="planner-controls" data-mode-date>
-            <label>Datum <input type="date" name="date" id="planner-date" required></label>
-            <label class="planner-check"><input type="checkbox" name="weekend"> Bekijk het hele weekend</label>
-          </div>
-          <p class="planner-hint" id="planner-mode-hint"></p>
-          <div class="planner-controls">
-            <label>Gewest
-              <select name="region" id="planner-region"><option value="">Heel België</option>${regionOptions}</select>
+      <section id="planner-itinerary" aria-labelledby="planner-itinerary-title">
+        <form id="planner-itinerary-form" class="planner-panel itinerary-form" aria-labelledby="planner-itinerary-title">
+          <h2 id="planner-itinerary-title" class="visually-hidden">Je fietsroute maken</h2>
+          <div class="itinerary-grid itinerary-first">
+            <label for="itinerary-start">Vertrekstad
+              <select id="itinerary-start" required><option value="">Kies een stad</option>${cityOptions}</select>
             </label>
-            <label>In de buurt van
-              <select name="city" id="planner-city"><option value="">Geen voorkeur</option>${citiesByRegion}</select>
+            <label for="itinerary-type">Type rit
+              <select id="itinerary-type">
+                <option value="single">Enkele rit</option><option value="loop">Lusrondrit</option>
+              </select>
             </label>
           </div>
-          <fieldset class="planner-distance" aria-describedby="planner-distance-hint">
+          <fieldset class="planner-distance itinerary-distance">
             <legend>Fietsafstand</legend>
             <div class="planner-controls planner-range-controls">
               <div class="planner-slider-label">
-                <label for="planner-min-km">Minimaal</label> <output for="planner-min-km" id="planner-min-distance-output" aria-hidden="true">0 km</output>
-                <input id="planner-min-km" name="minKm" aria-label="Minimale fietsafstand" type="range" min="0" max="160" step="5" value="0" aria-describedby="planner-distance-hint">
+                <label for="itinerary-min-km">Minimaal</label> <output for="itinerary-min-km" id="itinerary-min-output" aria-hidden="true">15 km</output>
+                <input id="itinerary-min-km" aria-label="Minimale fietsafstand" type="range" min="0" max="160" step="5" value="15">
               </div>
               <div class="planner-slider-label">
-                <label for="planner-max-km">Maximaal</label> <output for="planner-max-km" id="planner-distance-output" aria-hidden="true">85 km</output>
-                <input id="planner-max-km" name="maxKm" aria-label="Maximale fietsafstand" type="range" min="15" max="160" step="5" value="85" aria-describedby="planner-distance-hint">
+                <label for="itinerary-max-km">Maximaal</label> <output for="itinerary-max-km" id="itinerary-max-output" aria-hidden="true">45 km</output>
+                <input id="itinerary-max-km" aria-label="Maximale fietsafstand" type="range" min="5" max="160" step="5" value="45">
               </div>
             </div>
-            <p class="planner-hint" id="planner-distance-hint">Totale afstand van de rit, inclusief de terugweg bij een lusrondrit.</p>
           </fieldset>
-          <div class="planner-controls planner-ride-options">
-            <label>Aantal steden
-              <select id="planner-city-count" name="cityCount">
-                <option value="2" selected>2 steden</option><option value="3">3 steden</option>
-              </select>
-            </label>
-            <label class="planner-check"><input type="checkbox" name="roundtrip" aria-describedby="planner-loop-hint"> Lusrondrit</label>
-          </div>
-          <p class="planner-hint" id="planner-loop-hint">Bij een lus kunnen heen- en terugweg overlappen.</p>
-          <fieldset class="planner-activities" aria-describedby="planner-activities-hint">
-            <legend>Wat wil je bezoeken?</legend>
-            <p class="planner-hint" id="planner-activities-hint">Vink af wat je niet wilt bezoeken.</p>
-            <div class="planner-activity-options">
-              <label class="planner-check"><input type="checkbox" name="activity" value="museum" checked> Musea</label>
-              <label class="planner-check"><input type="checkbox" name="activity" value="heritage" checked> Erfgoed</label>
-              <label class="planner-check"><input type="checkbox" name="activity" value="nature" checked> Natuur</label>
-              <label class="planner-check"><input type="checkbox" name="activity" value="culture" checked> Cultuur</label>
-              <label class="planner-check"><input type="checkbox" name="activity" value="event" checked> Evenementen</label>
-              <label class="planner-check"><input type="checkbox" name="activity" value="other" checked> Overige</label>
+          <label for="itinerary-stop-budget" class="itinerary-budget">Tijd voor stops
+            <select id="itinerary-stop-budget">
+              <option value="">Geen voorkeur</option><option value="15">15 minuten</option>
+              <option value="45">45 minuten</option><option value="90">90 minuten</option>
+            </select>
+          </label>
+          <details class="itinerary-advanced" id="itinerary-advanced">
+            <summary>Route verfijnen</summary>
+            <div class="itinerary-advanced-body">
+              <div class="itinerary-grid">
+                <label for="itinerary-date"><span>Datum <span class="itinerary-optional">optioneel</span></span>
+                  <input type="date" id="itinerary-date" name="itineraryDate">
+                </label>
+                <label for="itinerary-end" id="itinerary-end-field"><span>Eindstad <span class="itinerary-optional">optioneel</span></span>
+                  <select id="itinerary-end"><option value="">Laat de planner kiezen</option>${cityOptions}</select>
+                </label>
+              </div>
+              <p class="planner-hint">De datum geldt voor stops en meldingen, niet voor het traject.</p>
+              <fieldset class="planner-activities itinerary-activities">
+                <legend>Wat wil je bezoeken?</legend>
+                <div class="planner-activity-options">
+                  <label class="planner-check"><input type="checkbox" name="itineraryActivity" value="museum" checked> Musea</label>
+                  <label class="planner-check"><input type="checkbox" name="itineraryActivity" value="heritage" checked> Erfgoed</label>
+                  <label class="planner-check"><input type="checkbox" name="itineraryActivity" value="nature" checked> Natuur</label>
+                  <label class="planner-check"><input type="checkbox" name="itineraryActivity" value="culture" checked> Cultuur</label>
+                  <label class="planner-check"><input type="checkbox" name="itineraryActivity" value="event" checked> Evenementen</label>
+                  <label class="planner-check"><input type="checkbox" name="itineraryActivity" value="other" checked> Overige</label>
+                </div>
+                <label class="planner-check"><input type="checkbox" id="itinerary-scheduled-only"> Alleen met bevestigde bezoekuren</label>
+              </fieldset>
             </div>
-            <p id="planner-activities-error" class="planner-hint" role="status" hidden></p>
-          </fieldset>
-          <div class="planner-visit-options">
-            <label class="planner-check"><input type="checkbox" name="scheduledOnly" aria-describedby="planner-visit-hint"> Alleen met bevestigde bezoekuren of evenementen</label>
-            <p class="planner-hint" id="planner-visit-hint">Buitenstops tellen standaard mee, ook zonder toegang tot het gebouw.</p>
+          </details>
+          <div class="itinerary-actions">
+            <button type="submit" id="itinerary-build" class="button primary" disabled>Bereken route <span aria-hidden="true">→</span></button>
           </div>
-          <div class="planner-actions">
-            <button type="submit" class="button primary" id="planner-submit" disabled>Zoek ritten <span aria-hidden="true">→</span></button>
-            <span data-date-adjacent>
-              <button type="button" class="button secondary" id="planner-upcoming" disabled>Bekijk komende weekenden</button>
-            </span>
-          </div>
-          <noscript><p>De planner is hier niet beschikbaar. Je kunt wel de <a href="/#steden">stedenlijst</a> bekijken.</p></noscript>
+          <p id="itinerary-form-error" class="planner-hint itinerary-form-error" role="status"></p>
+          <noscript><p>De planner werkt met JavaScript. Je kunt wel de <a href="/#steden">stedenlijst</a> bekijken.</p></noscript>
         </form>
-        <figure class="planner-panel planner-map-panel" data-mode-place hidden>
-          <div class="planner-map-heading"><h2>Kies op de kaart</h2><span id="planner-map-selection" aria-live="polite"></span></div>
-          <p class="planner-hint">Kies een stad of gewest op de kaart of in het formulier.</p>
-          <div class="planner-map" id="planner-map"></div>
-          <figcaption>Vereenvoudigde gewestgrenzen: <a href="https://simplemaps.com/gis/country/be">SimpleMaps</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>).</figcaption>
-        </figure>
-      </div>
-      <section class="planner-output" aria-labelledby="planner-output-title">
-        <h2 id="planner-output-title">Ritvoorstellen</h2>
-        <p id="planner-status" class="planner-status" role="status">Een moment, de planner wordt geladen.</p>
-        <div id="planner-results"></div>
+        <p id="planner-itinerary-status" class="planner-status" role="status"></p>
+        <div id="planner-itinerary-result"></div>
       </section>
     </main>`,
   });
@@ -281,7 +264,7 @@ export function cityPage(city, linkIds) {
           ${description ? `<p class="city-description">${escapeHtml(description)}</p>` : ''}
         </div>
         ${mapUrl ? `<div class="city-links">
-          <a class="button primary" href="/planner/?city=${encodeURIComponent(slug)}">Plan een rit bij ${escapeHtml(name)} <span aria-hidden="true">→</span></a>
+          <a class="button primary" href="/planner/?route=1&amp;city=${encodeURIComponent(slug)}">Route maken <span aria-hidden="true">→</span></a>
           <a class="city-map-link" href="${escapeHtml(mapUrl)}">Bekijk op de kaart ${arrow}</a>
         </div>` : ''}
       </header>

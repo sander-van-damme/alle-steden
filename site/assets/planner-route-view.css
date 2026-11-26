@@ -107,3 +107,17 @@
 .route-ravel-list { margin: .6rem 0 0; padding: 0 0 0 1.2rem; font-size: .84rem; }
 .route-ravel-list li { margin: .32rem 0; overflow-wrap: anywhere; }
 .route-ravel-list li span { display: block; font-size: .79rem; color: var(--route-muted); }
+.route-notices[hidden], .route-notices:not(:has(> :not([hidden]))) { display: none; }
+.route-notices { min-width: 0; color: var(--route-muted, #4b5a50); overflow-wrap: anywhere; }
+.route-notice-matches { margin: 0; padding: 0; list-style: none; }
+.route-notice-matches > li { padding: .4rem 0 .4rem .7rem; margin-block: .35rem; border-inline-start: 2px solid var(--route-brick, #9b3c2c); }
+.route-notice-matches strong { color: var(--route-ink, #202c26); }
+.route-notice-matches p, .route-notice-foot { margin: .22rem 0 0; line-height: 1.45; font-size: .79rem; }
+.route-notice-credit a { text-underline-offset: .15em; }
+.route-ravel-list { margin-top: .25rem; }
+.route-pin-pause circle { fill: #754f32; }
+.route-map-stop-pause button { color: #754f32; }
+
+.route-map-marker-details { width: 100%; }
+.route-map-marker-details > summary { min-height: 2.75rem; align-content: center; cursor: pointer; font-weight: 680; }
+@media (pointer: coarse) { .route-map-controls button, .route-map-marker-list button { min-height: 2.75rem; min-width: 2.75rem; } }

@@ -317,3 +317,71 @@
   .planner-mode-options span { font-size: 0.79rem; }
   .planner-activity-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Route composer: the essentials are visible; extra cities and visits are optional. */
+.itinerary-form { max-width: 48rem; }
+.itinerary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem 1rem; align-items: end; }
+.itinerary-form label:not(.planner-check) { display: grid; gap: .22rem; min-width: 0; color: var(--ink); font-size: .86rem; font-weight: 650; }
+.itinerary-form select, .itinerary-form input[type="date"] { width: 100%; min-width: 0; min-height: 2.75rem; }
+.itinerary-form .itinerary-budget { width: min(19rem, 100%); margin-top: .75rem; }
+.itinerary-form .itinerary-optional { font-size: .75rem; font-weight: 500; color: var(--muted); }
+.itinerary-advanced { border-block: 1px solid var(--planner-rule); margin-top: 1rem; }
+.itinerary-advanced > summary { min-height: 2.75rem; align-content: center; cursor: pointer; color: var(--accent); font-weight: 720; }
+.itinerary-advanced > summary:hover { color: var(--planner-focus); }
+.itinerary-advanced-body { padding-bottom: .7rem; }
+.itinerary-form [hidden] { display: none !important; }
+.itinerary-actions { margin-top: .8rem; }
+.itinerary-actions .button { margin-top: 0; }
+.itinerary-form-error { color: var(--planner-focus); font-weight: 660; }
+#planner-itinerary-status:empty { display: none; }
+#planner-itinerary-result:not(:empty) { margin-top: 1rem; }
+@media (max-width: 27rem) {
+  .itinerary-grid { gap: .55rem .65rem; }
+}
+
+.itinerary-route-choices { display: flex; flex-wrap: wrap; gap: .38rem; margin: 0 0 .85rem; }
+.itinerary-route-choices button, .itinerary-stop-editor button, .itinerary-stop-editor select {
+  appearance: auto;
+  min-height: 2.75rem;
+  border: 1px solid var(--planner-rule);
+  border-radius: .25rem;
+  background: var(--planner-card);
+  color: var(--ink);
+  font: inherit;
+  padding: .38rem .55rem;
+}
+.itinerary-route-choices button, .itinerary-stop-editor button { cursor: pointer; font-weight: 650; }
+.itinerary-route-choices button[aria-pressed="true"], .itinerary-stop-entry button:not(:disabled) {
+  background: var(--route-main);
+  border-color: var(--route-main);
+  color: #fff;
+}
+.itinerary-route-choices button:focus-visible, .itinerary-route :is(button, select, summary):focus-visible {
+  outline: 2px solid var(--planner-focus);
+  outline-offset: 2px;
+}
+.itinerary-route { display: grid; gap: .48rem; }
+.itinerary-route-heading { padding: .75rem 0 .48rem; border-top: 1px solid var(--planner-rule); }
+.itinerary-route-heading h2 { font-size: clamp(1.4rem, 3.5vw, 2.25rem); }
+.itinerary-route-metrics { margin: .28rem 0 0; color: var(--muted); font-size: .94rem; }
+.itinerary-route-metrics strong { color: var(--ink); font-weight: 750; font-variant-numeric: tabular-nums; }
+.itinerary-route > div:empty { display: none; }
+.itinerary-band { border-top: 1px solid var(--planner-rule); padding: .5rem 0 0; }
+.itinerary-band h3, .itinerary-band summary { font: inherit; font-weight: 700; }
+.itinerary-band summary { min-height: 2.75rem; align-content: center; cursor: pointer; color: var(--accent); }
+.itinerary-passage-list { display: flex; flex-wrap: wrap; gap: 0 .25rem; padding: 0; margin: .2rem 0 0; list-style: none; }
+.itinerary-passage-list li { display: flex; align-items: center; gap: .24rem; }
+.itinerary-passage-list li:not(:last-child)::after { content: '›'; color: var(--muted); margin-inline: .12rem; }
+.itinerary-passage-list a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.itinerary-added-list, .itinerary-service-list { display: grid; gap: .35rem; padding: 0; margin: .2rem 0 .5rem; list-style: none; }
+.itinerary-added-list li, .itinerary-service-list li { border-bottom: 1px solid var(--planner-rule); padding: .4rem 0; }
+.itinerary-added-list li { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .38rem; align-items: center; }
+.itinerary-stop-text, .itinerary-service-list li { overflow-wrap: anywhere; }
+.itinerary-stop-text small, .itinerary-service-list small { display: block; color: var(--muted); }
+.itinerary-stop-controls { display: inline-flex; flex-wrap: wrap; gap: .32rem; }
+.itinerary-stop-entry { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .4rem; }
+.itinerary-stop-entry select { width: 100%; min-width: 0; text-overflow: ellipsis; }
+@media (max-width: 26rem) {
+  .itinerary-added-list li { grid-template-columns: minmax(0,1fr); }
+  .itinerary-band summary { font-size: .93rem; }
+}

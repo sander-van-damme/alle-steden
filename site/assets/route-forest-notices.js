@@ -27,7 +27,7 @@ const overlap = (a,b) => a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >=
 const bounds = (points) => points.reduce((shape,p) => include(shape, box(p,p)), [Infinity,Infinity,-Infinity,-Infinity]);
 
 function routeShape(legs) {
-  if (!Array.isArray(legs) || !legs.length || legs.length > 6 || legs.some(({ coordinates } = {}) =>
+  if (!Array.isArray(legs) || !legs.length || legs.length > 16 || legs.some(({ coordinates } = {}) =>
     !Array.isArray(coordinates) || coordinates.length < 2 || coordinates.length > 25_000 ||
     !coordinates.every(validPoint)) || legs.reduce((size, {coordinates}) => size + coordinates.length, 0) > 25_000) {
     throw new RangeError('Geen volledig, bruikbaar traject.');
@@ -128,6 +128,7 @@ async function readBody(response) {
 }
 
 export async function findForestNotices(legs, day, { fetcher = fetch, signal, now = new Date() } = {}) {
+  signal?.throwIfAborted();
   const today = localToday(now);
   const year = Number(today.slice(0,4)) - (today.slice(5,10) < '07-01' ? 1 : 0);
   if (!validDay(day) || day < today || day < year + '-07-01' || day >= (year+1) + '-07-01') {
@@ -144,7 +145,7 @@ export async function findForestNotices(legs, day, { fetcher = fetch, signal, no
   const timeout = AbortSignal.timeout(10_000);
   const response = await fetcher(url, {
     signal: signal ? AbortSignal.any([signal,timeout]) : timeout,
-    credentials: 'omit', redirect: 'error', headers: { Accept: 'application/geo+json,application/json' },
+    credentials: 'omit', redirect: 'error', referrerPolicy: 'no-referrer', headers: { Accept: 'application/geo+json,application/json' },
   });
   const body = await readBody(response);
   signal?.throwIfAborted();

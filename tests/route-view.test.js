@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { bRouterSurfaceSegments, fetchRoute, normalizeBRouter } from '../site/assets/planner-routing.js';
-import { createRouteGpx, elevationProfile, surfaceBreakdown, surfaceTimeline } from '../site/assets/planner-route-view.js';
+import { createRouteGpx, elevationProfile, relevantWalloonRoute, surfaceBreakdown, surfaceTimeline } from '../site/assets/planner-route-view.js';
 
 const points = [[4.1012, 50.81, 12], [4.1026, 50.82], [4.1047, 50.826, 0], [4.105, 50.827, -1.75]];
 const router = (coordinates, metres, ascent, messages) => normalizeBRouter({
@@ -134,4 +134,13 @@ test('combines genuine outbound and return chains but never puts composition est
   assert.equal(surfaceTimeline({route:first,returnRoute:{...second,km:NaN}}), null);
   assert.equal(surfaceTimeline({route:{...first,surfaceSegments:[{kind:'paved',startM:1,endM:333}]}}), null);
   assert.equal(surfaceBreakdown({route:{...first, signals:{pavedKm:.3,unpavedKm:.2}}}).unknown,.333);
+});
+
+
+test('route notices are scoped to actual geometry, including a Walloon crossing with both endpoints outside', () => {
+  assert.equal(relevantWalloonRoute([{coordinates:[[3.72,51.05],[3.70,51.06]]}]),false);
+  assert.equal(relevantWalloonRoute([{coordinates:[[4.8904,50.30],[4.8904,50.31]]}]),true);
+  assert.equal(relevantWalloonRoute([{coordinates:[[3.7,51.05],[3.7,49.65]]}]),true);
+  assert.equal(relevantWalloonRoute([{coordinates:[[2.965,50.766],[2.944,50.744]]}]),true);
+  assert.equal(relevantWalloonRoute([]),false);
 });

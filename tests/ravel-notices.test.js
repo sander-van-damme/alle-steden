@@ -51,7 +51,7 @@ test('without joining dots, compares real individual points to separate route le
   assert.throws(()=>matchRavelNotices(doc,[{coordinates:[[4.89,50.30]]}],'2026-11-28','2026-11-26'),RangeError);
 });
 
-test('the optional browser request has one fixed relative URL, no itinerary, credentials, redirects or calls after abort',async()=>{
+test('the scoped browser request has one fixed relative URL, no itinerary, credentials, redirects or calls after abort',async()=>{
   const calls=[];
   const control=new AbortController();
   const result=await findRavelNotices(route,'2027-01-01',{signal:control.signal,fetcher:async(url,init)=>{
@@ -64,6 +64,10 @@ test('the optional browser request has one fixed relative URL, no itinerary, cre
   }});
   assert.deepEqual(result,{items:[],count:0,limited:false});
   assert.deepEqual(calls,[ravelNoticePath]);
+  const doesNotFetch = () => assert.fail('No requests for unsafe or outdated routes');
+  await assert.rejects(findRavelNotices(Array(17).fill(route[0]), '2027-01-01', {fetcher:doesNotFetch}), RangeError);
+  await assert.rejects(findRavelNotices([{coordinates:Array(25_001).fill([4.89,50.30])}], '2027-01-01', {fetcher:doesNotFetch}), RangeError);
+  assert.deepEqual(await findRavelNotices(route,'2020-01-01',{fetcher:doesNotFetch}), {items:[],count:0,limited:false});
   control.abort();
   await assert.rejects(()=>findRavelNotices(route,'2027-01-01',{signal:control.signal,fetcher:()=>assert.fail('aborted')}),
     {name:'AbortError'});
