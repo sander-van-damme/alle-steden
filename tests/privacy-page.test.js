@@ -20,3 +20,16 @@ test('the complete public notice is bullet-first and keeps recipients, rights an
     'https://developers.cloudflare.com/speed/observatory/rum-beacon/', 'https://osmfoundation.org/wiki/Privacy_Policy',
     'https://www.gegevensbeschermingsautoriteit.be/klacht-indienen']) assert.ok(main.includes('href="' + href + '"'), href);
 });
+
+test('optional traffic logs being off does not rule out standard Cloudflare analytics', () => {
+  const { main } = privacyPage((data) => data);
+  const logs = main.match(/<h2>Logs en statistieken<\/h2>\s*<ul class="info-sources">([\s\S]*?)<\/ul>/u)?.[1];
+  assert.ok(logs);
+  const bullets = [...logs.matchAll(/<li>(.*?)<\/li>/gu)].map(([, bullet]) => bullet);
+  assert.equal(bullets.length, 4);
+  assert.match(bullets[0], /live logs van Pages Functions<\/a> niet/u);
+  assert.match(bullets[1], /Optionele opslag van verkeers- en beveiligingslogs en export via Logpush staan voor deze site uit/u);
+  assert.match(bullets[2], /standaardstatistieken over webverzoeken en beveiliging[\s\S]*hoelang, is niet bevestigd/u);
+  assert.match(bullets[3], /Web Analytics[\s\S]*zes maanden[\s\S]*geen bewaartermijn voor ruwe meetgegevens/u);
+  assert.doesNotMatch(main, /instellingen voor verkeerslogs/u);
+});
