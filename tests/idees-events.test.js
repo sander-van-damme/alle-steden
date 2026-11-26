@@ -131,3 +131,30 @@ test('the exact stale Weihnachtszauber aggregator entry yields to the verified 2
     [city], {from:'2027-11-15',through:'2027-12-31'});
   assert.equal(future.items.length,1);
 });
+
+test('exact publisher UTC day envelopes preserve the intended final date, not the following Belgian day',()=>{
+  const from='2026-11-26',through='2027-01-03';
+  const data=[
+    event({ DTSTART:'20261127T000000Z',DTEND:'20261231T235959Z',SUMMARY:'Marché de Noël à Namur',
+      URL:'https://ideessorties.be/events/marche-de-noel-a-namur-namur',CATEGORIES:'Marché de Noël' },'c66bca1d-7d54-4c39-97ee-bc7e9fecfc44'),
+    event({ DTSTART:'20261202T000000Z',DTEND:'20261202T235959Z',SUMMARY:"Les contes d'hiver" },'contes'),
+    event({ DTSTART:'20261127T000000Z',DTEND:'20270102T235959Z',SUMMARY:'Dinant Lumière',
+      LOCATION:'Dinant' },'dinant'),
+    event({ DTSTART:'20261231T220000Z',DTEND:'20261231T235959Z',SUMMARY:'Echt laat concert' },'concert'),
+    event({ DTSTART:'20261218T230000Z',DTEND:'20261219T230000Z',SUMMARY:'Plaatselijke inclusieve datums' },'local'),
+  ];
+  const cities=[...catalog,{slug:'dinant',name:'Dinant'}];
+  const output=period=>parseIdeesCalendar(publish(...data),cities,period).items;
+  const byName=Object.fromEntries(output({from,through}).map(x=>[x.name,x]));
+  const namur=byName['Marché de Noël à Namur'];
+  assert.deepEqual([namur.start,namur.end,namur.allDay],['2026-11-27','2026-12-31',undefined]);
+  const days=['2026-12-31','2027-01-01'];
+  const display=eventsByDay([calendarEvent(namur,'namen')],days);
+  assert.deepEqual(days.map(day=>display.get(day).length),[1,0]);
+  assert.ok(!output({from:'2027-01-01',through}).some(i=>i.id===namur.id));
+  assert.deepEqual([byName["Les contes d'hiver"].start,byName["Les contes d'hiver"].end],['2026-12-02',undefined]);
+  assert.equal(byName['Dinant Lumière'].end,'2027-01-02');
+  assert.equal(byName['Echt laat concert'].end,'2026-12-31T23:59:59Z');
+  assert.equal(calendarEvent(byName['Echt laat concert'],'namen').last,'2027-01-01');
+  assert.equal(byName['Plaatselijke inclusieve datums'].end,'2026-12-20');
+});

@@ -82,6 +82,7 @@ function parseDate(property, fallbackTimezone) {
   return {
     at, normalized: new Date(at).toISOString().replace('.000Z', 'Z'),
     day: local.slice(0, 10), localClock: local.slice(11), utcMidnight: Boolean(m[7] && time === '00:00:00'),
+    utcEndOfDay: Boolean(m[7] && time === '23:59:59'),
   };
 }
 
@@ -157,7 +158,12 @@ function normalizeDates(event, category, parse, name) {
   // DURATION still has a known start, and its unspecified end stays unspecified.
   const placeholder = !begin.date && (begin.utcMidnight || begin.localClock === '00:00:00');
   const range = begin.date || placeholder || (finish && finish.day > begin.day && finish.at - begin.at > 18 * 3_600_000);
-  let last = finish?.day ?? begin.day;
+  // The publisher also encloses date ranges in UTC 00:00:00 … 23:59:59
+  // (Namen's Christmas market, Dinant Lumière, Les Contes d'hiver). The
+  // endpoint date is inclusive; interpreting its final second as a Belgian
+  // showtime creates a phantom extra calendar day. Only recognize the pair.
+  const utcDateEnvelope = begin.utcMidnight && finish?.utcEndOfDay;
+  let last = utcDateEnvelope ? finish.normalized.slice(0, 10) : finish?.day ?? begin.day;
   // Idées publishes placeholder-mapped dates as inclusive in its own detail pages
   // (e.g. Louvain-la-Neige ends on 20 Dec even though ICS marks midnight).
   // Only explicit DATE and a *real* timed midnight are exclusive.

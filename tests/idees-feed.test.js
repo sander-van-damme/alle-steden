@@ -93,3 +93,17 @@ test('refresh replaces stale items; malformed or oversize and blocked storage ar
     await assert.rejects(setup().newLoad(async()=>upstream)());
   }
 });
+
+test('pre-correction stored calendar snapshots are not shown fresh or stale after the parser changes',async()=>{
+  const state=setup();
+  await state.newLoad(async()=>ics())();
+  const [key,value]=state.stored.entries().next().value;
+  const old=await value.json();
+  delete old.interpretation;
+  old.items[0].name='Verouderde kalenderdatums';
+  state.stored.set(key,Response.json(old));
+  let earlier;
+  await assert.rejects(state.newLoad(async()=>new Response('',{status:503}))(x=>{earlier=x}),/Ongeldig/);
+  assert.equal(earlier,undefined);
+  assert.equal((await state.newLoad(async()=>ics())()).items[0].name,'Concerttest');
+});

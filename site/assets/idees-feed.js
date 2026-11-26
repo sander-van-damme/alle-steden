@@ -7,6 +7,9 @@ const failurePause = 60_000;
 const cacheName = 'alle-steden-idees-v1';
 const cachePath = '/__calendar-cache/idees-v1';
 const timeout = 13_500;
+// Persisted items do not keep their raw ICS timestamps. Never re-use
+// flattened dates from a superseded parser, even during an upstream outage.
+const interpretation = 2;
 
 async function readFeed(fetcher) {
   const upstream = await fetcher(new URL(ideesFeedUrl), {
@@ -49,7 +52,8 @@ export function makeIdeesLoader({ getCache = ()=>globalThis.caches?.open(cacheNa
           const saved = await cache?.match(slot.key);
           if (saved) {
             const data = await saved.json();
-            if (Array.isArray(data?.items) && data.items.length <= 12_000 && Number.isFinite(data.fetchedAt)) slot.value = data;
+            if (data?.interpretation === interpretation && Array.isArray(data.items) && data.items.length <= 12_000 &&
+                Number.isFinite(data.fetchedAt)) slot.value = data;
           }
         }).catch(()=>{});
       }
@@ -75,7 +79,7 @@ export function makeIdeesLoader({ getCache = ()=>globalThis.caches?.open(cacheNa
       slot.pending = readFeed(fetcher).then(async raw => {
         const {items,stats} = parseIdeesCalendar(raw,cities,{from:today,through:addCalendarDays(today,120)});
         if (!items.length && stats.total && saved?.items.length) throw new Error('Onverwachte lege agenda');
-        const value = {items,fetchedAt:now(),forDay:today};
+        const value = {items,fetchedAt:now(),forDay:today,interpretation};
         slot.value = value;
         (async () => {
           const cache = await slot.cache;

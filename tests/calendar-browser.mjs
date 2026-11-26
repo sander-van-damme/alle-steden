@@ -467,6 +467,28 @@ try {
   await desktop.locator('[data-day="2026-12-04"]').click();
   assert.equal(await desktop.getByRole('link',{name:'Kleinhandelsmarkt Mechelen', exact:true}).count(),1);
 
+  for(const width of [1440,390]){
+    const device=await browser.newPage({viewport:{width,height:844},hasTouch:width===390,isMobile:width===390});
+    await install(device);
+    const url='https://uwtaxdtecrngvmgzradk.supabase.co/functions/v1/calendar-feed?**';
+    const feed=['BEGIN:VCALENDAR','VERSION:2.0','BEGIN:VEVENT','UID:namur-market-date-envelope@ideessorties.be',
+      'DTSTART:20261127T000000Z','DTEND:20261231T235959Z','SUMMARY:Marché de Noël à Namur','CATEGORIES:Marché de Noël',
+      'LOCATION:Rue de l’Ange, 5000 Namur, Namur','URL:https://ideessorties.be/events/marche-de-noel-a-namur-namur',
+      'END:VEVENT','END:VCALENDAR',''].join('\r\n');
+    await device.route(url,r=>r.fulfill({contentType:'text/calendar',body:feed,headers:{'Access-Control-Allow-Origin':'*'}}));
+    await device.goto(origin+'/kalender/?stad=namen&maand=2026-12');
+    await loaded(device);
+    const market=device.locator('[data-calendar-source=idees]').filter({has:device.getByRole('link',{name:'Marché de Noël à Namur',exact:true})});
+    await device.locator('[data-day="2026-12-31"]').click();
+    assert.equal(await market.count(),1);
+    assert.match(await market.innerText(),/27 november t\/m donderdag 31 december/u);
+    await device.goto(origin+'/kalender/?stad=namen&maand=2027-01');
+    await loaded(device);
+    await device.locator('[data-day="2027-01-01"]').click();
+    assert.equal(await market.count(),0);
+    await device.close();
+  }
+
   const namurMarketsUrl=url=>url.pathname.endsWith('/marchesnamurois/exports/json');
   let namurCalls=0;
   for(const device of [desktop,phone]) {
