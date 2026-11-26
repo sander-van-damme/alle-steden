@@ -33,6 +33,8 @@ export const sources = {
   randonneurs: { label: 'Randonneurs Belgium', href: 'https://randonneurs.be/kalender/', terms: 'https://randonneurs.be/api/docs/' },
   brusselsMarkets: { label: 'Stad Brussel · markten', href: brussels + '/explore/dataset/marches-plein-air-vbx/information/',
     license: 'https://creativecommons.org/publicdomain/zero/1.0/', attribution: 'Ville de Bruxelles · Affaires économiques / Data Management' },
+  namurMarkets: { label: 'Ville de Namur · markten', href: 'https://www.odwb.be/explore/dataset/marchesnamurois/information/',
+    license: ccby, attribution: 'Ville de Namur' },
   liegeMarkets: { label: 'Ville de Liège · marchés', href: 'https://opendata.liege.be/explore/dataset/marches/information/',
     license: ccby, attribution: 'Ville de Liège' },
   liegeBrocantes: { label: 'Ville de Liège · brocantes', href: 'https://opendata.liege.be/explore/assets/brocantes/',

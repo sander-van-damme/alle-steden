@@ -50,6 +50,7 @@ async function install(page, { fails = false, pauseGent = null, pauseIdeas = nul
   await page.route('https://www.odwb.be/api/**', (route) => {
     if (fails) return route.abort();
     const path = new URL(route.request().url()).pathname;
+    if (path.includes('/marchesnamurois/')) return route.fulfill({json:[],headers:{'Access-Control-Allow-Origin':'*'}});
     const walloonRows = [fixture, { ...fixture, id: 'mismatch', title: 'Verkeerde stad', address_city: 'Namur' },
       { ...fixture, id: 'recurrence', title: 'Niet uitgewerkte herhaling', recurrence: 'RRULE:FREQ=WEEKLY' }];
     const beyondFirstPage = { ...fixture, id:'ath-beyond-first', title:'Ath voorbij de eerste bronpagina',
@@ -465,6 +466,41 @@ try {
   }
   await desktop.locator('[data-day="2026-12-04"]').click();
   assert.equal(await desktop.getByRole('link',{name:'Kleinhandelsmarkt Mechelen', exact:true}).count(),1);
+
+  const namurMarketsUrl=url=>url.pathname.endsWith('/marchesnamurois/exports/json');
+  let namurCalls=0;
+  for(const device of [desktop,phone]) {
+    await device.route(namurMarketsUrl,route=>{
+      namurCalls++;
+      const rows=[['Belgrade','place du Bia Bouquet',50.471,4.825],['Bord de l’Eau','boulevard Frère Orban',50.464,4.856],
+        ['Jambes','place de la Wallonie',50.456,4.874],['La Plante','parking hall sportif',50.445,4.856]];
+      assert.equal(new URL(route.request().url()).searchParams.get('select'),'marche_nom,situation_emplacement,geo_point_2d');
+      return route.fulfill({json:rows.map(([marche_nom,situation_emplacement,lat,lon])=>({marche_nom,situation_emplacement,geo_point_2d:{lat,lon}})),
+        headers:{'Access-Control-Allow-Origin':'*'}});
+    });
+    await device.goto(origin+'/kalender/?stad=namen&maand=2026-12');
+    await loaded(device);
+    await device.locator('#calendar-category').selectOption('Markt');
+    const listings=device.locator('[data-calendar-source=namurMarkets]');
+    await device.locator('[data-day="2026-12-05"]').click();
+    assert.equal(await listings.count(),1);
+    assert.match(await listings.innerText(),/Bord de l’eau.*08:30–13:00.*gewone marktrooster.*Ville de Namur.*CC BY 4.0/su);
+    await device.locator('[data-day="2026-12-04"]').click();
+    assert.match(await listings.innerText(),/La Plante.*15:00–19:00/su);
+    for(const day of ['24','25','31']){
+      await device.locator('[data-day="2026-12-'+day+'"]').click();
+      assert.equal(await listings.count(),0);
+    }
+    await device.goto(origin+'/kalender/?stad=dinant&maand=2026-12');
+    await loaded(device);
+    assert.equal(await listings.count(),0);
+  }
+  assert.equal(namurCalls,2);
+  await phone.route(namurMarketsUrl,route=>route.fulfill({status:502,headers:{'Access-Control-Allow-Origin':'*'}}));
+  await phone.goto(origin+'/kalender/?stad=namen&maand=2026-12');
+  await loaded(phone);
+  assert.equal(await phone.locator('[data-calendar-source=namurMarkets]').count(),0);
+  assert.match(await phone.locator('#calendar-status').innerText(),/Niet bereikbaar:.*Ville de Namur · markten/);
 
   let metroCalls = 0;
   for (const device of [desktop,phone]) {

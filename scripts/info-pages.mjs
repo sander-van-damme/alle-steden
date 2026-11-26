@@ -51,6 +51,7 @@ export function aboutPage(layout) {
         [from('lacart'), 'Voor een selectie tijdelijke tentoonstellingen in Kortrijk en Doornik. De gepubliceerde openingsinfo van Abby, Texture en TAMAT bepaalt welke bezoekuren we tonen.'],
         [from('eurometropolis') + ' en ' + from('stripmuseum', 'Stripmuseum'), 'Voor tijdelijke activiteiten via OpenAgenda. De openingsinfo van het ' + link('museum', sources.stripmuseum.visitorHref) + ' bepaalt welke bezoekuren we tonen.'],
         [from('antwerpMarkets', 'bron stad Antwerpen') + ', ' + from('brusselsMarkets', 'Stad Brussel') + ' en ' + from('liegeMarkets', 'Ville de Liège (markten)') + ' en ' + from('liegeBrocantes', 'brocantes'), 'Voor markten en brocantes volgens het gewone rooster.'],
+        [from('namurMarkets'), 'Voor de gebruikelijke marktplekken in Namen. De bezoekersuren en vaste uitzonderingen komen uit ' + link('het stadsreglement', 'https://www.namur.be/fr/ma-ville/administration/services-communaux/domaine-public-et-securite/reglements/annexe-1-activites-ambulantes-sur-les-marches-en.pdf') + '; de kaart bevestigt geen afzonderlijke edities.'],
         ['Gemeentelijke roosters: ' + editionLinks.map(([id, city]) => from(id, city)).join(', '), 'Voor lokale markten en de uitzonderingen die de gemeente publiceert.'],
         ['Organisatoren, stadsdiensten en plekken zelf', 'Handmatig nagekeken datums, bezoekuren en uitzonderingen. Onder meer ' +
           link('Arts&Publics', 'https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/') + ', ' +

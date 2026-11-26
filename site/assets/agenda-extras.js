@@ -4,6 +4,7 @@
 import { dateOnly, localToday } from './sources.js';
 import { liegeBrocantesEventSource, marketEventSource } from './market-events.js';
 import { antwerpMarketEventSource } from './antwerp-market-events.js';
+import { namurMarketEventSource } from './namur-market-events.js';
 import { localMarketEventSource } from './local-market-events.js';
 import { fetchRandonneursEvents } from './randonneurs-events.js';
 import { fetchAdepsEvents } from './adeps-events.js';
@@ -47,7 +48,7 @@ export function extraAgendaJobs(cities, { city, region, span, origin, rawFetcher
     if (adepsCities.length) work.push(['adeps', () => fetchAdepsEvents({ ...options, cities: adepsCities, from: span.from, to: span.through })]);
     for (const entry of chosen) {
       const settings = { ...span, ...options, today };
-      const provider = marketEventSource(entry, settings) ?? antwerpMarketEventSource(entry, settings) ?? localMarketEventSource(entry, settings);
+      const provider = marketEventSource(entry, settings) ?? antwerpMarketEventSource(entry, settings) ?? localMarketEventSource(entry, settings) ?? namurMarketEventSource(entry, settings);
       if (provider) work.push([provider.key, provider.run]);
       const brocantes = liegeBrocantesEventSource(entry, settings);
       if (brocantes) work.push([brocantes.key, brocantes.run]);
