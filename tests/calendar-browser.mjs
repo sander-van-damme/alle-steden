@@ -30,6 +30,7 @@ async function install(page, { fails = false, pauseGent = null, pauseIdeas = nul
     'DTEND;VALUE=DATE:20261231','SUMMARY:Le Village de Noël de Liège','CATEGORIES:Marché de Noël','LOCATION:Place du Marché, 4000 Liège',
     'URL:https://ideessorties.be/events/le-village-de-noel-de-liege-liege','END:VEVENT','END:VCALENDAR',''].join('\r\n');
   await page.route(origin + '/api/zuid-limburg', route => route.fulfill({json:{items:[]}}));
+  await page.route(origin + '/api/lacart-events?**', route => route.fulfill({json:{items:[]}}));
   await page.route(origin + '/api/fosdem', route => route.fulfill({json:{items:[]}}));
   await page.route('https://uwtaxdtecrngvmgzradk.supabase.co/functions/v1/calendar-feed?**',async route=>{
     if(pauseIdeas) await pauseIdeas;
@@ -499,6 +500,36 @@ try {
   await loaded(phone);
   assert.match(await phone.locator('#calendar-status').innerText(),/Niet bereikbaar:.*Eurometropolis/);
   assert.equal(await phone.locator('[data-calendar-source=eurometropolis]').count(),0);
+
+  let lacartCalls=0;
+  for (const device of [desktop,phone]) {
+    await device.route(origin+'/api/lacart-events?stad=kortrijk',route=>{
+      lacartCalls++;
+      return route.fulfill({json:{items:[{
+        id:'lacart:39620528',city:'kortrijk',name:'After Nature. Beauty and Decay, from Savery to Today',category:'Tentoonstelling',
+        website:'https://openagenda.com/la-cart/events/39620528_after-nature',
+        venue:'Abby Kortrijk',source:'lacart',sourceUpdated:'2026-08-19',start:'2026-10-30',end:'2027-04-11',
+        sessions:[
+          {start:'2026-12-23T10:00:00+01:00',end:'2026-12-23T18:00:00+01:00'},
+          {start:'2026-12-26T10:00:00+01:00',end:'2026-12-26T18:00:00+01:00'},
+        ],
+      }]}});
+    });
+    await device.goto(origin+'/kalender/?stad=kortrijk&maand=2026-12');
+    await loaded(device);
+    const expo=device.locator('[data-calendar-source=lacart]');
+    assert.equal(await expo.count(),1);
+    await device.locator('[data-day="2026-12-23"]').click();
+    assert.match(await expo.innerText(),/10:00–18:00[\s\S]+La C’ART[\s\S]+Licence Ouverte 2.0/);
+    await device.locator('[data-day="2026-12-25"]').click();
+    assert.equal(await expo.count(),0);
+  }
+  assert.equal(lacartCalls,2);
+  await phone.route(origin+'/api/lacart-events?stad=kortrijk',route=>route.fulfill({status:502}));
+  await phone.goto(origin+'/kalender/?stad=kortrijk&maand=2026-12');
+  await loaded(phone);
+  assert.match(await phone.locator('#calendar-status').innerText(),/Niet bereikbaar:.*La C’ART/);
+  assert.equal(await phone.locator('[data-calendar-source=lacart]').count(),0);
 
   let comicsCalls=0;
   for (const device of [desktop,phone]) {

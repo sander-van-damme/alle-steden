@@ -48,6 +48,7 @@ export function aboutPage(layout) {
         [from('idees') + ', ' + from('adeps') + ' en ' + from('randonneurs'), 'Voor uitstappen, wandelingen en fietsactiviteiten.'],
         [from('zuidLimburg'), 'Voor geselecteerde activiteiten in Belgische steden die het Nederlandse toerismebureau in zijn Belgische agenda opneemt. Controleer de daguren bij de organisator.'],
         [from('fosdem', 'FOSDEM-agenda') + ' (' + link('CC BY 4.0', cc) + ', behalve naam en logo)', 'Voor de congresdatums in Brussel. Het programma bepaalt de uren.'],
+        [from('lacart'), 'Voor een selectie tijdelijke tentoonstellingen in Kortrijk en Doornik. De gepubliceerde openingsinfo van Abby, Texture en TAMAT bepaalt welke bezoekuren we tonen.'],
         [from('eurometropolis') + ' en ' + from('stripmuseum', 'Stripmuseum'), 'Voor tijdelijke activiteiten via OpenAgenda. De openingsinfo van het ' + link('museum', sources.stripmuseum.visitorHref) + ' bepaalt welke bezoekuren we tonen.'],
         [from('antwerpMarkets', 'bron stad Antwerpen') + ', ' + from('brusselsMarkets', 'Stad Brussel') + ' en ' + from('liegeMarkets', 'Ville de Liège (markten)') + ' en ' + from('liegeBrocantes', 'brocantes'), 'Voor markten en brocantes volgens het gewone rooster.'],
         ['Gemeentelijke roosters: ' + editionLinks.map(([id, city]) => from(id, city)).join(', '), 'Voor lokale markten en de uitzonderingen die de gemeente publiceert.'],

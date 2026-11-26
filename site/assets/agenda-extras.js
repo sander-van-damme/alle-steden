@@ -8,6 +8,7 @@ import { localMarketEventSource } from './local-market-events.js';
 import { fetchRandonneursEvents } from './randonneurs-events.js';
 import { fetchAdepsEvents } from './adeps-events.js';
 import { fetchMetroEvents, metroCities } from './eurometropolis-events.js';
+import { fetchLacartEvents, lacartCities } from './lacart-events.js';
 import { fetchComicsEvents } from './stripmuseum-events.js';
 import { fetchZuidLimburgEvents, zuidLimburgCities } from './zuidlimburg-events.js';
 import { loadIdees } from './idees-feed.js';
@@ -36,6 +37,8 @@ export function extraAgendaJobs(cities, { city, region, span, origin, rawFetcher
     if (origin && chosen.some(({slug})=>metroCities.includes(slug))) work.push(['eurometropolis', () => fetchMetroEvents({
       ...span, ...options, origin, cities:chosen,
     })]);
+    if (origin && chosen.some(({slug})=>lacartCities.includes(slug))) work.push(['lacart',() =>
+      fetchLacartEvents({...span,...options,origin,cities:chosen})]);
     if (origin && allowed.has('brussel')) work.push(['stripmuseum',() => fetchComicsEvents({...span,...options,origin})]);
     if (origin && allowed.has('brussel') && fosdemInScope(span)) work.push(['fosdem', () => fetchFosdemEvents({ ...span, ...options, origin })]);
     if (origin && chosen.some(({slug})=>zuidLimburgCities.includes(slug))) work.push(['zuidLimburg',() =>
