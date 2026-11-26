@@ -27,6 +27,5 @@ export function cityDirectoryMap(cities, esc) {
       </g>
     </svg>
     <div class="directory-map-focus"><p id="directory-map-label">Kies een stad op de kaart of in de lijst.</p><a id="directory-map-link" hidden>Bekijk stadsfiche</a></div>
-    <figcaption>Gewestgrenzen: <a href="https://simplemaps.com/gis/country/be">SimpleMaps</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>).</figcaption>
   </figure>`;
 }

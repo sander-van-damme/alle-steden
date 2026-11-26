@@ -8,6 +8,20 @@ const port = process.env.CITY_MAP_TEST_PORT ?? '4179';
 const origin = 'http://127.0.0.1:' + port;
 const server = spawn(process.execPath, ['scripts/preview.mjs'], { stdio: ['ignore', 'pipe', 'inherit'], env: {...process.env, PORT: port} });
 let browser;
+async function checkFooterMapCredit(page) {
+  const sourceUrl = 'https://simplemaps.com/gis/country/be';
+  assert.equal(await page.locator('.directory-map a[href="' + sourceUrl + '"]').count(), 0);
+  assert.equal(await page.locator('a[href="' + sourceUrl + '"]').count(), 1);
+  const credit = page.getByRole('region', { name: 'Kaartbron' });
+  assert.ok(await credit.isVisible());
+  assert.ok(await credit.evaluate(el => el === el.parentElement.lastElementChild &&
+    el.parentElement.nextElementSibling?.matches('footer') &&
+    el.previousElementSibling?.matches('.field-note')));
+  assert.equal(await credit.getByRole('link', { name: 'SimpleMaps' }).getAttribute('href'), sourceUrl);
+  assert.equal(await credit.getByRole('link', { name: 'CC BY 4.0' }).getAttribute('href'),
+    'https://creativecommons.org/licenses/by/4.0/');
+  assert.match(await credit.innerText(), /coördinaten zijn afgerond/u);
+}
 try {
   await Promise.race([once(server.stdout, 'data'), once(server, 'exit').then(code => assert.fail('Preview exited: ' + code))]);
   browser = await chromium.launch({
@@ -18,6 +32,7 @@ try {
   const errors = [];
   desktop.on('pageerror', e => errors.push(e.message));
   await desktop.goto(origin + '/#steden');
+  await checkFooterMapCredit(desktop);
   assert.equal(await desktop.locator('[data-city-pin]').count(), 138);
   const card = desktop.locator('[data-city-slug="gent"]');
   const pin = desktop.locator('[data-city-pin="gent"]');
@@ -59,6 +74,7 @@ try {
   for (const width of [320, 390]) {
     await phone.setViewportSize({ width, height: 780 });
     await phone.goto(origin + '/#steden');
+    await checkFooterMapCredit(phone);
     await phone.locator('#query').fill('ninove');
     await phone.locator('[data-city-pin="ninove"] .directory-pin-hit').tap();
     assert.equal(await phone.locator('#directory-map-label').textContent(), 'Ninove');

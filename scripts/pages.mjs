@@ -167,6 +167,10 @@ export function indexPage(cities) {
         <div><h2>De Graslei in Gent</h2><p>Historische gevels aan de Leie.</p>
         <a href="/steden/gent/">Naar de stadsfiche van Gent ${arrow}</a></div>
       </aside>
+      <section class="directory-credits" aria-labelledby="directory-credits-title">
+        <h2 id="directory-credits-title">Kaartbron</h2>
+        <p>Gewestgrenzen: <a href="https://simplemaps.com/gis/country/be">SimpleMaps</a> (<a href="https://creativecommons.org/licenses/by/4.0/" rel="license">CC BY 4.0</a>). De coördinaten zijn afgerond voor deze kaart.</p>
+      </section>
     </main>`,
   });
 }
