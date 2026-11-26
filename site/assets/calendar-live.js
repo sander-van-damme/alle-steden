@@ -1,5 +1,5 @@
 import { addCalendarDays, cityNames, fetchCityEvents, getGent, getJson, getNamur, localToday,
-  regionalWalloonAgendaLimit, walloonAgendaItems, walloonAgendaQuery } from './sources.js';
+  regionalWalloonAgendaLimit, walloonAgendaItems, walloonAgendaQuery, walloonCalendarVenue } from './sources.js';
 import { preferStripmuseum } from './stripmuseum-events.js';
 import { preferAdeps } from './adeps-events.js';
 import { preferExistingLuikChristmas } from './zuidlimburg-events.js';
@@ -39,7 +39,7 @@ async function regionalWalloonEvents(cities, span, options) {
     if (!row || typeof row !== 'object') continue;
     const owner = aliases.get(exactKey(row.owner_name));
     const address = aliases.get(exactKey(row.address_city));
-    if (!owner || owner !== address) continue;
+    if (!owner || (owner !== address && (address || !walloonCalendarVenue(row, owner)))) continue;
     if (!byCity.has(owner)) byCity.set(owner, []);
     byCity.get(owner).push(row);
   }

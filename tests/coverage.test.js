@@ -76,3 +76,50 @@ test('planner registry returns only inclusive-window Belgian dates, without losi
   assert.match(response.items[0].start, /09:00:00\+00:00$/);
   assert.deepEqual(response.coverage, [{ source: 'imio', state: 'ok', count: 1 }]);
 });
+
+const kom = { slug:'komen-waasten', code:'57097', region:'Wallonië', name:'Komen-Waasten',
+  names:['Komen-Waasten','Comines-Warneton'] };
+const localConcert = base({
+  id:'jazz-1', category:'concert_festival', owner_name:'Comines-Warneton', address_city:'Comines', address_postal_code:'7780',
+  address_street_name:'Place Sainte-Anne', address_house_number:'13',
+  event_url:'https://www.openmusicjazzclub.be/liste-des-concerts/', whole_day:0,open_end:0,
+});
+const localOrchestra = {
+  ...localConcert,id:'euro-1',address_city:'Warneton',address_postal_code:'7784',address_street_name:'Clos des Mountches',
+  address_house_number:'7',event_url:'https://cccw.be/event/euro-symphonic-orchestra/',
+};
+
+test('iMio calendar can expand only for exact verified Belgian venues, not short city names everywhere', () => {
+  const uncertain = [
+    { address_postal_code:'59560' }, { address_house_number:'12' }, { address_street_name:'Other place' },
+    { address_city:'Bruges', address_postal_code:'8000' }, { event_url:'https://other.example/' },
+    { owner_name:'Mouscron' }, { category:'flea_market_market' }, { whole_day:1 }, { open_end:1 },
+    { end_datetime:'2026-11-28T09:00:00+00:00' }, { recurrence:'RRULE:FREQ=WEEKLY' },
+    { address_city:'Ploegsteert',address_postal_code:'7782',event_url:'https://cccw.be/event/marcel-et-son-orchestre/' },
+  ];
+  const results = [localConcert, localOrchestra, ...uncertain.map((fields,i)=>({ ...localConcert,id:'bad-'+i,...fields }))];
+  const items = walloonAgendaItems({results},kom,range,{calendar:true});
+  assert.deepEqual(items.map(({id,start,end,venue})=>[id,start,end,venue]),[
+    ['imio:jazz-1','2026-11-28',undefined,'Open Music Jazz Club · Place Sainte-Anne 13, Comines'],
+    ['imio:euro-1','2026-11-28T09:00:00+00:00',undefined,'Église Saints-Pierre-et-Paul · Place de l’Abbaye, Warneton'],
+  ]);
+  assert.deepEqual(walloonAgendaItems({results},kom,range),[]);
+  assert.deepEqual(walloonAgendaItems({results},{...kom,code:'57098'},range,{calendar:true}),[]);
+  assert.deepEqual(walloonAgendaItems({results},{...kom,slug:'somewhere-else'},range,{calendar:true}),[]);
+});
+
+test('the exact iMio query is calendar-only and adds no request, user data or looser postcode matching', async () => {
+  const fetches=[];
+  const req={...range,fetcher:async url=>{
+    fetches.push(url);
+    return Response.json({results:[localConcert]});
+  }};
+  assert.equal((await fetchCityEvents(kom,{...req,calendar:true})).items.length,1);
+  assert.equal((await fetchCityEvents(kom,req)).items.length,0);
+  assert.equal(fetches.length,2);
+  const clauses=fetches[0].searchParams.get('where');
+  assert.match(clauses,/address_city in \('Comines'\) AND address_postal_code in \('7780'\) AND address_street_name in \('Place Sainte-Anne'\) AND address_house_number in \('13'\)/);
+  assert.match(clauses,/address_city in \('Warneton'\) AND address_postal_code in \('7784'\)/);
+  assert.match(clauses,/event_url in \('https:\/\/cccw\.be\/event\/euro-symphonic-orchestra\/'\)/);
+  assert.doesNotMatch(fetches[1].searchParams.get('where'),/'Warneton'|'Comines'|address_postal_code in/);
+});

@@ -583,11 +583,37 @@ function eventSpan({ from = localToday(), through = addCalendarDays(from, 83) } 
 const imioSelect = 'id,start_datetime,end_datetime,recurrence,whole_day,open_end,title,category,coordinates,address_street_name,address_house_number,address_postal_code,address_city,owner_name,event_url';
 const odsqlLiterals = (values) => values.map((value) => "'" + value.replaceAll("'", "''") + "'").join(', ');
 
-export function walloonAgendaQuery(city, span, { regional = false } = {}) {
+// A locality name is not a municipality match. Only expand the calendar for
+// reviewed venues with an exact postcode, street, address and organizer link.
+const imioCalendarVenues = [
+  { city:'Comines', postcode:'7780', street:'Place Sainte-Anne', number:'13',
+    href:'https://www.openmusicjazzclub.be/liste-des-concerts/', label:'Open Music Jazz Club · Place Sainte-Anne 13, Comines',
+    timing:'date' },
+  { city:'Warneton', postcode:'7784', street:'Clos des Mountches', number:'7',
+    href:'https://cccw.be/event/euro-symphonic-orchestra/', label:'Église Saints-Pierre-et-Paul · Place de l’Abbaye, Warneton',
+    timing:'start' },
+];
+const imioLocalityVenues = (city) => city?.slug === 'komen-waasten' && city?.code === '57097' ? imioCalendarVenues : [];
+
+export function walloonCalendarVenue(row, city) {
+  if (row?.category !== 'concert_festival' || Number(row.whole_day) !== 0 || Number(row.open_end) !== 0) return undefined;
+  return imioLocalityVenues(city).find((venue) => nameKey(row.address_city) === nameKey(venue.city)
+    && row.address_postal_code === venue.postcode && nameKey(row.address_street_name) === nameKey(venue.street)
+    && row.address_house_number === venue.number && visitorUrl(row.event_url) === venue.href);
+}
+
+export function walloonAgendaQuery(city, span, { regional = false, calendar = false } = {}) {
   const { from, through } = eventSpan(span);
   const names = regional ? '' : odsqlLiterals(cityNames(city));
   if (!regional && !names) throw new Error('Ontbrekende stadsnaam');
-  const locality = regional ? '' : `owner_name in (${names}) AND address_city in (${names}) AND `;
+  const additions = calendar && !regional ? imioLocalityVenues(city) : [];
+  const knownAddresses = additions.map(({ city:locality, postcode, street, number, href }) =>
+    '(' + Object.entries({ address_city:locality, address_postal_code:postcode, address_street_name:street,
+      address_house_number:number, event_url:href, category:'concert_festival' })
+      .map(([field, value]) => field + ' in (' + odsqlLiterals([value]) + ')').join(' AND ') + ')');
+  const normalAddress = `address_city in (${names})`;
+  const candidates = knownAddresses.length ? '(' + [normalAddress, ...knownAddresses].join(' OR ') + ')' : normalAddress;
+  const locality = regional ? '' : `owner_name in (${names}) AND ${candidates} AND `;
   // The API stores datetimes in UTC. Fetch a one-day margin at each end,
   // then filter exactly by Belgian calendar day after normalization.
   const lower = addCalendarDays(from, -1);
@@ -619,8 +645,11 @@ export function walloonAgendaItems(doc, city, span, { calendar = false } = {}) {
   const { from, through } = eventSpan(span);
   return rows(doc, 'results').flatMap((row) => {
     const name = compact(row.title);
-    if (!name || !names.has(nameKey(row.owner_name)) || !names.has(nameKey(row.address_city))
-      || !Object.hasOwn(imioTypes, row.category) || compact(row.recurrence)) return [];
+    if (!name || !names.has(nameKey(row.owner_name)) || !Object.hasOwn(imioTypes, row.category) ||
+        compact(row.recurrence)) return [];
+    const locality = !names.has(nameKey(row.address_city));
+    const localVenue = locality && calendar ? walloonCalendarVenue(row, city) : undefined;
+    if (locality && !localVenue) return [];
     const start = dateValue(row.start_datetime);
     const end = dateValue(row.end_datetime);
     if (!start || (end && Date.parse(end) < Date.parse(start))) return [];
@@ -637,6 +666,15 @@ export function walloonAgendaItems(doc, city, span, { calendar = false } = {}) {
       allDay && end && !dateOnly(end) ? sameWholeDayEnd(firstDay, end) : lastDay;
     if ((calendarDay(visibleEnd) ?? firstDay) < from || firstDay > through) return [];
     const id = compact(row.id, 160);
+    if (localVenue) {
+      // The local rows under review describe individual concerts. Do not
+      // turn an advertised start or a customary end into a visit window.
+      if (!id || !start || dateOnly(start) || !timed || firstDay !== lastDay || Date.parse(end) <= Date.parse(start)) return [];
+      return [{
+        id:'imio:' + id, name, source:'imio', start:localVenue.timing === 'start' ? start : firstDay,
+        venue:localVenue.label, category:imioTypes[row.category], website:localVenue.href,
+      }];
+    }
     const sourceRecord = parameters(namur + '/explore/dataset/' + imioDataset + '/table/', { q: id });
     const address = [compact(row.address_street_name), compact(row.address_house_number), compact(row.address_city)]
       .filter(Boolean).join(' · ');
@@ -655,7 +693,7 @@ export function walloonAgendaItems(doc, city, span, { calendar = false } = {}) {
 
 export async function getWalloonEvents(city, options = {}) {
   const span = eventSpan(options);
-  const result = await getJson(walloonAgendaQuery(city, span), options);
+  const result = await getJson(walloonAgendaQuery(city, span, { calendar: options.calendar === true }), options);
   return walloonAgendaItems(result, city, span, options);
 }
 

@@ -18,6 +18,12 @@ const fixture = {
   category: 'concert_festival', start_datetime: '2026-12-20T16:00:00Z', end_datetime: '2026-12-20T17:30:00Z',
   event_url: 'https://example.org/concert',
 };
+const localized = {
+  ...fixture,id:'verified-comines',title:'Jazz in Comines',category:'concert_festival',
+  owner_name:'Comines-Warneton',address_city:'Comines',address_postal_code:'7780',
+  address_street_name:'Place Sainte-Anne',address_house_number:'13',whole_day:0,open_end:0,
+  event_url:'https://www.openmusicjazzclub.be/liste-des-concerts/',
+};
 async function install(page, { fails = false, pauseGent = null, pauseIdeas = null, ideasStatus = 200 } = {}) {
   await page.clock.setFixedTime(date);
   const ics = ['BEGIN:VCALENDAR','VERSION:2.0','BEGIN:VEVENT','UID:test-idee@ideessorties.be',
@@ -737,6 +743,25 @@ try {
     assert.ok((await candidate.locator('.calendar-event-meta').innerText()).includes(hours),name);
     await device.locator('[data-day="'+no+'"]').click();
     assert.equal(await candidate.count(),0);
+  }
+
+  // Keep the main broad fixture unchanged; add localized rows in isolated browser cases.
+  const localFixture = (device) => device.route('https://www.odwb.be/api/**/evenements-en-wallonie/**', route => {
+    const rows=[localized, {...localized,id:'misleading',title:'Jazz over de grens',address_postal_code:'59560'}];
+    return route.fulfill({json:route.request().url().includes('/exports/json?')?rows:{results:rows},
+      headers:{'Access-Control-Allow-Origin':'*'}});
+  });
+  await localFixture(desktop);
+  await localFixture(phone);
+  for (const [device,filter] of [[desktop,'gewest=Wallonië'],[phone,'stad=komen-waasten']]) {
+    await device.goto(origin+'/kalender/?maand=2026-12&'+filter);
+    await loaded(device);
+    const day=device.locator('[data-day="2026-12-20"]');
+    if (device===phone) await day.tap(); else await day.click();
+    const result=device.locator('.calendar-event[data-calendar-source=imio]').filter({hasText:'Jazz in Comines'});
+    assert.equal(await result.count(),1);
+    assert.match(await result.innerText(),/Komen-Waasten[\s\S]*Uur niet vermeld[\s\S]*Place Sainte-Anne 13/u);
+    assert.equal(await device.getByText('Jazz over de grens',{exact:true}).count(),0);
   }
 
   const expoTitle = 'Albert Servaes. Pionier van het expressionisme';

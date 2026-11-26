@@ -44,7 +44,7 @@ export function aboutPage(layout) {
         [link('Paradigm / Brussel Mobiliteit', 'https://opendata.brussels.be/explore/dataset/limites-administratives-des-communes-en-region-de-bruxelles-capitale/') + ' en ' + link('Open Data Wallonie-Bruxelles', 'https://www.odwb.be/explore/dataset/communesgemeente-belgium/information/'), 'Gemeentegrenzen voor het controleren van locaties.'],
       ])}
       ${sourceGroup('Kalender en bezoekuren', [
-        [from('gent') + ', ' + from('namur', 'agenda van Namen') + ' en ' + from('imio', 'iMio / Open Data Wallonie-Bruxelles'), 'Voor de Gentse, Naamse en aangesloten Waalse agenda’s.'],
+        [from('gent') + ', ' + from('namur', 'agenda van Namen') + ' en ' + from('imio', 'iMio / Open Data Wallonie-Bruxelles'), 'Voor de Gentse, Naamse en aangesloten Waalse agenda’s. Bij gecontroleerde concertlocaties in Komen en Waasten nemen we ook vermeldingen over die onder hun deelgemeente staan.'],
         [from('idees') + ', ' + from('adeps') + ' en ' + from('randonneurs'), 'Voor uitstappen, wandelingen en fietsactiviteiten.'],
         [from('zuidLimburg'), 'Voor geselecteerde activiteiten in Belgische steden die het Nederlandse toerismebureau in zijn Belgische agenda opneemt. Controleer de daguren bij de organisator.'],
         [from('fosdem', 'FOSDEM-agenda') + ' (' + link('CC BY 4.0', cc) + ', behalve naam en logo)', 'Voor de congresdatums in Brussel. Het programma bepaalt de uren.'],
