@@ -16,9 +16,10 @@ await withPlanner(process.env.PLANNER_OPTIONS_PORT??4487,async(browser,origin)=>
   const editor=trip.locator('[data-itinerary-stop-editor]'); await editor.waitFor();
   if(!await editor.evaluate(node=>node.open))await editor.locator('summary').click();
   const pick=editor.locator('[data-itinerary-stop-choice]');
-  const park=pick.locator('option').filter({hasText:'Testpark langs de route'});
-  await park.waitFor({state:'attached',timeout:25_000});
-  assert.doesNotMatch((await pick.locator('option').allTextContents()).join(' '),/Testmuseum langs de route/);
+  const park=trip.locator('[data-route-stop-key][aria-label*="Testpark langs de route"]');
+  await park.waitFor({timeout:25_000});
+  assert.equal(await trip.locator('[data-route-stop-key][aria-label*="Testmuseum langs de route"]').count(),0);
+  assert.doesNotMatch((await pick.locator('option').allTextContents()).join(' '),/Testpark|Testmuseum/i);
   const services=trip.locator(loc.service); await services.waitFor({timeout:25_000});
   await services.locator('summary').click();
   await services.getByRole('link',{name:'Openbaar toilet',exact:true}).waitFor();
@@ -34,7 +35,8 @@ await withPlanner(process.env.PLANNER_OPTIONS_PORT??4487,async(browser,origin)=>
   const other=await minutes.locator('option:not(:checked)').first().getAttribute('value');
   await minutes.selectOption(other); assert.equal(await minutes.inputValue(),other);
   await pauses.locator('[data-itinerary-remove-stop]').click(); assert.equal(await pauses.count(),0);
-  await pick.selectOption(await park.getAttribute('value')); await editor.locator('[data-itinerary-add-stop]').click();
+  await park.click();
+  await trip.locator('[data-route-stop-popup]').getByRole('button',{name:/Voeg.*stop toe/i}).click();
   await activities.getByText('Testpark langs de route',{exact:true}).waitFor();
   assert.equal(await activities.getByText(/geopend|bevestigd bezoek/i).count(),0);
   assert.equal(calls.routes.length,beforeStops,'an optional stop is not a fabricated reroute');

@@ -144,3 +144,14 @@ test('route notices are scoped to actual geometry, including a Walloon crossing 
   assert.equal(relevantWalloonRoute([{coordinates:[[2.965,50.766],[2.944,50.744]]}]),true);
   assert.equal(relevantWalloonRoute([]),false);
 });
+
+test('an optional off-route activity exports a separate labelled waypoint and leaves track bytes intact',()=>{
+  const route={coordinates:[[3.77540,50.62872],[3.83531,50.70848]],km:12.3};
+  const bare={route,distanceDriven:true,cities:[{name:'Aat'},{name:'Lessen'}]};
+  const activity={kind:'activity',name:'Hôpital Notre-Dame à la Rose',lon:3.83612,lat:50.70935,distanceToRouteKm:.116};
+  const without=createRouteGpx(bare);
+  const withStop=createRouteGpx({...bare,visits:[activity]});
+  assert.equal(withStop.split('<trk>')[1],without.split('<trk>')[1]);
+  assert.match(withStop,/<wpt lat="50\.7093500" lon="3\.8361200"><name>Hôpital Notre-Dame à la Rose<\/name><desc>116 m hemelsbreed van de route; omweg niet berekend\.<\/desc><\/wpt>/u);
+  assert.doesNotMatch(without,/<wpt /);
+});

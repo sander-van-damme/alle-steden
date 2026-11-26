@@ -112,6 +112,7 @@ function syncMarkers(view) {
 }
 function renderStopRows(view) {
   const rows=[...view.stops.values()].sort((a,b)=>a.kmAlongRoute-b.kmAlongRoute);
+  view.stopSummary.textContent=rows.length?rows.length+' '+(rows.length===1?'geplande stop':'geplande stops'):'Stops en pauzes';
   view.stopList.hidden=!rows.length;
   const list=el('ul',null,'itinerary-added-list');
   for(const row of rows){
@@ -120,7 +121,7 @@ function renderStopRows(view) {
     const label=el('strong',row.name);
     if(row.website)label.replaceChildren(link(row.name,row.website));
     body.append(label,el('small','Rond km '+fmt(row.kmAlongRoute)+
-      (row.kind==='pause'?' · Pauzeplek zelf kiezen':row.distanceToRouteKm>.06?' · Omweg niet berekend':'')));
+      (row.kind==='pause'?' · Pauzeplek zelf kiezen':row.distanceToRouteKm>.01?' · Omweg niet berekend':'')));
     const controls=el('div',null,'itinerary-stop-controls');
     const mins=el('select'); mins.dataset.itineraryStopMinutes=row.key;
     mins.setAttribute('aria-label','Geschatte duur '+row.name);
@@ -144,28 +145,24 @@ function choices(view) {
     if(!Array.isArray(city.firstLocation)||view.stops.has('pause:'+city.slug))continue;
     option('pause:'+city.slug,'Korte pauze bij '+city.name+' (15 min)');
   }
-  for(const p of view.candidates){
-    if(!view.stops.has(p.key))option(p.key,p.name+' · ca. '+duration(p.effort)+(p.kind==='exterior'?' buiten':!p.documented?' · uren onbekend':''));
-  }
   view.stopChoice.replaceChildren(...options);
   if(options.some(opt=>opt.value===previous))view.stopChoice.value=previous;
   view.add.disabled=!options.length;
   view.stopChoice.disabled=!options.length;
-  if(view.candidates.length)view.stopEditor.dataset.itineraryPois='';
-  else delete view.stopEditor.dataset.itineraryPois;
   renderStopRows(view);
 }
 function makeStopEditor(view) {
   const box=el('details',null,'itinerary-band itinerary-details itinerary-stop-editor');
   box.dataset.itineraryStopEditor='';
-  box.append(el('summary','Stops plannen'));
+  const summary=el('summary','Stops en pauzes');
+  box.append(summary);
   const list=el('div'); list.dataset.itineraryStops=''; list.hidden=true;
   const budget=el('p',null,'planner-hint'); budget.dataset.itineraryStopBudget=''; budget.setAttribute('aria-live','polite');
   const line=el('div',null,'itinerary-stop-entry');
-  const select=el('select'); select.dataset.itineraryStopChoice=''; select.setAttribute('aria-label','Kies een mogelijke stop');
-  const add=action('Voeg stop toe','itineraryAddStop');
+  const select=el('select'); select.dataset.itineraryStopChoice=''; select.setAttribute('aria-label','Waar wil je pauzeren?');
+  const add=action('Voeg pauze toe','itineraryAddStop');
   line.append(select,add); box.append(list,line,budget);
-  Object.assign(view,{stopEditor:box,stopList:list,stopBudget:budget,stopChoice:select,add});
+  Object.assign(view,{stopEditor:box,stopSummary:summary,stopList:list,stopBudget:budget,stopChoice:select,add});
   box.addEventListener('click',event=>{
     const button=event.target.closest('button');
     if(button===add){
@@ -175,22 +172,29 @@ function makeStopEditor(view) {
         const point=city?.firstLocation && Number.isFinite(city.firstKm)
           ? {lon:city.firstLocation[0],lat:city.firstLocation[1],kmAlongRoute:city.firstKm,distanceToRouteKm:0} : pointAtKm(view.trip);
         if(point)view.stops.set(key,{...point,key,kind:'pause',name:city?'Korte pauze bij '+city.name:'Korte pauze',minutes:15});
-      }else{
-        const point=view.candidates.find(x=>x.key===key);
-        if(point)view.stops.set(key,{...point,kind:'activity',minutes:point.effort});
       }
-      choices(view); select.focus();
+      choices(view); (select.disabled?summary:select).focus();
     }else if(button?.dataset.itineraryRemoveStop){
-      view.stops.delete(button.dataset.itineraryRemoveStop); choices(view); select.focus();
+      view.stops.delete(button.dataset.itineraryRemoveStop); choices(view); (select.disabled?summary:select).focus();
     }
   });
   box.addEventListener('change',event=>{
     const input=event.target, key=input.dataset.itineraryStopMinutes;
     if(key&&view.stops.has(key)){
-      view.stops.get(key).minutes=Number(input.value); renderStopBudget(view);
+      view.stops.get(key).minutes=Number(input.value); renderStopBudget(view); syncMarkers(view);
     }
   });
   return box;
+}
+function toggleMapStop(view,key) {
+  if(selected!==view||view.controller.signal.aborted)return;
+  if(view.stops.has(key))view.stops.delete(key);
+  else{
+    const point=view.candidates.find(candidate=>candidate.key===key);
+    if(!point)return;
+    view.stops.set(key,{...point,visitKind:point.kind,kind:'activity',minutes:point.effort});
+  }
+  renderStopRows(view);
 }
 async function loadPassages(view) {
   try{
@@ -255,7 +259,8 @@ function renderSelected(model,index) {
     passedSlot:el('div'),serviceSlot:el('div'),extrasStatus:el('p',null,'planner-hint itinerary-extras-status')};
   selected=view;
   view.extrasStatus.hidden=true;view.extrasStatus.setAttribute('role','status');
-  view.notices=renderRouteNotices(trip); view.map=renderRouteView(trip,{routeNotices:false});
+  view.notices=renderRouteNotices(trip);
+  view.map=renderRouteView(trip,{routeNotices:false,onStopToggle:key=>toggleMapStop(view,key)});
   article.append(header);
   if(view.notices)article.append(view.notices);
   article.append(view.map??el('p','De routekaart is niet beschikbaar.','planner-hint'));

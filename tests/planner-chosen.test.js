@@ -22,6 +22,41 @@ test('small budget prioritizes nearby shorter stops without removing longer choi
   assert.equal(makeStopCandidates(trip,[],passage,[museum],{...settings,filters:{exclude:['museum']}}).length,0);
   assert.equal(makeStopCandidates(trip,[],passage,[museum],{...settings,filters:{scheduledOnly:true}}).length,0);
 });
+test('crowded groups do not consume every stop slot on a valid route',()=>{
+  const longRoute={km:36,coordinates:[[3.6,50.65],[4.1,50.65]]};
+  const longTrip={route:longRoute,startCity:ath};
+  const dense=Array.from({length:14},(_,i)=>({id:'Q'+(i+21),name:'Historisch gebouw '+i,lon:3.62+i*.001,lat:50.65}));
+  const further=[
+    {id:'Q91',name:'Tuin halverwege',lon:3.9,lat:50.6505,wikidataKinds:['Q22698']},
+    {id:'Q92',name:'Park aan het einde',lon:4.07,lat:50.651,wikidataKinds:['Q22698']},
+    {id:'Q93',name:'Te ver van de route',lon:3.91,lat:50.67,wikidataKinds:['Q22698']},
+  ];
+  const result=makeStopCandidates(longTrip,[],passage,[...dense,...further],{date:'2026-11-26'});
+  assert.equal(result.length,12);
+  assert.ok(result.some(({id,kmAlongRoute})=>id==='Q91'&&kmAlongRoute>20));
+  assert.ok(result.some(({id})=>id==='Q92'));
+  assert.ok(!result.some(({id})=>id==='Q93'));
+});
+test('one matching venue pin, but independent events at that site are still selectable',()=>{
+  const venue={id:'https://www.wikidata.org/entity/Q51',name:'Église Saint-Martin',lon:3.7754,lat:50.62872,
+    exterior:true,source:'https://example.org/site',openingHours:['Th 10:00-18:00']};
+  const nearby={...venue,id:'Q58',name:'EGLISE SAINT MARTIN',lon:3.77545};
+  const buildingNextDoor={...venue,id:'Q59',name:'Halle historique'};
+  const event1={...venue,id:'Q51',name:'Orgelconcert',start:'2026-11-26T10:00:00+01:00',end:'2026-11-26T11:30:00+01:00'};
+  const event2={...event1,start:'2026-11-26T14:00:00+01:00',end:'2026-11-26T15:30:00+01:00'};
+  const city={...ath,places:[venue],events:[event1,event2]};
+  const result=makeStopCandidates(trip,[city],passage,[nearby,buildingNextDoor],{date:'2026-11-26'});
+  assert.equal(result.filter(({kind})=>kind==='event').length,2);
+  assert.deepEqual(result.filter(({kind,id})=>kind!=='event'&&id===venue.id).map(({kind})=>kind),['place']);
+  assert.ok(!result.some(({id})=>id===nearby.id));
+  assert.ok(result.some(({id})=>id===buildingNextDoor.id));
+  const short=makeStopCandidates(trip,[city],passage,[nearby],{date:'2026-11-26',budget:15});
+  assert.deepEqual(short.filter(({kind,id})=>kind!=='event'&&id===venue.id).map(({kind})=>kind),['exterior']);
+  const documentedHours=makeStopCandidates(trip,[city],passage,[nearby],{
+    date:'2026-11-26',budget:15,filters:{scheduledOnly:true},
+  });
+  assert.deepEqual(documentedHours.filter(({kind,id})=>kind!=='event'&&id===venue.id).map(({kind})=>kind),['place']);
+});
 test('official Aat public facilities appear only for a matching actual route',()=>{
   const results=localRouteServices(trip,passage);
   assert.equal(results.length,2);

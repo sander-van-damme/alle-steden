@@ -1,9 +1,10 @@
-import { visitWindows } from './planner-core.js';
+import { approxKm, visitWindows } from './planner-core.js';
 import { distanceToRoute } from './planner-routing.js';
 import { activityCategories, matchesActivity } from './planner-activities.js';
 import { safeUrl } from './sources.js';
 
 const maxAlongKm = 0.65;
+const candidateLimit = 12;
 const finite = Number.isFinite;
 export const stopMinuteOptions = Object.freeze([5, 10, 15, 20, 25, 30, 45, 60, 80, 90, 120]);
 export function routeLegs(trip) {
@@ -13,7 +14,7 @@ export function positionOnTrip(trip, item) {
   if (!finite(item?.lat) || !finite(item?.lon)) return null;
   let offset = 0, nearest;
   for (const leg of routeLegs(trip)) {
-    if (!finite(leg.km) || leg.coordinates?.length < 2) continue;
+    if (!finite(leg.km) || !Array.isArray(leg.coordinates) || leg.coordinates.length < 2) continue;
     const match = distanceToRoute([item.lon, item.lat], leg.coordinates);
     if (finite(match.distanceToRouteKm) && (!nearest || match.distanceToRouteKm < nearest.distanceToRouteKm)) {
       nearest = { distanceToRouteKm: match.distanceToRouteKm, kmAlongRoute: offset + match.position * leg.km };
@@ -54,6 +55,36 @@ export function estimateVisit(item, kind = item?.kind) {
   const tags = activityCategories(item, kind === 'event' ? 'event' : 'place');
   return tags.includes('museum') ? 60 : tags.includes('nature') ? 30 : 25;
 }
+const placeId = item => String(item.id).replace(/^https?:\/\/www\.wikidata\.org\/(?:entity|wiki)\//,'');
+const comparableName = name => String(name ?? '').normalize('NFKD').replace(/\p{M}/gu,'')
+  .toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+
+// Within each stop-budget tier, offer one stop per part of the ride before
+// filling more slots from the same area. The caller still receives ranked
+// suggestions, but a cluster at one end can't fill all twelve places.
+function distributeCandidates(items, rank, count, totalKm) {
+  const sections = Math.max(1, Math.min(6, Math.floor(totalKm / 2)));
+  const sectionFor = item => totalKm > 0
+    ? Math.max(0, Math.min(sections - 1, Math.floor(item.kmAlongRoute / totalKm * sections))) : 0;
+  const selected = new Set();
+  for (const tier of new Set(items.map(rank))) {
+    const inTier = items.filter(item => rank(item) === tier);
+    while (selected.size < count) {
+      const touched = new Set();
+      for (const item of inTier) {
+        const section = sectionFor(item);
+        if (selected.has(item) || touched.has(section)) continue;
+        selected.add(item);
+        touched.add(section);
+        if (selected.size === count) break;
+      }
+      if (!touched.size) break;
+    }
+    if (selected.size === count) break;
+  }
+  return items.filter(item => selected.has(item));
+}
+
 export function makeStopCandidates(trip, catalog, passage, nearby, { date, filters = {}, budget = null } = {}) {
   if (Array.isArray(filters.include) && !filters.include.length) return [];
   const allowedCities = new Set([trip.startCity?.slug, trip.destinationCity?.slug, ...(passage?.cities ?? []).map(city => city.slug)]);
@@ -69,11 +100,29 @@ export function makeStopCandidates(trip, catalog, passage, nearby, { date, filte
     return [{ ...item, ...position, kind:'nearby', effort:estimateVisit(item,'place'), website:safeUrl(item.url), documented:false }];
   });
   const rank = item => finite(budget) && item.effort > budget ? 2 : 0;
-  const key = item => [String(item.id).replace(/^https?:\/\/www\.wikidata\.org\/(?:entity|wiki)\//,''),
-    item.kind === 'exterior' ? 'outside':'visitor'].join('|');
+  const key = item => item.kind === 'event' ? [placeId(item),'event',item.earliest,item.latest].join('|')
+    : [placeId(item),item.kind === 'exterior' ? 'outside':'visitor'].join('|');
+  const compare = (a,b) => rank(a)-rank(b) || Number(b.documented)-Number(a.documented)
+    || a.distanceToRouteKm-b.distanceToRouteKm || a.kmAlongRoute-b.kmAlongRoute;
   const unique = new Map();
-  for (const item of [...fromLocal, ...fromNearby]) if (!unique.has(key(item))) unique.set(key(item),{...item,key:key(item)});
-  return [...unique.values()].sort((a,b) => rank(a)-rank(b) ||
-    Number(b.documented)-Number(a.documented) || a.distanceToRouteKm-b.distanceToRouteKm || a.kmAlongRoute-b.kmAlongRoute)
-    .slice(0,12);
+  const venueIds = new Map(), venueNames = new Map();
+  const index = (map,value,item) => {
+    const points = map.get(value) ?? [];
+    points.push(item);
+    map.set(value,points);
+  };
+  for (const item of [...fromLocal, ...fromNearby].sort(compare)) {
+    const id = key(item);
+    if (unique.has(id)) continue;
+    if (item.kind !== 'event') {
+      const identity = placeId(item), name = comparableName(item.name);
+      if (venueIds.get(identity)?.some(other => approxKm(item,other) <= .05) ||
+          name.length >= 5 && venueNames.get(name)?.some(other => approxKm(item,other) <= .03)) continue;
+      index(venueIds,identity,item);
+      if (name.length >= 5) index(venueNames,name,item);
+    }
+    unique.set(id,{...item,key:id});
+  }
+  const km = routeLegs(trip).reduce((sum,leg)=>sum+(finite(leg.km) && leg.km > 0 ? leg.km : 0),0);
+  return distributeCandidates([...unique.values()],rank,candidateLimit,km);
 }

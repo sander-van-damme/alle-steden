@@ -65,10 +65,12 @@ const inside = [[4.8904,50.30,20],[4.8904,50.31,20]];
 const forestRing = [[4.88,50.29],[4.90,50.29],[4.90,50.32],[4.88,50.32],[4.88,50.29]];
 const forestHit = {type:'Feature',geometry:{type:'Polygon',coordinates:[forestRing]},
   properties:{KEYG:'2026/7123134008',SAISON:2026,DATE_EXTRACT:Date.parse('2026-11-24'),
-    LISTOFDATEBATTUECLOSE:'05/12/2026',LISTOFDATEAFFUTCLOSE:null,LISTOFDATEAUTRECLOSE:null}};
-const ravelHit = {id:'0dcd04bb-0cff-445e-8916-26dc601ed46d',title:'Travaux près de la route',kind:'CHT',
-  from:'2026-11-04',through:'2026-12-07',points:[[4.8904,50.304]]};
-const expired = {...ravelHit,id:'b3e099d5-b7f1-44a0-a620-d70c1129536c',title:'Travaux dépassés',through:'2026-11-15'};
+    LISTOFDATEBATTUECLOSE:'28/11/2026',LISTOFDATEAFFUTCLOSE:null,LISTOFDATEAUTRECLOSE:null}};
+// Exact normalized official records retrieved from the verified SPW / RAVeL join.
+const ravelHit = {id:'0dcd04bb-0cff-445e-8916-26dc601ed46d',title:'Réhabilitation du RAVeL de la Ligne 150 entre Anhée et Aisemont',kind:'CHT',
+  from:'2026-11-04',through:'2026-12-02',points:[[4.890436,50.305917],[4.633011,50.399424]]};
+const expired = {id:'b3e099d5-b7f1-44a0-a620-d70c1129536c',title:"Fermeture du RAVeL de l'Escaut à hauteur de Pottes (Celles)",kind:'CHT',
+  from:'2026-10-01',through:'2026-10-30',points:[[3.412185,50.745787],[3.388187,50.728303],[3.388185,50.728305]]};
 const openDetails = async (page,label) => {
   const summary=page.getByText('Bekijk route',{exact:true});
   if (label==='mobile') await summary.tap();
@@ -78,7 +80,14 @@ async function verifyAutomaticNotices(context,label) {
   const page=await context.newPage();
   const queries=[], errors=[];
   let mode='positive', releaseOld;
-  const fixture=html.replace(JSON.stringify(sample),JSON.stringify(inside)).replaceAll("'Wallonië'","'Vlaanderen'");
+  const fixture=html.replace(JSON.stringify(sample),JSON.stringify(inside)).replaceAll("'Wallonië'","'Vlaanderen'")
+    .replace("date:'2026-12-05'","date:'2026-11-28'")
+    .replace('<details><summary>Bekijk route','<details class="trip-route-detail"><summary>Bekijk route')
+    .replace('<link rel="stylesheet" href="/planner-route-view.css">','<link rel="stylesheet" href="/planner-route-view.css"><link rel="stylesheet" href="/planner.css">');
+  const activate=async summary=>{
+    if (label==='mobile') await summary.tap();
+    else await summary.press('Enter');
+  };
   try {
     await page.clock.setFixedTime(new Date('2026-11-25T11:00:00+01:00'));
     page.on('pageerror',error=>errors.push(error.message));
@@ -87,7 +96,7 @@ async function verifyAutomaticNotices(context,label) {
     await page.route(forestRoute,async route=>{
       queries.push('forest');
       const url=new URL(route.request().url());
-      assert.ok(url.searchParams.get('where').includes("LISTOFDATEBATTUECLOSE LIKE '%05/12/2026%'"));
+      assert.ok(url.searchParams.get('where').includes("LISTOFDATEBATTUECLOSE LIKE '%28/11/2026%'"));
       assert.doesNotMatch(url.searchParams.get('outFields'),/BATTUEOPEN|LISTOFDATETXT|request/);
       assert.equal(url.searchParams.get('geometry'),'4.88,50.29,4.91,50.32');
       assert.equal(await route.request().headerValue('referer'),null);
@@ -96,13 +105,14 @@ async function verifyAutomaticNotices(context,label) {
       if (mode==='limited') return route.fulfill({status:503,headers});
       if (mode==='stale') await new Promise(resolve=>{releaseOld=resolve;});
       return route.fulfill({contentType:'application/geo+json',headers,
-        body:JSON.stringify({type:'FeatureCollection',features:['positive','stale'].includes(mode)?[forestHit]:[]})}).catch(()=>{});
+        body:JSON.stringify({type:'FeatureCollection',features:['positive','mixed','stale'].includes(mode)?[forestHit]:[]})}).catch(()=>{});
     });
     await page.route(ravelEndpoint,async route=>{
       queries.push('ravel');
       assert.equal(route.request().url(),ravelEndpoint);
       assert.equal(route.request().method(),'GET');
       assert.equal(await route.request().headerValue('referer'),null);
+      if (mode==='mixed') return route.fulfill({status:502,contentType:'text/plain',body:'Bad Gateway'});
       return route.fulfill({json:{limited:mode==='limited',items:mode==='positive'?[ravelHit,expired]:[expired]}}).catch(()=>{});
     });
     const host=page.locator('.route-notices');
@@ -120,14 +130,28 @@ async function verifyAutomaticNotices(context,label) {
       queries.length=0;
     };
     await selected(async()=>{
-      await forest.getByText('Eén jachtterrein',{exact:true}).waitFor();
+      const forestRow=forest.locator('summary');
+      const ravelRow=ravel.locator('summary');
+      await forestRow.getByText('Jacht · 1 terrein nabij de route',{exact:true}).waitFor();
+      await ravelRow.getByText('RAVeL · 1 melding nabij de route',{exact:true}).waitFor();
+      assert.equal(await host.locator('details[open]').count(),0);
+      assert.equal(await host.getByRole('link').count(),0,'Collapsed rows show no verbose details or credit links');
+      assert.ok((await forestRow.boundingBox()).height>=44,'Summary has a usable touch target');
+      assert.equal(await forestRow.evaluate(el=>getComputedStyle(el,'::before').content),'none','Outer route disclosure does not add its own symbol');
+      if (output) await host.screenshot({path:output+'/route-notice-collapsed-'+label+'.png'});
+      await activate(forestRow);
+      assert.match(await forest.innerText(),/goedgekeurde aanvragen.*Welke paden eventueel dicht zijn.*volg de borden ter plaatse/su);
+      assert.equal(await ravel.getByRole('link').count(),0,'Disclosures can be opened independently');
+      await activate(ravelRow);
       const link=ravel.getByRole('link',{name:ravelHit.title});
       await link.waitFor();
       assert.equal(await ravel.getByRole('link',{name:expired.title}).count(),0);
       assert.equal(await link.getAttribute('href'),'https://ravel.wallonie.be/home/a-la-une/warnings.html#warning-'+ravelHit.id);
-      assert.match(await host.innerText(),/goedgekeurde aanvragen.*Welke paden eventueel dicht zijn.*volg de borden ter plaatse/su);
       assert.equal(await host.getByRole('link',{name:'CC BY 4.0'}).count(),2);
-      assert.equal(await host.getByText(/Controle niet volledig/u).count(),0);
+      if (output) await host.screenshot({path:output+'/route-notice-expanded-'+label+'.png'});
+      await activate(forestRow);
+      assert.equal(await forest.locator('details[open]').count(),0);
+      assert.equal(await ravel.locator('details[open]').count(),1);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     });
     mode='empty';
@@ -139,12 +163,25 @@ async function verifyAutomaticNotices(context,label) {
     });
     mode='limited';
     await selected(async()=>{
-      const status=host.locator('.route-notice-foot');
-      await status.getByText(/Controle niet volledig/u).waitFor();
-      assert.equal(await status.getByRole('link',{name:'ChasseOnWeb'}).count(),1);
-      assert.equal(await status.getByRole('link',{name:'RAVeL'}).count(),1);
-      assert.equal(await host.locator('.route-notice-matches').isVisible(),false);
-      assert.doesNotMatch(await status.innerText(),/veilig|route is open|geen meldingen/u);
+      const forestRow=forest.locator('summary');
+      const ravelRow=ravel.locator('summary');
+      await forestRow.getByText('Jacht · Controle onvolledig',{exact:true}).waitFor();
+      await ravelRow.getByText('RAVeL · Controle onvolledig',{exact:true}).waitFor();
+      assert.equal(await host.locator('details[open]').count(),0);
+      assert.equal(await host.getByRole('link').count(),0);
+      await activate(forestRow);
+      await activate(ravelRow);
+      assert.equal(await host.getByRole('link',{name:'ChasseOnWeb'}).count(),1);
+      assert.equal(await host.getByRole('link',{name:'RAVeL'}).count(),1);
+      assert.doesNotMatch(await host.innerText(),/veilig|route is open|geen meldingen/u);
+    });
+    mode='mixed';
+    await selected(async()=>{
+      await forest.locator('summary').getByText('Jacht · 1 terrein nabij de route',{exact:true}).waitFor();
+      await ravel.locator('summary').getByText('RAVeL · Controle onvolledig',{exact:true}).waitFor();
+      assert.equal(await host.locator('details').count(),2,'A partial provider does not duplicate or bury the other result');
+      assert.equal(await host.locator('details[open]').count(),0);
+      assert.equal(await host.getByRole('status').textContent(),'Jacht · 1 terrein nabij de route. RAVeL · Controle onvolledig.');
     });
     mode='stale';
     await selected(async()=>{
@@ -156,13 +193,14 @@ async function verifyAutomaticNotices(context,label) {
       assert.equal(await host.count(),0,'Replacing the route with Flemish geometry invalidates old results');
     });
     mode='positive';
-    const direct=fixture.replace('<details><summary>Bekijk route</summary><main></main></details>','<main></main>')
+    const direct=fixture.replace('<details class="trip-route-detail"><summary>Bekijk route</summary><main></main></details>','<main></main>')
       .replace('import { renderRouteView }','import { renderRouteView, renderRouteNotices }')
       .replace('let map = renderRouteView(trip);','let map = renderRouteView(trip,{routeNotices:false});')
       .replace('main.append(map);','main.append(map);const host=renderRouteNotices(trip);main.append(host);host.startRouteNotices();host.startRouteNotices();');
     await serveRouteFixture(page,direct);
     await page.goto(origin);
-    await host.getByRole('link',{name:ravelHit.title}).waitFor();
+    await ravel.locator('summary').getByText('RAVeL · 1 melding nabij de route',{exact:true}).waitFor();
+    assert.equal(await host.locator('details[open]').count(),0);
     assert.equal(await host.count(),1);
     assert.deepEqual([...queries].sort(),['forest','ravel'],'Explicit route automatically checks once without opening a menu');
     queries.length=0;
@@ -262,11 +300,18 @@ for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{
     await page.waitForFunction((zoomed) => document.querySelector('.route-map-overlay > g').getAttribute('transform') !== zoomed, zoomed);
     const panned = await layer.getAttribute('transform');
     await page.getByRole('button',{name:'P1 Eventuele stop'}).click();
-    await page.waitForFunction((panned)=>document.querySelector('.route-map-overlay > g').getAttribute('transform')!==panned,panned);
+    await page.waitForFunction((panned)=>{
+      const map=document.querySelector('.route-map-viewport');
+      const [x,y]=[...(map.querySelector('[data-route-marker="P1"]')?.getAttribute('transform')??'')
+        .matchAll(/-?\d+(?:\.\d+)?/g)].map(match=>Number(match[0]));
+      return map.querySelector('.route-map-overlay > g').getAttribute('transform')!==panned
+        && Math.abs(x-map.clientWidth/2)<1 && Math.abs(y-map.clientHeight/2)<1;
+    },panned);
     assert.equal(await page.getByRole('button',{name:'P1 Eventuele stop'}).getAttribute('aria-pressed'),'true');
     const transformed = await layer.getAttribute('transform');
     await page.evaluate(() => window.refreshMarkers());
     await page.getByRole('button',{name:'T1 Markttoilet'}).waitFor();
+    await page.locator('[data-route-marker="T1"][transform]').waitFor();
     assert.equal(await layer.getAttribute('transform'),transformed,'Optional markers do not reset the route view');
     assert.equal(await page.getByRole('button',{name:'P1 Eventuele stop'}).getAttribute('aria-pressed'),'true');
     await page.getByRole('button',{name:'Toon de hele route'}).click();
