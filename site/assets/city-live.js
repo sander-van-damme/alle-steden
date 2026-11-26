@@ -4,6 +4,7 @@ import {
   upcomingEvents, dedupeEvents,
 } from './sources.js';
 import { displayedPlaces, placeProviders } from './place-providers.js';
+import { isHistoriaVenue } from './historia-visit.js';
 import { livePlaceFragment } from './place-rdf.js';
 import { enhanceVerifiedLinks, isLinkRecord } from './link-check.js';
 
@@ -77,15 +78,24 @@ function appendVisitNotice(card, item) {
 
 function appendHours(card, item) {
   if (appendVisitNotice(card, item)) return;
+  if (item.hoursSource==='historiaVisit') {
+    card.querySelectorAll('[data-hours], [data-historia-note], .entry-meta:has(strong)').forEach(node=>node.remove());
+  }
   if (!item.hours || card.querySelector('[data-hours], .entry-meta strong')) return;
   const row = el('p', '', 'entry-meta');
   row.dataset.hours = '';
-  row.append(el('strong', 'Openingsuren: '), item.hours);
+  row.append(el('strong', item.hoursSource==='historiaVisit'?'Gewone openingsuren: ':'Openingsuren: '), item.hours);
   if (item.hoursSource === 'osm') {
     row.append(' · ', link('Bekijk op de kaart', item.hoursUrl), ' · ',
       link('© OpenStreetMap-bijdragers (ODbL)', sources.osm.href));
   }
   card.append(row);
+  if (item.hoursNote) {
+    const note = el('p',item.hoursNote,'entry-meta');
+    note.dataset.historiaNote = '';
+    if (item.card) note.append(' ',link(sources.historiaVisit.label,sources.historiaVisit.visitorHref));
+    card.append(note);
+  }
 }
 
 const placeFragments = (item) => [...new Set([item, ...(item.recordReferences ?? [])].map(livePlaceFragment).filter(Boolean))];
@@ -276,7 +286,7 @@ function enhanceSection(section, city, type) {
     }));
     if (revision !== requestId || type !== 'places') return;
     render(true);
-    extraHours = await getOsmHours(mappedPlaces.filter((item) => item.category !== 'Buitenkunst' && !visitNotice(item)));
+    extraHours = await getOsmHours(mappedPlaces.filter((item) => item.category !== 'Buitenkunst' && !isHistoriaVenue(item) && !visitNotice(item)));
     if (revision !== requestId || !extraHours.size) return;
     render();
   };

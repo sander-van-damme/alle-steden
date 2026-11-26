@@ -242,6 +242,35 @@ try {
   assert.match(await seroule.innerText(), /actuele toegang en openingsuren niet bevestigd[\s\S]*Ville de Verviers/);
   assert.equal(await routePhone.getByText('Parc Moreau',{exact:true}).count(),0);
 
+  let historiaStatus=200, historiaRequests=0;
+  await routePhone.route(base+'/api/historia-visit',route=>{
+    historiaRequests++;
+    return route.fulfill({status:historiaStatus,json:{
+      hours:'ma 13:00–18:00 · di–vr 09:00–18:00 (in juli en augustus 10:00–18:00) · za–zo 10:00–18:00',
+      hoursNote:'Laatste toegang om 17:30. Gesloten op 1 januari; 1 mei; 1 november; 24, 25, 31 december.',
+    }});
+  });
+  await routePhone.route('https://query.wikidata.org/sparql?**',route=>json(route,{results:{bindings:[{
+    item:{value:'http://www.wikidata.org/entity/Q46012'}, name:{value:'Huis van de Europese geschiedenis'},
+    site:{value:'https://historia.europa.eu/'},
+  }]}}));
+  await routePhone.route('https://opendata.brussels.be/api/**',route=>json(route,{results:[],records:[]}));
+  assert.equal(historiaRequests,0);
+  await routePhone.goto(base+'/steden/brussel/');
+  const historyHouse=routePhone.locator('[data-live-places] li')
+    .filter({has:routePhone.getByRole('heading',{name:'Huis van de Europese geschiedenis',exact:true})});
+  await historyHouse.locator('[data-hours]').waitFor();
+  assert.equal(await historyHouse.count(),1);
+  assert.match(await historyHouse.innerText(),/in juli en augustus 10:00–18:00[\s\S]*Laatste toegang om 17:30.*24, 25, 31 december/u);
+  assert.equal(await historyHouse.getByRole('link',{name:'Huis van de Europese geschiedenis',exact:true}).getAttribute('href'),'https://historia.europa.eu/nl/bezoek');
+  assert.equal(await routePhone.locator('[data-live-events]').getByText('Huis van de Europese geschiedenis',{exact:true}).count(),0);
+  historiaStatus=502;
+  await routePhone.reload();
+  await historyHouse.waitFor();
+  await routePhone.waitForFunction(()=>document.querySelector('[data-live-places] [data-status]')?.textContent.includes('Niet alle bronnen'));
+  assert.equal(await historyHouse.locator('[data-hours]').count(),0);
+  assert.equal(historiaRequests,2);
+
   const fallback = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   pages.push(fallback);
   await fallback.goto(base + city);

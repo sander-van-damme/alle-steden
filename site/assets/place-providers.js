@@ -2,6 +2,7 @@ import { getBrusselsPlaces, getFlemishHeritage, getJson, getWallonia, getWikidat
   mergePlaces, regionalSource, safeUrl } from './sources.js';
 
 import { fwbMuseumQuery } from './fwb-museums.js';
+import { getHistoriaVisit, historiaId, isHistoriaVenue } from './historia-visit.js';
 
 const ready = (items) => ({ items });
 export const placeViewLimit = (city, expanded = true) =>
@@ -24,6 +25,9 @@ export function placeProviders(city, { expanded = true, origin = globalThis.loca
   }] : [];
   const wikidata = { key: 'wikidata', run: () => getWikidata(city, options).then(ready) };
   if (region === 'brussels') return [
+    ...(expanded && city.slug==='brussel' && origin ? [
+      { key:'historiaVisit', added:true, run:()=>getHistoriaVisit({origin,...options}) },
+    ] : []),
     wikidata,
     ...['brussels', 'brusselsGrandPlace', 'brusselsCulture'].map((key) => ({
       key, run: () => getBrusselsPlaces(key, options).then(ready),
@@ -114,5 +118,10 @@ function unifyMuseumIdentities(city, records) {
 }
 export function displayedPlaces(city, stored, groups, expanded = true) {
   const records = [...stored, ...interleavePlaceSources(groups)];
-  return mergePlaces(unifyMuseumIdentities(city, records), placeViewLimit(city, expanded));
+  const historia = expanded && city.slug==='brussel' && records.find(item=>item.source==='historiaVisit');
+  const trusted = historia ? records.map(item=>item!==historia && isHistoriaVenue(item)
+    ? {...item,id:historiaId,hours:undefined} : item) : records;
+  return mergePlaces(unifyMuseumIdentities(city, trusted), placeViewLimit(city, expanded)).map(item =>
+    historia && isHistoriaVenue(item) ? {...item,website:historia.website,
+      hours:historia.hours,hoursNote:historia.hoursNote,hoursSource:'historiaVisit'} : item);
 }

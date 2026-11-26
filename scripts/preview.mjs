@@ -6,7 +6,8 @@ import { onRequest as cityLive } from '../functions/api/city-live.js';
 import { onRequest as verifyLink } from '../functions/api/verify-link.js';
 import { onRequest as zuidLimburg } from '../functions/api/zuid-limburg.js';
 import { onRequest as fosdem } from '../functions/api/fosdem.js';
-const functions = new Map([['/api/city-live', cityLive], ['/api/verify-link', verifyLink], ['/api/zuid-limburg', zuidLimburg], ['/api/fosdem', fosdem]]);
+import { onRequest as historiaVisit } from '../functions/api/historia-visit.js';
+const functions = new Map([['/api/city-live', cityLive], ['/api/verify-link', verifyLink], ['/api/zuid-limburg', zuidLimburg], ['/api/fosdem', fosdem], ['/api/historia-visit', historiaVisit]]);
 const functionAssets = new Set(['/data/cities.json', '/link-check-data.json']);
 
 const port = Number(process.env.PORT ?? 4173);

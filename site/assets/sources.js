@@ -8,6 +8,9 @@ const gent = 'https://data.stad.gent';
 const ccby = 'https://creativecommons.org/licenses/by/4.0/';
 
 export const sources = {
+  historiaVisit: { label: 'Europees Parlement · Huis van de Europese geschiedenis',
+    href: 'https://historia.europa.eu/en/visit', visitorHref: 'https://historia.europa.eu/nl/bezoek',
+    license: 'https://historia.europa.eu/en/legal-notice' },
   fosdem: { label: 'FOSDEM', href: 'https://fosdem.org/2027/',
     visitorHref: 'https://fosdem.org/2027/calendar/', license: ccby },
   zuidLimburg: { label:'Visit Zuid-Limburg',
