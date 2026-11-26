@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: github-pages-preview
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -48,5 +48,19 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Require the separate github.io project address
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! curl -fsS -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/pages" -o "$RUNNER_TEMP/pages-site.json"; then
+            echo "::error::Cannot verify the GitHub Pages settings. Enable the GitHub Actions source before retrying."
+            exit 1
+          fi
+          if ! jq -e '(.cname // "") == "" and .build_type == "workflow" and (.html_url | sub("/$"; "")) == "https://sander-van-damme.github.io/alle-steden"' \
+            "$RUNNER_TEMP/pages-site.json" >/dev/null; then
+            echo "::error::The GitHub Pages site is not configured as a standalone github.io preview. No deployment was made."
+            exit 1
+          fi
       - id: deployment
         uses: actions/deploy-pages@v4
