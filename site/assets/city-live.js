@@ -42,11 +42,12 @@ function renderCredits(root) {
     if (signature === last) return;
     last = signature;
     const focused = list.contains(document.activeElement) ? document.activeElement.href : undefined;
-    list.replaceChildren(...all.map(({ label, href, references, terms }) => {
+    list.replaceChildren(...all.map(({ label, href, references, terms }, index) => {
       const row = el('li');
       row.append(href ? link(label, href) : label);
       for (const credit of references) row.append(' · ', credit);
       for (const term of terms) row.append(' · ', link(term.label, term.href));
+      if (index < all.length - 1) row.append(', ');
       return row;
     }));
     section.hidden = !all.length;

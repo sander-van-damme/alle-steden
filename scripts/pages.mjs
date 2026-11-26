@@ -203,12 +203,12 @@ function entryProvenance(source) {
 }
 
 function cityCredits(items) {
-  const markup = creditLinks(items.map(({ source }) => staticCityCredit(source))).map(({ label, href, references, terms }) =>
+  const markup = creditLinks(items.map(({ source }) => staticCityCredit(source))).map(({ label, href, references, terms }, index, all) =>
     `<li><a href="${escapeHtml(href)}">${escapeHtml(label)}</a>${references.map((credit) => ' · ' + escapeHtml(credit)).join('')}${terms
-      .map((term) => ` · <a href="${escapeHtml(term.href)}">${escapeHtml(term.label)}</a>`).join('')}</li>`).join('');
+      .map((term) => ` · <a href="${escapeHtml(term.href)}">${escapeHtml(term.label)}</a>`).join('')}${index < all.length - 1 ? ', ' : ''}</li>`).join('');
   return `<section class="city-credits" aria-labelledby="city-credits-title" data-city-credits${markup ? '' : ' hidden'}>
     <h2 id="city-credits-title">Bronnen</h2>
-    <ul data-credit-items>${markup}</ul>
+    <ul role="list" data-credit-items>${markup}</ul>
   </section>`;
 }
 

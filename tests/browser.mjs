@@ -21,6 +21,16 @@ const json = (route, body) => route.fulfill({
   json: body,
   headers: { 'Access-Control-Allow-Origin': '*' },
 });
+async function checkInlineCredits(page, minimum) {
+  const list = page.getByRole('region', { name: 'Bronnen' }).getByRole('list');
+  const rows = await list.getByRole('listitem').evaluateAll(items => items.map(item => ({
+    text: item.textContent, display: getComputedStyle(item).display,
+  })));
+  assert.ok(rows.length >= minimum);
+  assert.ok(rows.every(({ display }) => display === 'inline'));
+  assert.ok(rows.slice(0, -1).every(({ text }) => text.endsWith(', ')));
+  assert.doesNotMatch(rows.at(-1).text, /,\s*$/u);
+}
 async function fixture(page, { upstreamFailure = false } = {}) {
   await page.route('https://inventaris.onroerenderfgoed.be/aanduidingsobjecten?**', (route) => json(route, [
     { id: 5865, naam: 'Historisch gebouw A', locatie_samenvatting: 'Gent',
@@ -97,6 +107,7 @@ try {
     'https://inventaris.onroerenderfgoed.be/aanduidingsobjecten/5865');
   assert.equal(await credits.getByRole('link', { name: '© OpenStreetMap-bijdragers' }).count(), 1);
   assert.equal(await credits.getByRole('link', { name: 'ODbL' }).count(), 1);
+  await checkInlineCredits(desktop, 3);
   assert.equal(await desktop.locator('.entry-list .entry-source').count(), 0);
   assert.equal(await desktop.getByRole('link', { name: 'Live proefmuseum' }).getAttribute('href'), 'https://example.com/museum');
   const rdf = await desktop.request.get(base + '/data/gent.ttl');
@@ -138,6 +149,7 @@ try {
   assert.ok(await mobileCredits.getByRole('link', { name: 'Toerisme Vlaanderen' }).isVisible());
   assert.equal(await mobileCredits.getByText('Wikidata', { exact: true }).count(), 0);
   assert.equal(await mobileCredits.getByRole('link', { name: 'Agentschap Onroerend Erfgoed' }).count(), 1);
+  await checkInlineCredits(mobile, 2);
   await mobile.unroute('https://query.wikidata.org/sparql?**');
   await mobile.route('https://query.wikidata.org/sparql?**', (route) => json(route, {
     results: { bindings: [{ item: { value: 'http://www.wikidata.org/entity/Q22222222' }, name: { value: 'Na opnieuw laden' } }] },
@@ -349,6 +361,8 @@ try {
   pages.push(fallback);
   await fallback.goto(base + city);
   assert.ok(await fallback.getByRole('heading', { name: 'Gravensteen' }).isVisible());
+  await checkInlineCredits(fallback, 3);
+  assert.equal(await fallback.evaluate(() => document.documentElement.scrollWidth), 390);
   assert.ok(await fallback.getByText(/Je ziet hier een selectie van bezienswaardigheden/).isVisible());
   await fallback.goto(base + '/steden/andenne/');
   assert.ok(await fallback.locator('[data-local-routes]').getByRole('link',{name:/Alle routes bij Andenne Tourisme/}).isVisible());
