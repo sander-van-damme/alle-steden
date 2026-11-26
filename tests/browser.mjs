@@ -369,7 +369,10 @@ try {
     assert.doesNotMatch(await p.getByRole('main').innerText(), /UiTdatabank/);
     await footer.getByRole('link', { name:'Privacy' }).click();
     assert.equal(await p.getByRole('heading', { level:1 }).innerText(), 'Privacy');
-    assert.match(await p.getByRole('main').innerText(), /Cloudflare Web Analytics[\s\S]*BRouter[\s\S]*twaalf uur/);
+    const privacy = p.getByRole('main');
+    assert.equal(await privacy.getByRole('heading', { level:2 }).first().innerText(), 'Wat wordt er over jou verzameld?');
+    assert.equal(await privacy.locator('p').count(), 0);
+    assert.match(await privacy.innerText(), /Web Analytics[\s\S]*BRouter[\s\S]*12 uur/u);
     assert.match(await p.getByRole('main').getByRole('link', { name:'Gegevensbeschermingsautoriteit' }).getAttribute('href'), /gegevensbeschermingsautoriteit.be/);
     await footer.getByRole('link', { name:'Gebruiksvoorwaarden' }).click();
     assert.equal(await p.getByRole('heading', { level:1 }).innerText(), 'Gebruiksvoorwaarden');
