@@ -23,7 +23,7 @@ const sourceGroup = (title, entries) => `<section><h3>${title}</h3><ul class="in
   .map(([source, use]) => `<li>${source} <span>${use}</span></li>`).join('')}</ul></section>`;
 const page = (layout, id, title, intro, body) => layout({
   title: id === 'about' ? title : title + ' · Alle Steden', active: id,
-  main: `<main id="inhoud" class="wrap info-page"><header class="info-heading"><h1>${esc(title)}</h1><p>${intro}</p></header>${body}</main>`,
+  main: `<main id="inhoud" class="wrap info-page"><header class="info-heading"><h1>${esc(title)}</h1>${intro ? `<p>${intro}</p>` : ''}</header>${body}</main>`,
 });
 
 export function aboutPage(layout) {
@@ -73,21 +73,40 @@ export function aboutPage(layout) {
 }
 
 export function privacyPage(layout) {
-  return page(layout, 'privacy', 'Privacy',
-    'Je kunt Alle Steden gebruiken zonder account. Hieronder staat welke gegevens bij het laden van de gids, de kalender en de fietsplanner worden doorgegeven of tijdelijk bewaard.',
-    `<section><h2>Bij een bezoek</h2>
-      <p>De site draait op Cloudflare Pages. Cloudflare ontvangt je webverzoek, waaronder je IP-adres en de opgevraagde pagina, om de site te leveren en te beveiligen. Raadpleeg het ${link('privacybeleid van Cloudflare', cloudflare)} voor informatie over de dienst.</p>
-      <p>Op de site wordt ook een script van Cloudflare Web Analytics geladen. Waar meting actief is, stuurt het prestatiegegevens zoals laadtijden, de bezochte pagina en de verwijzende pagina naar Cloudflare. Volgens ${link('de uitleg van Cloudflare', rum)} gebruikt dit script geen cookies of browseropslag voor de meting. Dat staat los van de verwerking van gewone webverzoeken.</p></section>
-    <section><h2>Gegevens ophalen</h2>
-      <p>Voor de stadsfiches, kalender en kaart maakt je browser verbinding met <a href="/over/">gegevensaanbieders</a>. Bij een rechtstreekse aanvraag ziet de aanbieder je IP-adres en de opgevraagde informatie, bijvoorbeeld de gekozen stad, periode of kaartuitsnede. Bij Toerisme Vlaanderen voor bezoekersplekken, OpenAgenda, Visit Zuid-Limburg, FOSDEM, het Huis van de Europese geschiedenis, Visit Diest en de controle van ondersteunde bronlinks vraagt de site de informatie via Cloudflare op. Die koppelingen sturen je cookies of IP-adres niet mee in de aanvraag die de site aan de bron richt.</p>
-      <p>Bij het zoeken naar een fietsrit krijgt ${link('BRouter', brouter)} de coördinaten van de routepunten die nodig zijn om ritvoorstellen te berekenen. Dat is geen gps-tracking van je toestel. Een geopende routekaart haalt kaartbeelden rechtstreeks bij ${link('OpenStreetMap', osm)}. Voor je gekozen route kan je browser automatisch de kaartzone opvragen bij Pin je punt en ChasseOnWeb, bij bosmeldingen ook voor de gekozen datum. Voor stopideeën kan je browser een beperkt aantal punten op de route gebruiken om bij Wikidata plekken in de buurt te zoeken. Welke stadsgemeenten de route kruist, berekent je browser lokaal met gemeentegrenzen van deze site. Voor RAVeL-meldingen haalt Cloudflare bij het SPW enkel de algemene lijst op. Je browser vergelijkt daarna de meldingen met je route en datum, zonder die door te sturen. Een GPX-bestand wordt in je browser gemaakt.</p>
-      <p>Volg je een link naar een organisator of andere website, dan geldt daar het privacybeleid van die website.</p></section>
-    <section><h2>Wat je browser bewaart</h2>
-      <p>De kalender kan een kopie van de openbare agenda-items van Idées de sorties tijdelijk op je toestel bewaren. Die bevat geen accountgegevens of geschiedenis van je zoekopdrachten. De site hergebruikt de kopie ongeveer twintig minuten en kan ze tot twaalf uur na het ophalen tonen, met een melding als ze verouderd is. Die twaalf uur is een grens voor gebruik, geen belofte dat je browser de kopie op dat moment wist. Je kunt de kopie wissen via de sitegegevens in je browser. Je browser kan ook gewone webbestanden en kaartbeelden tijdelijk bewaren.</p>
-      <p>De gekozen stad of maand van de kalender kan in het webadres staan. Je browser kan dat adres in de geschiedenis bewaren en het reist mee als je de link deelt.</p></section>
-    <section><h2>Je privacyrechten</h2>
-      <p>Afhankelijk van de verwerking kun je onder meer inzage, verbetering, wissing of beperking vragen, bezwaar maken of gegevensoverdraagbaarheid vragen. Je kunt ook een klacht indienen bij de ${link('Gegevensbeschermingsautoriteit', gba)}.</p>
-      <p class="info-note">Dit overzicht beschrijft de werking die voor deze site kon worden nagegaan. De gegevens van de verantwoordelijke en zijn privacycontact, de rechtsgronden en de precieze instellingen voor verkeerslogs, bewaartermijnen en internationale doorgifte zijn nog niet bevestigd. Dit is daarom nog geen volledige privacyverklaring.</p></section>`);
+  return page(layout, 'privacy', 'Privacy', '', `
+    <section><h2>Wat wordt er over jou verzameld?</h2>
+      <ul class="info-sources">
+        <li><strong>Geen account of gps-locatie.</strong> Je hoeft je niet aan te melden. De site vraagt niet waar je toestel is.</li>
+        <li><strong>Je webverzoek.</strong> Cloudflare Pages ontvangt je IP-adres en de opgevraagde pagina om de site te tonen en te beveiligen. Zie het ${link('privacybeleid van Cloudflare', cloudflare)}.</li>
+        <li><strong>Laadtijden en paginagegevens.</strong> Waar Web Analytics actief meet, ontvangt Cloudflare metingen zoals laadtijd, het webadres, de eventuele verwijzende pagina en een code per paginabezoek. Volgens ${link('Cloudflare', rum)} gebruikt het meetscript geen cookies of browseropslag. Cloudflare ontvangt ook je IP-adres bij het versturen van die meting, maar zegt het daarvoor niet te bewaren. Dat staat los van gewone webverzoeken.</li>
+      </ul>
+    </section>
+    <section><h2>Wie krijgt gegevens als je iets opzoekt?</h2>
+      <ul class="info-sources">
+        <li><strong>Rechtstreeks.</strong> Aanbieders van <a href="/over/">informatie over steden, de kalender en kaarten</a> zien bij een aanvraag je IP-adres en wat je opvraagt, zoals een stad, periode of kaartgedeelte.</li>
+        <li><strong>Via deze site.</strong> Cloudflare haalt onder meer gegevens op bij Toerisme Vlaanderen, OpenAgenda, Visit Zuid-Limburg, FOSDEM, het Huis van de Europese geschiedenis en Visit Diest. Dat geldt ook voor de controle van ondersteunde links. De site neemt je IP-adres en cookies niet over uit je browserverzoek. Welke technische gegevens Cloudflare zelf meestuurt, is niet bevestigd.</li>
+        <li><strong>Via een link.</strong> Ga je naar een organisator of andere site, dan geldt daar het eigen privacybeleid.</li>
+      </ul>
+    </section>
+    <section><h2>Wat deelt de fietsplanner?</h2>
+      <ul class="info-sources">
+        <li>${link('BRouter', brouter)} krijgt coördinaten van routepunten om de rit te berekenen. De routekaart vraagt kaartbeelden rechtstreeks op bij ${link('OpenStreetMap', osm)}.</li>
+        <li>Voor je gekozen rit kan je browser automatisch het gebied opvragen bij Pin je punt en ChasseOnWeb; bij ChasseOnWeb ook voor de gekozen datum. Voor stopideeën kan Wikidata enkele punten op de route krijgen.</li>
+        <li>Cloudflare vraagt voor RAVeL alleen de algemene meldingenlijst op. Je browser vergelijkt die lokaal met je route en datum, bepaalt de doorkruiste stadsgemeenten en maakt het GPX-bestand.</li>
+      </ul>
+    </section>
+    <section><h2>Wat blijft in je browser?</h2>
+      <ul class="info-sources">
+        <li>Je browser kan openbare agenda-items van Idées de sorties tijdelijk bewaren, zonder accountgegevens of zoekgeschiedenis. Na ongeveer 20 minuten vraagt de kalender bij gebruik een nieuwe versie. Hij kan de oude kopie tot 12 uur na het ophalen tonen, met een melding als ze verouderd is. Dat is geen automatische wistermijn; wissen kan via je browserinstellingen.</li>
+        <li>Je browser kan webbestanden en kaartbeelden tijdelijk bewaren. Een stad of kalendermaand in het webadres kan in je browsergeschiedenis staan en meegaan als je de link deelt.</li>
+      </ul>
+    </section>
+    <section><h2>Je rechten en wat nog ontbreekt</h2>
+      <ul class="info-sources">
+        <li>Afhankelijk van de verwerking kun je inzage, verbetering, wissing, beperking of overdraagbaarheid vragen, of bezwaar maken. Je kunt een klacht indienen bij de ${link('Gegevensbeschermingsautoriteit', gba)}.</li>
+        <li>Dit overzicht is nog niet volledig. De verantwoordelijke en het privacycontact, de rechtsgronden, de instellingen voor verkeerslogs, de bewaartermijnen en eventuele doorgifte buiten de EER zijn nog niet bevestigd.</li>
+      </ul>
+    </section>`);
 }
 
 export function termsPage(layout) {
