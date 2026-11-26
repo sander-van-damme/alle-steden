@@ -8,6 +8,8 @@ const gent = 'https://data.stad.gent';
 const ccby = 'https://creativecommons.org/licenses/by/4.0/';
 
 export const sources = {
+  fosdem: { label: 'FOSDEM', href: 'https://fosdem.org/2027/',
+    visitorHref: 'https://fosdem.org/2027/calendar/', license: ccby },
   zuidLimburg: { label:'Visit Zuid-Limburg',
     href:'https://partners.visitzuidlimburg.nl/voor-partners/rss-feeds/',
     visitorHref:'https://www.visitzuidlimburg.nl/agenda/' },

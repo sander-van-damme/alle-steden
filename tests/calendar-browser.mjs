@@ -30,6 +30,7 @@ async function install(page, { fails = false, pauseGent = null, pauseIdeas = nul
     'DTEND;VALUE=DATE:20261231','SUMMARY:Le Village de Noël de Liège','CATEGORIES:Marché de Noël','LOCATION:Place du Marché, 4000 Liège',
     'URL:https://ideessorties.be/events/le-village-de-noel-de-liege-liege','END:VEVENT','END:VCALENDAR',''].join('\r\n');
   await page.route(origin + '/api/zuid-limburg', route => route.fulfill({json:{items:[]}}));
+  await page.route(origin + '/api/fosdem', route => route.fulfill({json:{items:[]}}));
   await page.route('https://uwtaxdtecrngvmgzradk.supabase.co/functions/v1/calendar-feed?**',async route=>{
     if(pauseIdeas) await pauseIdeas;
     return route.fulfill({status:ideasStatus,contentType:'text/calendar',body:ideasStatus===200?ics:'',headers:{'Access-Control-Allow-Origin':'*'}}).catch(()=>{});
@@ -595,6 +596,40 @@ try {
     await loaded(device);
     assert.equal(dutch.length,before);
   }
+
+  const conferences = [];
+  for (const device of [desktop, phone]) {
+    await device.route(origin+'/api/fosdem', route=>{
+      conferences.push(route.request().url());
+      return route.fulfill({json:{items:[{
+        source:'fosdem', id:'fosdem:fosdem-2027@fosdem.org', city:'brussel', name:'FOSDEM 2027',
+        start:'2027-01-30', end:'2027-01-31', website:'https://fosdem.org/2027/',
+        venue:'ULB Solbosch, Franklin Rooseveltlaan 50', category:'Congres',
+      }]}});
+    });
+    await device.goto(origin+'/kalender/?stad=brussel&maand=2027-01');
+    await loaded(device);
+    await device.locator('#calendar-category').selectOption('Congres');
+    const conference = device.locator('[data-calendar-source=fosdem]');
+    for (const day of ['30','31','29']) {
+      await device.locator('[data-day="2027-01-'+day+'"]').click();
+      assert.equal(await conference.count(),day==='29'?0:1);
+      if (day!=='29') {
+        assert.equal(await conference.getByRole('link',{name:'FOSDEM 2027'}).getAttribute('href'),'https://fosdem.org/2027/');
+        assert.match(await conference.innerText(),/Solbosch[\s\S]*CC BY 4.0/u);
+        assert.doesNotMatch(await conference.innerText(),/00:00|Hele dag/u);
+      }
+    }
+    await device.goto(origin+'/kalender/?stad=brussel&maand=2027-02');
+    await loaded(device);
+    await device.locator('[data-day="2027-02-01"]').click();
+    assert.equal(await conference.count(),0);
+    const before=conferences.length;
+    await device.goto(origin+'/kalender/?stad=gent&maand=2027-01');
+    await loaded(device);
+    assert.equal(conferences.length,before);
+  }
+  assert.equal(conferences.length,4);
 
   console.log('Kalender in Chromium: maanden, toetsenbord, smartphone, filters, bronfout, toekomstgrens en fallback zonder JavaScript.');
 } finally {
