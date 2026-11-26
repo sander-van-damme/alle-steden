@@ -123,3 +123,27 @@ test('the exact iMio query is calendar-only and adds no request, user data or lo
   assert.match(clauses,/event_url in \('https:\/\/cccw\.be\/event\/euro-symphonic-orchestra\/'\)/);
   assert.doesNotMatch(fetches[1].searchParams.get('where'),/'Warneton'|'Comines'|address_postal_code in/);
 });
+
+test('iMio shows only the separately verified Open Music Jazz Club starts, without ends or new records', () => {
+  const span = {from:'2026-12-01',through:'2026-12-31'};
+  const verified = [
+    {id:'2435649f55624c54be358098f0e0e612',title:'Open Music Jazz Club : Aurélie Charneux en trio en concert',day:'2026-12-11'},
+    {id:'f04d4a4125af4e8a998c5334860d276c',title:'Open Music Jazz Club : Natasha Vew - MUSE ECHOES en concert',day:'2026-12-18'},
+  ].map(({day,...fields})=>({...localConcert,...fields,start_datetime:day+'T19:30:00+00:00',end_datetime:day+'T22:30:00+00:00'}));
+  const items = rows=>walloonAgendaItems({results:rows},kom,span,{calendar:true});
+  assert.deepEqual(items(verified).map(({id,start,end})=>[id,start,end]),verified.map(row=>['imio:'+row.id,row.start_datetime,undefined]));
+  assert.deepEqual(items([]),[]);
+  const [first]=verified;
+  for(const difference of [
+    {id:'different'},
+    {title:'Annulé : '+first.title},
+    {start_datetime:'2026-12-11T20:00:00+00:00'},
+    {start_datetime:'2026-12-10T19:30:00+00:00',end_datetime:'2026-12-10T22:30:00+00:00'},
+  ]){
+    const [item]=items([{...first,...difference}]);
+    assert.match(item.start,/^\d{4}-\d{2}-\d{2}$/);
+    assert.equal(item.end,undefined);
+  }
+  assert.deepEqual(items([{...first,address_house_number:'12'}]),[]);
+  assert.deepEqual(walloonAgendaItems({results:verified},kom,span),[]);
+});

@@ -747,7 +747,11 @@ try {
 
   // Keep the main broad fixture unchanged; add localized rows in isolated browser cases.
   const localFixture = (device) => device.route('https://www.odwb.be/api/**/evenements-en-wallonie/**', route => {
-    const rows=[localized, {...localized,id:'misleading',title:'Jazz over de grens',address_postal_code:'59560'}];
+    const concerts=[
+      ['2435649f55624c54be358098f0e0e612','Open Music Jazz Club : Aurélie Charneux en trio en concert','2026-12-11'],
+      ['f04d4a4125af4e8a998c5334860d276c','Open Music Jazz Club : Natasha Vew - MUSE ECHOES en concert','2026-12-18'],
+    ].map(([id,title,date])=>({...localized,id,title,start_datetime:date+'T19:30:00+00:00',end_datetime:date+'T22:30:00+00:00'}));
+    const rows=[localized, ...concerts, {...localized,id:'misleading',title:'Jazz over de grens',address_postal_code:'59560'}];
     return route.fulfill({json:route.request().url().includes('/exports/json?')?rows:{results:rows},
       headers:{'Access-Control-Allow-Origin':'*'}});
   });
@@ -762,6 +766,14 @@ try {
     assert.equal(await result.count(),1);
     assert.match(await result.innerText(),/Komen-Waasten[\s\S]*Uur niet vermeld[\s\S]*Place Sainte-Anne 13/u);
     assert.equal(await device.getByText('Jazz over de grens',{exact:true}).count(),0);
+    for(const [date,name] of [['11','Aurélie Charneux'],['18','Natasha Vew']]){
+      const target=device.locator('[data-day="2026-12-'+date+'"]');
+      if (device===phone) await target.tap(); else await target.click();
+      const concert=device.locator('.calendar-event[data-calendar-source=imio]').filter({hasText:name});
+      assert.equal(await concert.count(),1);
+      assert.match(await concert.innerText(),/20:30[\s\S]*Place Sainte-Anne 13/u);
+      assert.doesNotMatch(await concert.innerText(),/23:30|Uur niet vermeld/u);
+    }
   }
 
   const expoTitle = 'Albert Servaes. Pionier van het expressionisme';

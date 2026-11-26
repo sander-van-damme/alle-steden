@@ -595,6 +595,17 @@ const imioCalendarVenues = [
 ];
 const imioLocalityVenues = (city) => city?.slug === 'komen-waasten' && city?.code === '57097' ? imioCalendarVenues : [];
 
+// The organizer confirmed these two starts independently. Use iMio's clock
+// only while the live identity, title, venue and instant still agree.
+const imioVerifiedJazzStarts = new Map([
+  ['2435649f55624c54be358098f0e0e612', [
+    'Open Music Jazz Club : Aurélie Charneux en trio en concert', '2026-12-11T20:30:00+01:00',
+  ]],
+  ['f04d4a4125af4e8a998c5334860d276c', [
+    'Open Music Jazz Club : Natasha Vew - MUSE ECHOES en concert', '2026-12-18T20:30:00+01:00',
+  ]],
+]);
+
 export function walloonCalendarVenue(row, city) {
   if (row?.category !== 'concert_festival' || Number(row.whole_day) !== 0 || Number(row.open_end) !== 0) return undefined;
   return imioLocalityVenues(city).find((venue) => nameKey(row.address_city) === nameKey(venue.city)
@@ -670,8 +681,10 @@ export function walloonAgendaItems(doc, city, span, { calendar = false } = {}) {
       // The local rows under review describe individual concerts. Do not
       // turn an advertised start or a customary end into a visit window.
       if (!id || !start || dateOnly(start) || !timed || firstDay !== lastDay || Date.parse(end) <= Date.parse(start)) return [];
+      const reviewed = localVenue.city === 'Comines' && imioVerifiedJazzStarts.get(id);
+      const verifiedStart = reviewed && nameKey(reviewed[0]) === nameKey(name) && Date.parse(reviewed[1]) === Date.parse(start);
       return [{
-        id:'imio:' + id, name, source:'imio', start:localVenue.timing === 'start' ? start : firstDay,
+        id:'imio:' + id, name, source:'imio', start:localVenue.timing === 'start' || verifiedStart ? start : firstDay,
         venue:localVenue.label, category:imioTypes[row.category], website:localVenue.href,
       }];
     }
