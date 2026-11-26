@@ -287,7 +287,7 @@ function enhanceSection(section, city, type) {
     }));
     if (revision !== requestId || type !== 'places') return;
     render(true);
-    extraHours = await getOsmHours(mappedPlaces.filter((item) => item.category !== 'Buitenkunst' && !isHistoriaVenue(item) && item.hoursSource!=='visitDiest' && !visitNotice(item)));
+    extraHours = await getOsmHours(mappedPlaces.filter((item) => item.category !== 'Buitenkunst' && item.source !== 'fwbCulturalCentres' && !item.alternateSources?.includes('fwbCulturalCentres') && !isHistoriaVenue(item) && item.hoursSource!=='visitDiest' && !visitNotice(item)));
     if (revision !== requestId || !extraHours.size) return;
     render();
   };

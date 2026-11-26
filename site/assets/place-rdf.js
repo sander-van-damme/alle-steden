@@ -7,6 +7,8 @@ const identifiers = Object.freeze({
   brussels: { property: 'Open Data Brussel record ID', type: 'TouristAttraction', authority: 'https://www.brussel.be/' },
   brusselsGrandPlace: { property: 'Stad Brussel Grote Markt ID', type: 'LandmarksOrHistoricalBuildings', authority: 'https://www.brussel.be/' },
   brusselsCulture: { property: 'Open Data Brussel record ID', type: 'Place', authority: 'https://www.brussel.be/' },
+  fwbCulturalCentres: { property: 'Belgian Crossroads Bank for Enterprises ID', type: 'Place',
+    authority: 'https://www.federation-wallonie-bruxelles.be/' },
   fwbMuseums: { property: 'Open Data Wallonie-Bruxelles museum record ID', type: 'Museum',
     authority: 'https://www.federation-wallonie-bruxelles.be/' },
   visitBrussels: { property: 'Visit.Brussels record ID', type: 'Place', authority: 'https://www.brussel.be/' },

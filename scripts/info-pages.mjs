@@ -36,6 +36,7 @@ export function aboutPage(layout) {
         [from('flanders', 'Toerisme Vlaanderen') + ', ' + from('erfg') + ' en ' + from('wallonia', 'Tourisme Wallonie (PIVOT)'), 'Voor bezoekersplekken en erfgoed. De inventaris van ' + link('het Waalse erfgoed', 'https://territoire.wallonie.be/') + ' helpt ook om plekken te kiezen die je vanop straat kunt bekijken.'],
         [from('visitBrussels') + ' en Stad Brussel: ' + from('brussels', 'musea') + ', ' + from('brusselsGrandPlace', 'Grote Markt') + ' en ' + from('brusselsCulture', 'cultuurplekken'), 'Voor de Brusselse stadsfiche. Bronvermeldingen omvatten Stad Brussel / Data Management, Visit.Brussels, Behind Brussels, Google Maps en NGI-IGN waar van toepassing.'],
         [from('fwbMuseums') + ', ' + from('marcheHeritage', 'erfgoed') + ' en ' + from('marcheArt', 'kunst in Marche-en-Famenne'), 'Voor erkende musea, erfgoedplekken en kunst in de openbare ruimte.'],
+        [from('fwbCulturalCentres'), 'Voor gecontroleerde cultuurplekken op de stadsfiche. Voor programma en toegang volg je de link naar het cultuurcentrum.'],
         [from('historiaVisit'), 'Voor gewone museumuren, laatste toegang en vaste sluitingsdagen. Controleer uitzonderingen bij het museum.'],
         [from('visitDiest'), 'Voor de gewone bezoekuren van het Diestse infokantoor en Stadsmuseum De Hofstadt.'],
         [from('monsArt', 'Ville de Mons') + ' en ' + from('namurArt', 'Ville de Namur'), 'Voor kunst in de openbare ruimte.'],

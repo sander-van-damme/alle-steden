@@ -1,6 +1,7 @@
 import { getBrusselsPlaces, getFlemishHeritage, getJson, getWallonia, getWikidata, interleavePlaceSources,
   mergePlaces, regionalSource, safeUrl } from './sources.js';
 
+import { fwbCulturalCentresQuery, getFwbCulturalCentre } from './fwb-cultural-centres.js';
 import { fwbMuseumQuery } from './fwb-museums.js';
 import { getHistoriaVisit, historiaId, isHistoriaVenue } from './historia-visit.js';
 import { getVisitDiest, visitDiestIdentity } from './visit-diest.js';
@@ -15,6 +16,9 @@ export function placeProviders(city, { expanded = true, origin = globalThis.loca
   const loadMarche = () => marche ??= import('./marche-places.js').then((module) => module.marchePlaceSources(city, options));
   const museumSource = expanded && fwbMuseumQuery(city) ? [{
     key: 'fwbMuseums', added: true, run: async () => (await import('./fwb-museums.js')).getFwbMuseums(city, options),
+  }] : [];
+  const cultureCentre = expanded && fwbCulturalCentresQuery(city) ? [{
+    key: 'fwbCulturalCentres', added: true, run: () => getFwbCulturalCentre(city, options),
   }] : [];
   // Not used by the planner: the inventory proves street-art locations, not schedules.
   const outdoorArt = expanded && ['bergen', 'namen'].includes(city.slug) ? [{
@@ -43,7 +47,7 @@ export function placeProviders(city, { expanded = true, origin = globalThis.loca
     return { ...result, items: result.items.map((item) => ({ ...item, verificationHref: safeUrl(item.website) })) };
   } }, ...(expanded && city.slug === 'marche-en-famenne' ? ['marcheHeritage','marcheArt'].map((key) => ({
     key, added: true, run: async () => (await loadMarche()).find((entry) => entry.key === key).run(),
-  })) : []), ...museumSource, ...outdoorArt, ...publicParks];
+  })) : []), ...museumSource, ...outdoorArt, ...publicParks, ...cultureCentre];
   return [...(expanded && city.slug==='diest' && origin ? [
     {key:'visitDiest',added:true,run:()=>getVisitDiest({origin,...options})},
   ] : []), wikidata, { key: 'flanders', run: async () => {
@@ -131,7 +135,14 @@ export function displayedPlaces(city, stored, groups, expanded = true) {
   }) : records;
   const trusted = historia ? consolidated.map(item=>item!==historia && isHistoriaVenue(item)
     ? {...item,id:historiaId,hours:undefined} : item) : consolidated;
-  return mergePlaces(unifyMuseumIdentities(city, trusted), placeViewLimit(city, expanded)).map(item=>{
+  // The cultural centre shares an address with distinct activities and spaces.
+  // Only the verified PIVOT identity at 56D may join the ODWB centre.
+  const libramont = city.slug === 'libramont-chevigny' &&
+    trusted.find(item => item.id === 'fwbCulturalCentres:0416.170.382');
+  const cultural = libramont ? trusted.map(item => item.id === 'pivot:LOD-A0-006W-0T1G'
+    ? { ...item, id:libramont.id, name:libramont.name, category:libramont.category, website:libramont.website,
+      hours:undefined, osm:[] } : item) : trusted;
+  return mergePlaces(unifyMuseumIdentities(city, cultural), placeViewLimit(city, expanded)).map(item=>{
     const authority=exactDiest(item) ?? (historia && isHistoriaVenue(item) ? historia : undefined);
     return authority ? {...item,website:authority.website,hours:authority.hours,hoursNote:authority.hoursNote,
       hoursSource:authority.source} : item;
