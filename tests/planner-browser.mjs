@@ -15,6 +15,12 @@ await withPlanner(process.env.PLANNER_PREVIEW_PORT??4173,async(browser,origin)=>
     assert.doesNotMatch(await page.locator(loc.form).innerText(),/Aantal steden|2 steden|3 steden/);
     assert.equal(await page.locator(loc.min).inputValue(),'15');
     assert.equal(await page.locator(loc.max).inputValue(),'45');
+    const boundaryRequests=[];
+    if(!live)await page.route('**/assets/city-municipal-boundaries.json',route=>{
+      boundaryRequests.push(new URL(route.request().url()));
+      return boundaryRequests.length===1?route.fulfill({status:503,body:'Test outage'}):route.continue();
+    });
+    assert.equal(boundaryRequests.length,0);
     for(const values of [calls.routes,calls.services,calls.pois,calls.notices])assert.equal(values.length,0);
     await openAdvanced(page);
     if(!live)await page.locator(loc.date).fill(chosenDate);
@@ -34,6 +40,8 @@ await withPlanner(process.env.PLANNER_PREVIEW_PORT??4173,async(browser,origin)=>
       assert.ok(calls.routes.some(({via})=>via.length===2&&near(via[0],points.aat)&&near(via.at(-1),points.aalst)));
       assert.ok(corridor.every(p=>track.points.some(q=>near(p,q))));
       const through=trip.locator(loc.cities); await through.waitFor({timeout:15_000});
+      assert.equal(boundaryRequests.length,2,'Fixed same-origin asset is retried once, only after submitting the route');
+      assert.ok(boundaryRequests.every(url=>url.search===''));
       const labels=await through.innerText();
       for(const name of names)assert.match(labels,new RegExp('\\b'+name+'\\b'));
       assert.deepEqual(names.toSorted((a,b)=>labels.indexOf(a)-labels.indexOf(b)),names);

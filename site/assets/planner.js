@@ -15,7 +15,7 @@ const nf = new Intl.NumberFormat('nl-BE', { maximumFractionDigits:1 });
 const fmt = value => nf.format(value);
 const dayName = new Intl.DateTimeFormat('nl-BE',{day:'numeric',month:'long',weekday:'long',timeZone:'UTC'});
 const abort = e => e?.name === 'AbortError';
-let cities = [], search, selected, boundaries;
+let cities = [], search, selected;
 
 function el(tag,text,className) {
   const node=document.createElement(tag);
@@ -194,8 +194,11 @@ function makeStopEditor(view) {
 }
 async function loadPassages(view) {
   try{
-    const {loadRouteCityBoundaries,routeCityPassages}=await import('./route-city-passages.js');
-    boundaries??=await loadRouteCityBoundaries({origin:location.origin,signal:view.controller.signal});
+    const {routeCityPassages,loadRouteCityBoundaries}=await import('./route-city-passages.js');
+    let boundaries=await view.model.boundaryLoad;
+    view.controller.signal.throwIfAborted();
+    if(boundaries.state==='unavailable')boundaries=await (view.model.boundaryRetry??=
+      loadRouteCityBoundaries({origin:location.origin,signal:view.model.controller.signal}));
     view.controller.signal.throwIfAborted();
     view.passage=routeCityPassages(view.trip,boundaries);
   }catch(error){
@@ -266,6 +269,10 @@ async function calculate(request) {
   reset();
   const model={request,controller:new AbortController(),trips:[]};search=model;
   setStatus('Fietsroute zoeken…','loading');
+  // Wait until the visitor asks for a route, but overlap the fixed same-origin
+  // asset with routing. It receives no route or visit data. Do not cache errors.
+  model.boundaryLoad=import('./route-city-passages.js').then(({loadRouteCityBoundaries})=>
+    loadRouteCityBoundaries({origin:location.origin,signal:model.controller.signal})).catch(()=>({state:'unavailable'}));
   try{
     const shape=request.loop===true?'loop':(request.loop||'oneway');
     const data=await generateDistanceRoutes(cities,{city:request.startSlug,finish:request.endSlug||undefined,

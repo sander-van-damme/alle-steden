@@ -116,7 +116,7 @@ export async function loadRouteCityBoundaries({origin=globalThis.location?.origi
     // This same-origin request contains no route, date, or other visitor parameters.
     const fetchWithAbort=(input,options={})=>(fetcher??globalThis.fetch)(input,
       {...options,signal:options.signal&&signal?AbortSignal.any([options.signal,signal]):options.signal??signal});
-    const value=prepareRouteCityBoundaries(await getJson(url,{fetcher:fetchWithAbort,credentials:'omit',timeout:8_000}));
+    const value=prepareRouteCityBoundaries(await getJson(url,{fetcher:fetchWithAbort,credentials:'omit',timeout:14_000}));
     signal?.throwIfAborted();
     if (value.state==='ok'&&!fetcher) boundaryCache={url:url.href,value};
     return value;
