@@ -47,7 +47,7 @@ export function calendarMain({ cities, events }, now = new Date()) {
             </div>
             <div id="calendar-grid" role="rowgroup"></div>
           </div>
-          <div class="calendar-key"><span></span> Aantal evenementen in deze kalender</div>
+          <div class="calendar-key"><span class="calendar-day-count" aria-hidden="true">12</span> Aantal evenementen in deze kalender</div>
         </section>
         <section class="calendar-list-panel" aria-labelledby="calendar-agenda-title">
           <div class="calendar-list-heading">

@@ -72,6 +72,42 @@ const loaded = (page) => page.waitForFunction(() => {
   const el = document.getElementById('calendar-status');
   return el?.textContent && !el.textContent.includes('We zoeken naar meer evenementen');
 });
+async function checkCalendarCounts(page, minDigits, { enlarged = false } = {}) {
+  const result = await page.locator('#calendar-grid').evaluate(grid => {
+    const gridBox = grid.getBoundingClientRect();
+    const counts = [...grid.querySelectorAll('.calendar-day-count')];
+    return {
+      gridFits: gridBox.left >= 0 && gridBox.right <= document.documentElement.clientWidth,
+      counts: counts.map(count => {
+        const countBox = count.getBoundingClientRect();
+        const day = count.closest('button');
+        const dayBox = day.getBoundingClientRect();
+        const dateBox = day.querySelector('.calendar-day-number').getBoundingClientRect();
+        const glyphs = document.createRange();
+        glyphs.selectNodeContents(count);
+        const fragments = [...glyphs.getClientRects()];
+        const style = getComputedStyle(count);
+        return {
+          value: count.textContent, label: day.getAttribute('aria-label'), hidden: count.getAttribute('aria-hidden'),
+          contained: countBox.top >= dateBox.bottom && countBox.bottom <= dayBox.bottom &&
+            fragments.length > 0 && fragments.every(box => box.left >= dayBox.left && box.right <= dayBox.right),
+          singleLine: fragments.length === 1, size: parseFloat(style.fontSize), numeric: style.fontVariantNumeric,
+        };
+      }),
+    };
+  });
+  assert.ok(result.gridFits);
+  assert.ok(result.counts.some(({ value }) => value.length === minDigits));
+  for (const { value, label, hidden, contained, singleLine, size, numeric } of result.counts) {
+    assert.ok(contained, 'count stays inside its day cell: ' + value);
+    if (value.length <= 2) assert.ok(singleLine, 'one or two digits stay together: ' + value);
+    assert.ok(size >= (enlarged ? 28 : 14));
+    assert.equal(numeric, 'tabular-nums');
+    assert.ok(label.endsWith(', ' + value + (value === '1' ? ' evenement' : ' evenementen')));
+    assert.equal(hidden, 'true');
+  }
+}
+
 try {
   await Promise.race([once(server.stdout, 'data'), once(server, 'exit').then(code => assert.fail('Preview exited: ' + code))]);
   browser = await chromium.launch({
@@ -88,6 +124,15 @@ try {
   await loaded(desktop);
   assert.equal(await desktop.locator('nav [aria-current="page"]').innerText(), 'Kalender');
   assert.equal(await desktop.locator('#calendar-month').textContent(), 'december 2026');
+  await checkCalendarCounts(desktop, 2);
+  const denseDay = desktop.locator('[data-day="2026-12-20"]');
+  await denseDay.focus();
+  await desktop.keyboard.press('Enter');
+  assert.equal(await denseDay.locator('..').getAttribute('aria-selected'), 'true');
+  assert.ok(await denseDay.evaluate(el => el === document.activeElement &&
+    getComputedStyle(el).outlineStyle === 'solid' && getComputedStyle(el).boxShadow !== 'none'));
+  await desktop.locator('#calendar-clear-day').click();
+
   await desktop.locator('.calendar-sources summary').click();
   assert.equal(await desktop.locator('.calendar-sources summary').textContent(), 'Over deze kalender');
   assert.doesNotMatch(await desktop.locator('.calendar-sources').innerText(), /geladen|vermeldingen|niet ingesteld/);
@@ -118,6 +163,7 @@ try {
   await desktop.locator('#calendar-city').selectOption('verviers');
   await loaded(desktop);
   assert.equal(await desktop.locator('.calendar-event').count(), 1);
+  await checkCalendarCounts(desktop, 1);
   await desktop.locator('#calendar-category').selectOption('Concert of festival');
   assert.match(await desktop.locator('.calendar-event').innerText(), /17:00–18:30/);
   assert.equal(await desktop.locator('.calendar-event-city').getAttribute('href'), '/steden/verviers/');
@@ -153,6 +199,7 @@ try {
   await loaded(phone);
   assert.match(await phone.locator('#calendar-status').textContent(), /Niet bereikbaar/);
   assert.ok(await phone.getByRole('link', { name: 'Gentse Winterfeesten 2026' }).isVisible());
+  await checkCalendarCounts(phone, 2);
   await phone.locator('[data-day="2026-12-20"]').tap();
   assert.match(await phone.locator('#calendar-agenda-title').innerText(), /20 december/);
   await phone.locator('#calendar-category').selectOption('Muziek');
@@ -164,6 +211,16 @@ try {
   await loaded(phone);
   assert.match(await phone.locator('#calendar-status').innerText(), /tot 120 dagen vooruit/);
   assert.ok(await phone.getByRole('link', { name: 'Heilig Bloedprocessie 2027' }).isVisible());
+
+  const compact = await browser.newPage({ viewport: { width: 320, height: 740 }, isMobile: true, hasTouch: true });
+  await install(compact);
+  await compact.goto(origin + '/kalender/?maand=2026-12');
+  await loaded(compact);
+  await checkCalendarCounts(compact, 2);
+  assert.equal(await compact.evaluate(() => document.documentElement.scrollWidth), 320);
+  await compact.addStyleTag({ content: 'html { font-size: 200% !important; }' });
+  await checkCalendarCounts(compact, 2, { enlarged: true });
+  await compact.close();
 
   // Organizer-confirmed dates live in the built catalogue, including a month
   // outside the live provider range. A date alone must never become a visit slot.

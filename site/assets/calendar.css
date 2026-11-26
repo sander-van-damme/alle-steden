@@ -140,17 +140,19 @@
 .calendar-day-number { font-size: .85rem; line-height: 1.35; font-weight: 670; }
 .calendar-day[aria-current="date"] .calendar-day-number { color: var(--cal-brick); text-decoration: underline 2px; text-underline-offset: .17em; }
 .calendar-cell .calendar-day.calendar-selected { background: #efe0d6; box-shadow: inset 0 0 0 2px var(--cal-brick); }
-.calendar-day-events {
-  font-size: .74rem;
-  line-height: 1.1;
+.calendar-day-count {
+  font-size: .9rem;
+  line-height: 1.13;
   font-weight: 710;
-  display: flex;
-  align-items: center;
-  gap: .21rem;
+  font-variant-numeric: tabular-nums;
   color: var(--cal-brick);
-  white-space: nowrap;
 }
-.calendar-day-dot, .calendar-key span { background: var(--cal-brick); border-radius: 50%; width: .34rem; height: .34rem; flex: none; }
+.calendar-day > .calendar-day-count {
+  align-self: end;
+  max-width: 100%;
+  text-align: end;
+  overflow-wrap: anywhere;
+}
 .calendar-key {
   display: flex;
   align-items: center;
@@ -216,14 +218,11 @@
   .calendar-intro p { font-size: .92rem; }
   .calendar-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .calendar-filters label:last-child { grid-column: 1 / -1; }
-  .calendar-day-events { gap: .14rem; }
-  .calendar-day-dot { width: .27rem; height: .27rem; }
 }
 @media (max-width: 25rem) {
+  .calendar.wrap { width: calc(100% - clamp(24px, 8vw, 32px)); }
   .calendar-toolbar h2 { font-size: clamp(1.2rem, 5.4vw, 1.4rem); }
-}
-@media (max-width: 20rem) {
-  .calendar.wrap { width: calc(100% - 1.5rem); }
+  .calendar-day, .calendar-outside { padding-inline: clamp(3px, .8vw, 6px); }
   .calendar-paging { gap: .15rem; }
-  .calendar-paging button { padding-inline: .33rem; }
+  .calendar-paging button { min-width: 44px; padding-inline: .33rem; }
 }

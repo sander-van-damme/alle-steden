@@ -170,11 +170,9 @@ async function start() {
           if (day === selectedDay) button.classList.add('calendar-selected');
           button.append(node('span', 'calendar-day-number', date));
           if (items.length) {
-            button.classList.add('calendar-has-events');
-            const badges = node('span', 'calendar-day-events');
-            badges.setAttribute('aria-hidden', 'true');
-            badges.append(node('span', 'calendar-day-dot'), node('span', 'calendar-day-count', String(items.length)));
-            button.append(badges);
+            const count = node('span', 'calendar-day-count', String(items.length));
+            count.setAttribute('aria-hidden', 'true');
+            button.append(count);
           }
           cell.append(button);
         }
