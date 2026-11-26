@@ -32,7 +32,6 @@ async function install(page, { fails = false, pauseGent = null, pauseIdeas = nul
   await page.route(origin + '/api/zuid-limburg', route => route.fulfill({json:{items:[]}}));
   await page.route(origin + '/api/lacart-events?**', route => route.fulfill({json:{items:[]}}));
   await page.route(origin + '/api/fosdem', route => route.fulfill({json:{items:[]}}));
-  await page.route(origin + '/api/andenne-library', route => route.fulfill({json:{items:[]}}));
   await page.route('https://uwtaxdtecrngvmgzradk.supabase.co/functions/v1/calendar-feed?**',async route=>{
     if(pauseIdeas) await pauseIdeas;
     return route.fulfill({status:ideasStatus,contentType:'text/calendar',body:ideasStatus===200?ics:'',headers:{'Access-Control-Allow-Origin':'*'}}).catch(()=>{});
@@ -181,36 +180,6 @@ try {
       assert.equal(await match.count(), 0);
     }
   }
-  // The library scope and individual slot dates survive real calendar navigation.
-  const libraryUrl = origin + '/api/andenne-library';
-  const libraryItem = { city:'andenne', id:'andenneLibrary:592', source:'andenneLibrary',
-    name:'Atelier créatif : Mailles & cie', category:'Workshop', venue:'Bibliothèque d’Andenne',
-    start:'2026-12-12T13:00:00Z', end:'2026-12-12T15:30:00Z',
-    website:'https://bibliotheque.andenne.be/events/atelier-creatif-autour-du-fil/' };
-  let libraryRequests = 0;
-  const libraryResponse = (route) => {
-    libraryRequests++;
-    return route.fulfill({json:{items:[libraryItem]}});
-  };
-  await desktop.route(libraryUrl, libraryResponse);
-  await desktop.goto(origin + '/kalender/?stad=andenne&maand=2026-12');
-  await loaded(desktop);
-  const workshop = desktop.locator('.calendar-event[data-calendar-source="andenneLibrary"]');
-  assert.match(await workshop.innerText(), /14:00–16:30[\s\S]+Bibliothèque d’Andenne/);
-  await desktop.locator('[data-day="2026-12-13"]').click();
-  assert.equal(await workshop.count(), 0);
-  await desktop.goto(origin + '/kalender/?stad=namen&maand=2026-12');
-  await loaded(desktop);
-  assert.equal(await workshop.count(), 0);
-  assert.equal(libraryRequests, 1);
-  await desktop.unroute(libraryUrl, libraryResponse);
-  await desktop.route(libraryUrl, route => route.fulfill({status:502}));
-  await desktop.goto(origin + '/kalender/?stad=andenne&maand=2026-12');
-  await loaded(desktop);
-  assert.match(await desktop.locator('#calendar-status').textContent(), /Niet bereikbaar: [^.]*(?=Bibliothèque d’Andenne)/);
-  assert.equal(await workshop.count(), 0);
-  await desktop.unroute(libraryUrl);
-
   // Exact winter programme hours, separate from the umbrella festival entry.
   await desktop.goto(origin + '/kalender/?stad=antwerpen&maand=2026-12');
   await loaded(desktop);

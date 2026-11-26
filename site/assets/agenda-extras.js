@@ -14,7 +14,6 @@ import { fetchComicsEvents } from './stripmuseum-events.js';
 import { fetchZuidLimburgEvents, zuidLimburgCities } from './zuidlimburg-events.js';
 import { loadIdees } from './idees-feed.js';
 import { fetchFosdemEvents, fosdemInScope } from './fosdem-events.js';
-import { fetchLibraryEvents } from './andenne-library-events.js';
 
 const day = (value) => typeof value === 'string' && (dateOnly(value) ? value :
   Number.isFinite(Date.parse(value)) && localToday(new Date(value)));
@@ -41,7 +40,6 @@ export function extraAgendaJobs(cities, { city, region, span, origin, rawFetcher
     })]);
     if (origin && chosen.some(({slug})=>lacartCities.includes(slug))) work.push(['lacart',() =>
       fetchLacartEvents({...span,...options,origin,cities:chosen})]);
-    if (origin && allowed.has('andenne')) work.push(['andenneLibrary', () => fetchLibraryEvents({ ...span, ...options, origin })]);
     if (origin && allowed.has('brussel')) work.push(['stripmuseum',() => fetchComicsEvents({...span,...options,origin})]);
     if (origin && allowed.has('brussel') && fosdemInScope(span)) work.push(['fosdem', () => fetchFosdemEvents({ ...span, ...options, origin })]);
     if (origin && chosen.some(({slug})=>zuidLimburgCities.includes(slug))) work.push(['zuidLimburg',() =>
