@@ -20,7 +20,9 @@ const body = `<!doctype html><html lang="nl"><body><main data-city="test"><ul>
   enhanceVerifiedLinks(document.querySelector('[data-city]'));
 </script></body></html>`;
 const calls = [];
-const js = await readFile(new URL('../site/assets/link-check.js', import.meta.url));
+const modules = new Map(await Promise.all(['link-check.js', 'site-paths.js'].map(async (name) => [
+  '/assets/' + name, await readFile(new URL('../site/assets/' + name, import.meta.url)),
+])));
 const page = await browser.newPage();
 const context = page.context();
 const errors = [];
@@ -29,7 +31,7 @@ try {
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.origin !== origin) return route.fulfill({ contentType: 'text/html', body: '<title>Doel</title>' });
-    if (url.pathname === '/assets/link-check.js') return route.fulfill({ contentType: 'text/javascript', body: js });
+    if (modules.has(url.pathname)) return route.fulfill({ contentType: 'text/javascript', body: modules.get(url.pathname) });
     if (url.pathname !== '/api/verify-link') return route.fulfill({ contentType: 'text/html', body });
     calls.push(url);
     const i = Number(url.searchParams.get('id'));
