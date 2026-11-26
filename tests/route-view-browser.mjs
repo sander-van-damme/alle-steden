@@ -70,7 +70,7 @@ const ravelHit = {id:'0dcd04bb-0cff-445e-8916-26dc601ed46d',title:'Travaux près
   from:'2026-11-04',through:'2026-12-07',points:[[4.8904,50.304]]};
 const expired = {...ravelHit,id:'b3e099d5-b7f1-44a0-a620-d70c1129536c',title:'Travaux dépassés',through:'2026-11-15'};
 const openDetails = async (page,label) => {
-  const summary=page.locator('summary');
+  const summary=page.getByText('Bekijk route',{exact:true});
   if (label==='mobile') await summary.tap();
   else await summary.press('Enter');
 };
@@ -187,6 +187,11 @@ async function verifyDistanceMarkers(context,label) {
     await page.goto(origin);
     await page.waitForFunction(()=>!!window.loadedRoute);
     await openDetails(page,label);
+    const points=page.getByText('Kaartpunten',{exact:true});
+    assert.equal(await points.evaluate(summary=>summary.parentElement.open),false);
+    assert.ok(await page.locator('.route-map').evaluate(node=>node.nextElementSibling?.classList.contains('route-insights')));
+    if(label==='mobile') await points.tap();
+    else await points.press('Enter');
     await page.getByRole('button',{name:'S Vertrek · Gent'}).waitFor();
     await page.getByRole('button',{name:'E Aankomst · Eeklo'}).waitFor();
     await page.getByRole('button',{name:'R1 Koffiepauze'}).waitFor();
