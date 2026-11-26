@@ -530,6 +530,7 @@ export async function getUiT(city, apiKey, options) {
 }
 
 const imioDataset = 'evenements-en-wallonie';
+export const regionalWalloonAgendaLimit = 400;
 const imioTypes = Object.freeze({
   party_folklore: 'Feest en folklore',
   stroll_discovery: 'Rondleiding',
@@ -577,12 +578,14 @@ export function walloonAgendaQuery(city, span, { regional = false } = {}) {
   // then filter exactly by Belgian calendar day after normalization.
   const lower = addCalendarDays(from, -1);
   const upper = addCalendarDays(through, 1);
-  return parameters(namur + '/api/explore/v2.1/catalog/datasets/' + imioDataset + '/records', {
+  const endpoint = regional ? '/exports/json' : '/records';
+  return parameters(namur + '/api/explore/v2.1/catalog/datasets/' + imioDataset + endpoint, {
     select: imioSelect,
     where: `${locality}(end_datetime >= date'${lower}' OR (end_datetime is null AND start_datetime >= date'${lower}')) AND
       start_datetime < date'${upper}' AND category in (${odsqlLiterals(Object.keys(imioTypes))}) AND
       (recurrence is null OR recurrence = '')`.replace(/\s*\n\s*/g, ' '),
-    order_by: 'start_datetime asc', limit: regional ? 100 : 40,
+    order_by: regional ? 'start_datetime asc,id asc' : 'start_datetime asc',
+    limit: regional ? regionalWalloonAgendaLimit + 1 : 40,
   });
 }
 

@@ -1,5 +1,5 @@
 import { addCalendarDays, cityNames, fetchCityEvents, getGent, getJson, getNamur, localToday,
-  walloonAgendaItems, walloonAgendaQuery } from './sources.js';
+  regionalWalloonAgendaLimit, walloonAgendaItems, walloonAgendaQuery } from './sources.js';
 import { preferStripmuseum } from './stripmuseum-events.js';
 import { preferAdeps } from './adeps-events.js';
 import { preferExistingLuikChristmas } from './zuidlimburg-events.js';
@@ -9,7 +9,6 @@ import { maxCalendarEventDays } from './calendar-core.js';
 const wallonia = 'Wallonië';
 const flanders = 'Vlaanderen';
 const exactKey = (name) => String(name ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
-const requestLimit = 100;
 const upperLiveDays = 120;
 
 export function liveCalendarSpan({ first, last }, today = localToday()) {
@@ -20,8 +19,8 @@ export function liveCalendarSpan({ first, last }, today = localToday()) {
 }
 
 async function regionalWalloonEvents(cities, span, options) {
-  // Reuse the exact supported URL, selected factual fields, category whitelist,
-  // date margin and recurrence exclusion in the existing per-city adapter.
+  // A filtered export reads a wider selection in one request. The extra row
+  // is a sentinel, not an event, so 400 rows alone don't imply truncation.
   const url = walloonAgendaQuery(null, span, { regional: true });
 
   const aliases = new Map();
@@ -33,10 +32,11 @@ async function regionalWalloonEvents(cities, span, options) {
       else if (aliases.get(key)?.slug !== city.slug) aliases.set(key, undefined);
     }
   }
-  const result = await getJson(url, options);
-  if (!Array.isArray(result.results)) throw new Error('Ongeldig regionaal antwoord');
+  const rows = await getJson(url, options);
+  if (!Array.isArray(rows)) throw new Error('Ongeldig regionaal antwoord');
   const byCity = new Map();
-  for (const row of result.results) {
+  for (const row of rows.slice(0, regionalWalloonAgendaLimit)) {
+    if (!row || typeof row !== 'object') continue;
     const owner = aliases.get(exactKey(row.owner_name));
     const address = aliases.get(exactKey(row.address_city));
     if (!owner || owner !== address) continue;
@@ -45,7 +45,7 @@ async function regionalWalloonEvents(cities, span, options) {
   }
   const items = [...byCity].flatMap(([city, results]) =>
     walloonAgendaItems({ results }, city, span, { calendar: true }).map((item) => ({ ...item, city: city.slug })));
-  return { items, limited: Number(result.total_count) > result.results.length || result.results.length >= requestLimit };
+  return { items, limited: rows.length > regionalWalloonAgendaLimit };
 }
 
 export async function fetchCalendarMonth(cities, options) {

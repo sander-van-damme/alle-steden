@@ -47,10 +47,16 @@ async function install(page, { fails = false, pauseGent = null, pauseIdeas = nul
   });
   await page.route('https://www.odwb.be/api/**', (route) => {
     if (fails) return route.abort();
-    return route.fulfill({ json: { total_count: 120, results: route.request().url().includes('evenements-en-wallonie')
-      ? [fixture, { ...fixture, id: 'mismatch', title: 'Verkeerde stad', address_city: 'Namur' },
-        { ...fixture, id: 'recurrence', title: 'Niet uitgewerkte herhaling', recurrence: 'RRULE:FREQ=WEEKLY' }] : [] },
-      headers: { 'Access-Control-Allow-Origin': '*' } });
+    const path = new URL(route.request().url()).pathname;
+    const walloonRows = [fixture, { ...fixture, id: 'mismatch', title: 'Verkeerde stad', address_city: 'Namur' },
+      { ...fixture, id: 'recurrence', title: 'Niet uitgewerkte herhaling', recurrence: 'RRULE:FREQ=WEEKLY' }];
+    const beyondFirstPage = { ...fixture, id:'ath-beyond-first', title:'Ath voorbij de eerste bronpagina',
+      owner_name:'Ath', address_city:'Ath' };
+    const sentinel = { ...fixture, id:'extra-sentinel', title:'Niet tonen buiten de bovengrens' };
+    const data = !path.includes('evenements-en-wallonie') ? { results:[] } : path.endsWith('/exports/json')
+      ? [...walloonRows,...Array(97).fill(null),beyondFirstPage,...Array(299).fill(null),sentinel]
+      : { results:walloonRows };
+    return route.fulfill({json:data, headers:{'Access-Control-Allow-Origin':'*'} });
   });
 }
 const loaded = (page) => page.waitForFunction(() => {
@@ -82,12 +88,15 @@ try {
   const ideas = desktop.locator('.calendar-event[data-calendar-source=idees]').filter({hasText:'Expo van ideeën'});
   const fixtureLink = desktop.getByRole('link', { name: fixture.title });
   const ideasLink = ideas.getByRole('link', {name:'Expo van ideeën'});
+  const fromBeyondFirstPage = desktop.getByRole('link', { name:'Ath voorbij de eerste bronpagina' });
   const more = desktop.locator('#calendar-more');
   // The first national results page can fill up with other cities' market
   // days. Use the visitor's own pagination rather than assume the order.
   for (let i = 0; i < 10 && await more.isVisible() &&
-      (!await fixtureLink.isVisible() || !await ideasLink.isVisible()); i++) await more.click();
+      (!await fixtureLink.isVisible() || !await ideasLink.isVisible() || !await fromBeyondFirstPage.isVisible()); i++) await more.click();
   assert.ok(await fixtureLink.isVisible());
+  assert.ok(await fromBeyondFirstPage.isVisible());
+  assert.equal(await desktop.getByText('Niet tonen buiten de bovengrens', {exact:true}).count(),0);
   await ideasLink.waitFor();
   assert.equal(await ideas.getByRole('link', {name:'Idées de sorties'}).getAttribute('href'),'https://ideessorties.be/');
   assert.equal(await desktop.getByText('Verkeerde stad', { exact: true }).count(), 0);

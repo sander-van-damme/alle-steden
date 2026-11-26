@@ -80,19 +80,83 @@ test('calendar live scope is forward-looking and capped at three calls without f
       assert.match(url.searchParams.get('where'), /(?:datedebut|date_start) >= date'2025-11-30'/);
       return new Response(JSON.stringify({ results: [] }));
     }
-    assert.equal(url.searchParams.get('limit'), '100');
+    assert.match(url.pathname, /\/exports\/json$/);
+    assert.equal(url.searchParams.get('limit'), '401');
+    assert.equal(url.searchParams.get('order_by'), 'start_datetime asc,id asc');
+    assert.match(url.searchParams.get('where'), /2026-11-30.*2027-01-01.*category in.*recurrence is null/s);
     assert.doesNotMatch(url.searchParams.get('select'), /description|contact|attendees/);
-    return new Response(JSON.stringify({
-      total_count: 155,
-      results: [imio, { ...imio, id: 41, address_city: 'Namur' }, { ...imio, id: 42, recurrence: 'FREQ=WEEKLY' }],
-    }));
+    return Response.json([imio, { ...imio, id: 'wrong-city', address_city: 'Namur' },
+      { ...imio, id: 'recurrence', recurrence: 'FREQ=WEEKLY' }, ...Array(97).fill(null),
+      { ...imio, id: 'page-2', title: 'Atelier au-delà de la première page' }]);
   } });
   assert.equal(calls.length, 3);
-  assert.equal(result.items.length, 1);
+  assert.equal(result.items.length, 2);
+  assert.equal(result.items[1].id, 'imio:page-2');
   assert.equal(result.items[0].city, 'verviers');
   assert.equal(result.items[0].allDay, true);
   assert.equal(result.items[0].end, '2026-12-05');
-  assert.equal(result.coverage.find(({ source }) => source === 'imio').state, 'limited');
+  assert.deepEqual(result.coverage.find(({ source }) => source === 'imio'), {source:'imio',state:'ok',count:2});
+});
+
+test('regional iMio uses a sentinel and keeps empty, capped and failed sources distinct', async () => {
+  const span = { from: '2026-12-01', through: '2026-12-31' };
+  const row = { id:'keep', title:'Festival à Verviers', owner_name:'Verviers', address_city:'Verviers',
+    category:'concert_festival', start_datetime:'2026-12-13T12:00:00Z', end_datetime:'2026-12-13T13:00:00Z' };
+  const full = [...Array(399).fill({}), row];
+  const scenarios = [
+    [full,'ok',1],
+    [[...full,{...row, id:'sentinel'}],'limited',1],
+    [[], 'empty',0],
+    [{results:[]},'failed',0],
+    [null,'failed',0],
+  ];
+  for (const [answer,state,count] of scenarios) {
+    let imioCalls = 0;
+    const result = await fetchCalendarMonth(cities, { extraSources:false, region:'Wallonië', span, fetcher: async (url) => {
+      if (!url.pathname.includes('evenements-en-wallonie')) return Response.json({results:[
+        {title:'Agenda de Namur', datedebut:'2026-12-12'},
+      ]});
+      imioCalls++;
+      assert.match(url.pathname, /\/exports\/json$/);
+      return answer === null ? new Response(null,{status:503}) : Response.json(answer);
+    } });
+    assert.equal(imioCalls,1, 'No second request for an empty, capped or failed export');
+    assert.equal(result.coverage.find(({source})=>source==='imio').state,state);
+    assert.deepEqual(result.items.filter(({source})=>source==='imio').map(({id})=>id),count?['imio:keep']:[]);
+    assert.equal(result.items.find(({source})=>source==='namur')?.name,'Agenda de Namur');
+  }
+});
+
+test('independent feeds can render while the regional export is pending, and cancellation stops stale progress', async () => {
+  const span = { from: '2026-12-01', through: '2026-12-31' };
+  const control = new AbortController();
+  let calls = 0;
+  let finishProgress;
+  let markAbort;
+  const firstProgress = new Promise((resolve)=>{finishProgress=resolve;});
+  const observedAbort = new Promise((resolve)=>{markAbort=resolve;});
+  const progress = [];
+  const result = fetchCalendarMonth(cities,{ extraSources:false, region:'Wallonië', span, signal:control.signal,
+    onProgress: (snapshot) => { progress.push(snapshot); finishProgress(); },
+    fetcher: async (url,{signal}) => {
+      if (!url.pathname.includes('evenements-en-wallonie')) return Response.json({results:[
+        {title:'Agenda de Namur', datedebut:'2026-12-12'},
+      ]});
+      calls++;
+      return new Promise((_,reject)=>signal.addEventListener('abort',()=>{
+        markAbort();
+        reject(signal.reason);
+      },{once:true}));
+    } });
+  await firstProgress;
+  assert.equal(progress.length,1);
+  assert.deepEqual(progress[0].coverage.map(({source})=>source),['namur']);
+  assert.equal(progress[0].items[0].name,'Agenda de Namur');
+  control.abort();
+  await observedAbort;
+  await result;
+  assert.equal(calls,1);
+  assert.equal(progress.length,1);
 });
 
 test('city query does not call other areas and provider failure is distinct from not-configured', async () => {
@@ -123,7 +187,12 @@ test('calendar city scope retains verified overnight iMio timestamps and does no
   const response = { results: [{ id: 'overnight', title: 'Nachtconcert', owner_name: 'Verviers',
     address_city: 'Verviers', category: 'concert_festival', start_datetime: overnight.start, end_datetime: overnight.end }] };
   const result = await fetchCalendarMonth(cities, { extraSources: false, city: 'verviers', span: { from: '2026-12-01', through: '2026-12-31' },
-    fetcher: async () => Response.json(response) });
+    fetcher: async (url) => {
+      assert.match(url.pathname, /\/records$/);
+      assert.equal(url.searchParams.get('limit'),'40');
+      assert.match(url.searchParams.get('where'), /owner_name in \('Verviers'\) AND address_city in \('Verviers'\)/);
+      return Response.json(response);
+    } });
   assert.equal(result.items[0].start, overnight.start);
   assert.match(eventTime(calendarEvent(result.items[0], 'verviers')), /23:30.*01:30/);
 });
