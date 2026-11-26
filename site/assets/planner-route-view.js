@@ -1,3 +1,5 @@
+import { ravelNoticeSource } from './ravel-source.js';
+
 const svgNs = 'http://www.w3.org/2000/svg';
 const tileUrl = 'https://tile.openstreetmap.org';
 const osmUrl = 'https://www.openstreetmap.org/copyright';
@@ -608,6 +610,76 @@ function forestNotices(doc, trip, outbound, inbound) {
   return { area, close: () => run.abort() };
 }
 
+function ravelNotices(doc, trip, outbound, inbound) {
+  if (!trip.cities?.some(({ region }) => region === 'Wallonië') || !/^\d{4}-\d{2}-\d{2}$/.test(trip.date ?? '')) return null;
+  const area = node(doc, 'section', 'route-insight route-ravel-notices');
+  area.append(node(doc, 'h5', '', 'RAVeL-meldingen'));
+  const hint = node(doc, 'p', 'route-view-hint');
+  const overview = node(doc, 'a', '', 'Officiële RAVeL-meldingen en omleidingen');
+  overview.href = ravelNoticeSource.overview;
+  hint.append('Controleer de actuele omleidingen vóór vertrek en volg de borden ter plaatse. ', overview);
+  const control = node(doc, 'button', 'button secondary', 'Zoek meldingen nabij de route');
+  control.type = 'button';
+  const status = node(doc, 'p', 'route-view-hint');
+  status.setAttribute('role','status');
+  const list = node(doc, 'ul', 'route-ravel-list');
+  list.hidden = true;
+  const credit = node(doc, 'p', 'route-view-hint');
+  area.append(hint, control, status, list, credit);
+  const format = new Intl.DateTimeFormat('nl-BE', {day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
+  const dateLabel = (day) => format.format(new Date(day+'T12:00:00Z'));
+  const run = new AbortController();
+  let pending = false;
+  control.addEventListener('click',async()=>{
+    if (pending || run.signal.aborted) return;
+    pending = true;
+    control.setAttribute('aria-disabled','true');
+    status.textContent = 'RAVeL-meldingen opzoeken…';
+    list.hidden = true;
+    list.replaceChildren();
+    credit.replaceChildren();
+    try {
+      if (trip.returnRoute && !inbound.length) throw new RangeError('Geen volledig traject');
+      const {findRavelNotices} = await import('./route-ravel-notices.js');
+      if (run.signal.aborted || !area.isConnected) return;
+      const result = await findRavelNotices([...outbound,...inbound],trip.date,{ signal:run.signal });
+      if (run.signal.aborted || !area.isConnected) return;
+      status.textContent = result.count
+        ? (result.count === 1 ? 'Eén gepubliceerde melding' : result.count + ' gepubliceerde meldingen')
+          + ' nabij deze route. De door de bron geplande periode omvat ' + dateLabel(trip.date)
+          + '. Dat zegt niet of jouw traject op die dag open of dicht is.'
+        : 'Geen overeenkomende meldingen nabij deze route gevonden voor ' + dateLabel(trip.date)
+          + '. Meldingen of afsluitingen kunnen ontbreken.';
+      if (result.limited) status.append(' De controle was onvolledig.');
+      if (result.count > result.items.length) status.append(' De dichtstbijzijnde meldingen staan hieronder.');
+      for (const item of result.items) {
+        const li = node(doc, 'li');
+        const title = node(doc, 'a', '', item.name);
+        title.href = item.url;
+        title.lang = 'fr';
+        const type = item.kind === 'CHT' ? 'Werken' : 'Incident';
+        li.append(title, node(doc, 'span', '', type + ' · gemeld van ' + dateLabel(item.from)
+          + ' tot ' + dateLabel(item.through) + ' (voorziene einddatum)'));
+        list.append(li);
+      }
+      list.hidden = !result.items.length;
+      const source = node(doc, 'a', '', ravelNoticeSource.credit);
+      source.href = ravelNoticeSource.metadata;
+      const licence = node(doc, 'a', '', 'CC BY 4.0');
+      licence.href = ravelNoticeSource.license;
+      credit.append(source,' · ',licence,' · selectie op datum en afstand (ongeveer 150 m).');
+    } catch (error) {
+      if (run.signal.aborted || !area.isConnected) return;
+      status.textContent = error instanceof RangeError ? 'Deze route kon niet volledig worden gecontroleerd.'
+        : 'De bron voor RAVeL-meldingen is niet bereikbaar. Er is geen controle uitgevoerd.';
+    } finally {
+      pending = false;
+      control.removeAttribute('aria-disabled');
+    }
+  });
+  return { area, close:()=>run.abort() };
+}
+
 export function renderRouteView(trip, { document: doc = globalThis.document } = {}) {
   const outbound = routeParts(trip.route), inbound = routeParts(trip.returnRoute);
   if (!outbound.length || !doc?.defaultView) return null;
@@ -637,8 +709,10 @@ export function renderRouteView(trip, { document: doc = globalThis.document } = 
   const map = createMap(doc, outbound, inbound, routeMarkers(trip, outbound), label, trip.edited === true || trip.exactStops === true);
   view.append(header, charts, map.figure);
   const notices = forestNotices(doc, trip, outbound, inbound);
+  const ravel = ravelNotices(doc, trip, outbound, inbound);
   if (notices) view.append(notices.area);
-  view.dismissRouteView = () => { notices?.close(); map.dispose(); };
+  if (ravel) view.append(ravel.area);
+  view.dismissRouteView = () => { notices?.close(); ravel?.close(); map.dispose(); };
   if (trip.returnRoute && !inbound.length) view.append(node(doc, 'p', 'route-view-hint', 'Geometrie voor de terugrit ontbreekt; de kaart toont alleen de heenrit.'));
   return view;
 }

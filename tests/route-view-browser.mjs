@@ -44,10 +44,10 @@ window.updateRoute = () => {
     visits:[{name:'Nieuwe stop',lon:3.644,lat:51.082}], pois:{items:[]}}));
 };
 </script>`;
-async function serveRouteFixture(page) {
+async function serveRouteFixture(page, fixture = html) {
   await page.route(origin + '/**', async (route) => {
     const {pathname} = new URL(route.request().url());
-    if (pathname === '/') return route.fulfill({contentType:'text/html',body:html});
+    if (pathname === '/') return route.fulfill({contentType:'text/html',body:fixture});
     const type = pathname.endsWith('.css')?'text/css':'text/javascript';
     return route.fulfill({contentType:type,body:await readFile('site/assets'+pathname)});
   });
@@ -123,6 +123,61 @@ async function verifyForestNotices(context, label) {
   } finally {
     await page.close();
   }
+}
+
+async function verifyRavelNotices(context, label) {
+  const page = await context.newPage();
+  const endpoint = origin + '/api/ravel-notices';
+  let requests = 0;
+  try {
+    const coords = [[4.8904,50.30,20],[4.8904,50.31,20]];
+    const fixture = html.replace(JSON.stringify(sample),JSON.stringify(coords)).replace("date:'2026-12-05'","date:'2026-11-28'");
+    await page.clock.setFixedTime(new Date('2026-11-26T11:00:00+01:00'));
+    await serveRouteFixture(page, fixture);
+    await page.route('https://tile.openstreetmap.org/**', (route) => route.abort());
+    await page.route(endpoint, (route) => {
+      requests++;
+      assert.equal(route.request().url(),endpoint);
+      assert.equal(route.request().method(),'GET');
+      if (label === 'mobile' && requests === 1) return route.fulfill({status:503,body:''});
+      return route.fulfill({json:{limited:label==='mobile',items:[{
+        id:'0dcd04bb-0cff-445e-8916-26dc601ed46d',title:'Travaux près de la route',kind:'CHT',
+        from:'2026-11-04',through:'2026-12-02',points:[[4.8904,50.304]],
+      },{
+        id:'b3e099d5-b7f1-44a0-a620-d70c1129536c',title:'Travaux dépassés',kind:'CHT',
+        from:'2026-10-01',through:'2026-10-30',points:[[4.8904,50.304]],
+      }]}});
+    });
+    await page.goto(origin);
+    const advisory=page.locator('.route-ravel-notices');
+    const button=advisory.getByRole('button',{name:'Zoek meldingen nabij de route'});
+    const status=advisory.getByRole('status');
+    await advisory.waitFor({state:'attached'});
+    assert.equal(requests,0);
+    await page.locator('summary').click();
+    await button.scrollIntoViewIfNeeded();
+    if (label === 'desktop') await button.hover();
+    await button.evaluate((el)=>el.focus({preventScroll:true}));
+    assert.equal(requests,0,'No eager RAVeL request');
+    const activate = async (expected) => {
+      const [res] = await Promise.all([page.waitForResponse(endpoint),
+        label==='mobile' ? button.tap() : button.press('Enter')]);
+      assert.equal(res.status(),expected);
+    };
+    if (label === 'mobile') {
+      await activate(503);
+      await status.getByText(/Er is geen controle uitgevoerd/u).waitFor();
+    }
+    await activate(200);
+    await advisory.getByRole('link',{name:'Travaux près de la route'}).waitFor();
+    assert.equal(await advisory.getByRole('link',{name:'Travaux dépassés'}).count(),0);
+    assert.match(await status.innerText(),/28 november.*niet of jouw traject.*open of dicht/su);
+    assert.equal((await status.innerText()).includes('onvolledig'),label==='mobile');
+    assert.equal(await advisory.getByRole('link',{name:'Travaux près de la route'}).getAttribute('href'),
+      'https://ravel.wallonie.be/home/a-la-une/warnings.html#warning-0dcd04bb-0cff-445e-8916-26dc601ed46d');
+    assert.match(await advisory.innerText(),/volg de borden ter plaatse.*CC BY 4.0/su);
+    assert.equal(requests,label==='mobile'?2:1);
+  } finally { await page.close(); }
 }
 
 for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{width:390,height:820}]]) {
@@ -208,7 +263,10 @@ for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{
       assert.ok(loadedTiles > 0, 'actual OpenStreetMap tiles loaded under correct Referer');
       assert.ok(counts[0] > 10 && counts[1] > 0, 'actual BRouter route has detailed geometry and elevation');
     }
-    if (!live) await verifyForestNotices(context, label);
+    if (!live) {
+      await verifyForestNotices(context, label);
+      await verifyRavelNotices(context, label);
+    }
     console.log(label, {tileCount,loadedTiles, real:live, replayedRouterResponse: !!replay, points:counts[0], altitudePoints:counts[1]});
   } finally {
     await browser.close();

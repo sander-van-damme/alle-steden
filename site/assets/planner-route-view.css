@@ -104,3 +104,6 @@
 .route-pin-service-repair circle { fill: #576324; }
 .route-map-stop-service-toilet button { color: #3056a5; }
 .route-map-stop-service-repair button { color: #485315; }
+.route-ravel-list { margin: .6rem 0 0; padding: 0 0 0 1.2rem; font-size: .84rem; }
+.route-ravel-list li { margin: .32rem 0; overflow-wrap: anywhere; }
+.route-ravel-list li span { display: block; font-size: .79rem; color: var(--route-muted); }

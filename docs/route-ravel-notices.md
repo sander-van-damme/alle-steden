@@ -1,0 +1,13 @@
+# RAVeL-meldingen bij een fietsroute
+
+Het [SPW](https://geoportail.wallonie.be/catalogue/ff71a317-fc05-4d0d-b30b-58a1740eb314.html) publiceert de collectie RAVeL en Véloroutes onder CC BY 4.0. De [kaartlaag Avertissements](https://geoservices3.wallonie.be/arcgis/rest/services/APP_VOIESLENTES/AVERTISSEMENTS/MapServer/0) levert typen en punten, maar geen datums. De [publieke meldingenlijst](https://ravel.wallonie.be/home/a-la-une/warnings.html) toont begin, voorziene einddatum en een verwijzing naar de omleiding. Bij de melding staat SPW-credit, licentie en welke selectie wij toepassen.
+
+- Na een expliciete knopactivering zoekt de browser via één vaste, gezamenlijke aanvraag. Cloudflare vraagt de twee algemene bronnen parallel, zonder route, datum, bezoeker-IP of cookies door te sturen. De Edge-cache bewaart enkel het openbare resultaat kort. Geen geodata, zoekparameters of bron-URL aannemen van de bezoeker.
+- Gebruik alleen geldige, unieke titels die exact overeenstemmen (na tekencodering en spaties), een geldig meldingsanker en twee gevalideerde datums op de officiële pagina. Geen berichttekst, route naar een omleidingsbestand of ruwe links kopiëren. Niet-koppelbare en afgeknotte data worden als onvolledig gemarkeerd; bij een onbruikbare bron is er geen controle.
+- De browser rekent per afzonderlijk meldingspunt, op maximaal circa 150 m van de feitelijke heen- of terugroute, en kiest alleen gemelde periodes die de dag omvatten en nog niet verstreken zijn. Het zijn nabijgelegen punten, geen lijn tussen punten, geen gegarandeerde actuele of toekomstige afsluitingen, en geen advies om een getekend traject als toegankelijk te behandelen. De route, stops en GPX veranderen niet.
+
+## Steekproef · 26 november 2026
+
+14 kaartrecords en 14 website-items gekoppeld. Drie UUID-ankers in de ruwe kaart (Pont Beaufaux, Obourg–Nimy en Canal de l’Espierres) waren verouderd; hun exacte overeenstemmende titel gaf een werkelijk bestaand anker. Een item met voorziene einddatum 30 oktober, Pottes, stond er nog; het valt buiten de getoonde periode. Een JSON-link bij Hermalle wees naar een anders getitelde melding en wordt niet gevolgd.
+
+Met een echte BRouter-route Dinant–Namen: circa 4 m van het gemelde punt Anhée–Aisemont, gekoppeld aan de bronperiode 4 november–2 december; wel een melding op 28 november, geen overeenkomst op 5 december. Bij La Louvière–Bergen ligt een punt van Canal du Centre Historique circa 0,5 m van de getekende route. Een andere rivieroever, een incident tussen twee punten of een later gewijzigde toestand zijn niet vastgesteld. Raadpleeg steeds de officiële omleidingen en de borden ter plaatse.

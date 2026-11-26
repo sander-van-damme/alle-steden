@@ -1,6 +1,7 @@
 import { sources } from '../site/assets/sources.js';
 import { andenneOutdoor } from '../site/assets/local-outdoor-routes.js';
 import { forestNoticeSource } from '../site/assets/route-forest-notices.js';
+import { ravelNoticeSource } from '../site/assets/ravel-source.js';
 import { routeServicesSource } from '../site/assets/route-services.js';
 
 const gba = 'https://www.gegevensbeschermingsautoriteit.be/klacht-indienen';
@@ -56,6 +57,7 @@ export function aboutPage(layout) {
         [link('SimpleMaps', 'https://simplemaps.com/gis/country/be') + ' (' + link('CC BY 4.0', cc) + ')', 'Voor de vereenvoudigde gewestgrenzen op de overzichtskaart en op de kaart om een vertrekstreek te kiezen.'],
         [from('osm', 'OpenStreetMap-bijdragers') + ' en ' + link('BRouter', 'https://brouter.de/brouter-web/'), 'OpenStreetMap levert de routekaart en soms openingsuren van bezienswaardigheden. BRouter berekent het traject en levert gegevens over hoogte en wegdek, waar beschikbaar. Wikidata helpt bij suggesties onderweg.'],
         [link('Pin je punt', routeServicesSource.url) + ' en ' + link('ChasseOnWeb', forestNoticeSource.map), 'Op jouw vraag zoeken we Vlaamse fietsvoorzieningen van Toerisme Vlaanderen / OpenStreetMap of Waalse bosmeldingen van de Service public de Wallonie. Een melding is geen bevestiging dat een pad open of dicht is.'],
+        [link('RAVeL-meldingen · Service public de Wallonie', ravelNoticeSource.overview) + ' (' + link('CC BY 4.0', cc) + ')', 'Op jouw vraag tonen we gepubliceerde werken of incidenten nabij een Waalse fietsroute. Gemelde periodes en omleidingen kunnen veranderen.'],
         [link('GAL Meuse@Campagnes', andenneOutdoor.sourceHref) + ' en ' + link('Andenne Tourisme', andenneOutdoor.visitorHref), 'Voor de aparte wandel- en fietsroutes bij Andenne.'],
       ])}
       <p class="info-note">Een link naar een agenda betekent niet altijd dat we de agenda zelf importeren. De gebruiksvoorwaarden van de bron gelden voor verder hergebruik.</p>`);
@@ -69,7 +71,7 @@ export function privacyPage(layout) {
       <p>Op de site wordt ook een script van Cloudflare Web Analytics geladen. Waar meting actief is, stuurt het prestatiegegevens zoals laadtijden, de bezochte pagina en de verwijzende pagina naar Cloudflare. Volgens ${link('de uitleg van Cloudflare', rum)} gebruikt dit script geen cookies of browseropslag voor de meting. Dat staat los van de verwerking van gewone webverzoeken.</p></section>
     <section><h2>Gegevens ophalen</h2>
       <p>Voor de stadsfiches, kalender en kaart maakt je browser verbinding met <a href="/over/">gegevensaanbieders</a>. Bij een rechtstreekse aanvraag ziet de aanbieder je IP-adres en de opgevraagde informatie, bijvoorbeeld de gekozen stad, periode of kaartuitsnede. Bij Toerisme Vlaanderen voor bezoekersplekken, OpenAgenda, Visit Zuid-Limburg en de controle van ondersteunde bronlinks vraagt de site de informatie via Cloudflare op. Die koppelingen sturen je cookies of IP-adres niet mee in de aanvraag die de site aan de bron richt.</p>
-      <p>Bij het zoeken naar een fietsrit krijgt ${link('BRouter', brouter)} de coördinaten van de kandidaat-stops die nodig zijn om routes te berekenen. Dat is geen gps-tracking van je toestel. Een geopende routekaart haalt kaartbeelden rechtstreeks bij ${link('OpenStreetMap', osm)}. Vraag je fietsvoorzieningen of Waalse bosmeldingen op, dan wordt de betrokken kaartzone opgevraagd, bij bosmeldingen ook voor de gekozen datum. Een GPX-bestand wordt in je browser gemaakt.</p>
+      <p>Bij het zoeken naar een fietsrit krijgt ${link('BRouter', brouter)} de coördinaten van de kandidaat-stops die nodig zijn om routes te berekenen. Dat is geen gps-tracking van je toestel. Een geopende routekaart haalt kaartbeelden rechtstreeks bij ${link('OpenStreetMap', osm)}. Vraag je fietsvoorzieningen of Waalse bosmeldingen op, dan wordt de betrokken kaartzone opgevraagd, bij bosmeldingen ook voor de gekozen datum. Voor RAVeL-meldingen haalt Cloudflare bij het SPW enkel de algemene lijst op. Je browser vergelijkt daarna de meldingen met je route en datum, zonder die door te sturen. Een GPX-bestand wordt in je browser gemaakt.</p>
       <p>Volg je een link naar een organisator of andere website, dan geldt daar het privacybeleid van die website.</p></section>
     <section><h2>Wat je browser bewaart</h2>
       <p>De kalender kan een kopie van de openbare agenda-items van Idées de sorties tijdelijk op je toestel bewaren. Die bevat geen accountgegevens of geschiedenis van je zoekopdrachten. De site hergebruikt de kopie ongeveer twintig minuten en kan ze tot twaalf uur na het ophalen tonen, met een melding als ze verouderd is. Die twaalf uur is een grens voor gebruik, geen belofte dat je browser de kopie op dat moment wist. Je kunt de kopie wissen via de sitegegevens in je browser. Je browser kan ook gewone webbestanden en kaartbeelden tijdelijk bewaren.</p>
