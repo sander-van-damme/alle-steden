@@ -19,7 +19,7 @@ wd:Q499313 a schema:City ;
 
 wd:Q2215500 a schema:Museum ;
     schema:name "mudel – Museum van Deinze en de Leiestreek"@nl, "Musée de Deinze et du Pays de la Lys"@fr ;
-    schema:description "Kunst uit de Leiestreek en erfgoed van Deinze. Controleer het museumrooster bij de opbouw van nieuwe tentoonstellingen."@nl ;
+    schema:description "Kunst uit de Leiestreek en erfgoed van Deinze. Gesloten op 24, 25, 26 en 31 december 2026. Controleer het museumrooster voor andere uitzonderingen."@nl ;
     schema:containedInPlace wd:Q499313 ;
     schema:openingHours "Tu-Su 11:00-17:00" ;
     schema:specialOpeningHoursSpecification [ a schema:OpeningHoursSpecification ; schema:validFrom "2026-12-24"^^xsd:date ; schema:opens "00:00" ; schema:closes "00:00" ],
@@ -56,3 +56,27 @@ wd:Q2438902 a schema:Park ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.9780913 ; schema:longitude 3.5226142 ] ;
     schema:url <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/de-brielmeersen/praktisch/openingsuren-en-toegang.html> ;
     dcterms:source <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/de-brielmeersen/praktisch/openingsuren-en-toegang.html>, <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/de-brielmeersen/ontspannen/wandelen.html>, <https://www.openstreetmap.org/node/1606417362> .
+
+# Afgebakende tentoonstelling, niet de vaste collectie of de lezing van 28 november.
+# Enkel het gepubliceerde tentoonstellingsrooster; niet een bevestiging van ieder slot.
+<https://www.mudel.be/activiteiten/detail/15692/albert-servaes-pionier-van-het-expressionisme> a schema:ExhibitionEvent ;
+    schema:name "Albert Servaes. Pionier van het expressionisme"@nl ;
+    schema:description "In het mudel, volgens het gepubliceerde tentoonstellingsrooster. Controleer extra sluitingsdagen bij het museum."@nl ;
+    schema:location wd:Q2215500 ;
+    schema:startDate "2026-11-21"^^xsd:date ;
+    schema:endDate "2027-05-16"^^xsd:date ;
+    schema:eventSchedule [ a schema:Schedule ;
+        schema:startDate "2026-11-21"^^xsd:date ;
+        schema:endDate "2027-05-16"^^xsd:date ;
+        schema:repeatFrequency "P1W"^^xsd:duration ;
+        schema:scheduleTimezone "Europe/Brussels" ;
+        schema:byDay schema:Tuesday, schema:Wednesday, schema:Thursday, schema:Friday, schema:Saturday, schema:Sunday ;
+        schema:startTime "11:00:00"^^xsd:time ;
+        schema:endTime "17:00:00"^^xsd:time ;
+        # Vier gepubliceerde sluitingsdagen; laat ook onzekere feestdagen weg.
+        schema:exceptDate "2026-12-24"^^xsd:date, "2026-12-25"^^xsd:date, "2026-12-26"^^xsd:date, "2026-12-31"^^xsd:date,
+            "2027-01-01"^^xsd:date, "2027-03-28"^^xsd:date, "2027-05-01"^^xsd:date, "2027-05-06"^^xsd:date
+    ] ;
+    schema:url <https://www.mudel.be/activiteiten/detail/15692/albert-servaes-pionier-van-het-expressionisme> ;
+    dcterms:source <https://www.mudel.be/activiteiten/detail/15692/albert-servaes-pionier-van-het-expressionisme>,
+        <https://www.mudel.be/contact/24/museum-van-deinze-en-de-leiestreek> .

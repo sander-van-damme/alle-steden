@@ -739,6 +739,39 @@ try {
     assert.equal(await candidate.count(),0);
   }
 
+  const expoTitle = 'Albert Servaes. Pionier van het expressionisme';
+  for (const device of [desktop, phone]) {
+    await device.goto(origin+'/kalender/?stad=deinze&maand=2026-12');
+    await loaded(device);
+    const expo = device.locator('.calendar-event').filter({has:device.getByRole('heading',{name:expoTitle,exact:true})});
+    assert.equal(await expo.count(),1);
+    await device.locator('#calendar-category').selectOption('Tentoonstelling');
+    for (const [day,visible] of [['21',false],['23',true],['24',false],['25',false],['26',false],['27',true],['31',false]]) {
+      const cell = device.locator('[data-day="2026-12-'+day+'"]');
+      if (device===phone) await cell.tap(); else await cell.click();
+      assert.equal(await expo.count(), Number(visible), day);
+      if (visible) {
+        assert.match(await expo.locator('.calendar-event-meta').innerText(), /11:00–17:00/u);
+        assert.match(await expo.innerText(),/volgens het gepubliceerde tentoonstellingsrooster/u);
+        assert.match(await expo.getByRole('link',{name:expoTitle}).getAttribute('href'), /mudel\.be\/activiteiten\/detail\/15692\//u);
+      }
+    }
+    await device.goto(origin+'/kalender/?stad=deinze&maand=2027-05');
+    await loaded(device);
+    await device.locator('[data-day="2027-05-16"]').click();
+    assert.equal(await expo.count(),1);
+    await device.locator('[data-day="2027-05-18"]').click();
+    assert.equal(await expo.count(),0);
+  }
+
+  const deinze = (await (await fetch(origin+'/planner-data.json')).json()).find(({ slug })=>slug==='deinze');
+  assert.ok(!deinze.events.some(({name})=>name===expoTitle));
+  for (const [day, canVisit] of [['2026-12-23',true],['2026-12-24',false]]) {
+    const visits = visitWindows(deinze, day).filter(({earliest,latest})=>earliest<=14*60 && latest>=14*60);
+    assert.equal(visits.some(({name})=>name.startsWith('mudel')),canVisit);
+    assert.equal(visits.some(({name})=>name==='De Brielmeersen'),true);
+  }
+
   console.log('Kalender in Chromium: maanden, toetsenbord, smartphone, filters, bronfout, toekomstgrens en fallback zonder JavaScript.');
 } finally {
   clearTimeout(timeout);

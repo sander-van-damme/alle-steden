@@ -7,6 +7,7 @@ import { eligiblePublicLink } from '../functions/lib/link-check-policy.js';
 import { calendarPage, cityPage, indexPage, layout, plannerPage } from './pages.mjs';
 import { aboutPage, privacyPage, termsPage } from './info-pages.mjs';
 import { classifyRdfActivity } from '../site/assets/planner-activities.js';
+import { weeklyEventSessions } from './weekly-event-schedule.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const source = resolve(root, 'cities');
@@ -118,6 +119,31 @@ function readCity(filename, turtle) {
       labels(feature, 'value').some(({ value, datatype }) => ['true', '1'].includes(value) && datatype?.value === xsdBoolean));
   }
 
+  function eventSessions(entity) {
+    const subEvents = objects(entity, 'subEvent').filter(isEvent).map((session) => ({
+      start: text(session, 'startDate'), end: text(session, 'endDate'),
+    }));
+    const schedules = objects(entity, 'eventSchedule');
+    if (!schedules.length) return subEvents;
+    const [schedule] = schedules;
+    if (!isEdition(entity) || subEvents.length || schedules.length !== 1 ||
+        !graph.countQuads(schedule, rdfType, schema + 'Schedule', null)) {
+      throw new Error('Gebruik één schema:Schedule per editie, zonder losse sessies.');
+    }
+    // The annual edition range is explicit (date-only) and cannot become a timed planner event.
+    const start = text(entity, 'startDate'), end = text(entity, 'endDate');
+    if (start !== text(schedule, 'startDate') || end !== text(schedule, 'endDate')) {
+      throw new Error('De dagen van het evenement en zijn schema verschillen.');
+    }
+    return weeklyEventSessions({
+      start, end, timezone: text(schedule, 'scheduleTimezone'), frequency: text(schedule, 'repeatFrequency'),
+      days: objects(schedule, 'byDay').map(({ termType, value }) => termType === 'NamedNode' && value.startsWith(schema)
+        ? value.slice(schema.length) : ''),
+      opens: text(schedule, 'startTime'), closes: text(schedule, 'endTime'),
+      exceptions: objects(schedule, 'exceptDate').map(({ termType, value }) => termType === 'Literal' ? value : ''),
+    });
+  }
+
   function entries(subjects) {
     return [...new Map(subjects.map((entity) => [entity.value, entity])).values()]
       .map((entity) => ({
@@ -136,9 +162,7 @@ function readCity(filename, turtle) {
         edition: isEdition(entity),
         start: text(entity, 'startDate'),
         end: text(entity, 'endDate'),
-        sessions: objects(entity, 'subEvent').filter(isEvent).map((session) => ({
-          start: text(session, 'startDate'), end: text(session, 'endDate'),
-        })),
+        sessions: eventSessions(entity),
         openingHours: labels(entity, 'openingHours').map((term) => term.value),
         specialHours: objects(entity, 'specialOpeningHoursSpecification').map((spec) => ({
           from: text(spec, 'validFrom'), through: text(spec, 'validThrough'),

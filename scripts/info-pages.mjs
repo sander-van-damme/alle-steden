@@ -55,6 +55,7 @@ export function aboutPage(layout) {
         ['Gemeentelijke roosters: ' + editionLinks.map(([id, city]) => from(id, city)).join(', '), 'Voor lokale markten en de uitzonderingen die de gemeente publiceert.'],
         ['Organisatoren, stadsdiensten en plekken zelf', 'Handmatig nagekeken datums, bezoekuren en uitzonderingen. Onder meer ' +
           link('Arts&Publics', 'https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/') + ', ' +
+          link('mudel', 'https://www.mudel.be/tentoonstellingen') + ', ' +
           link('Visit Damme', 'https://www.visitdamme.be/wintersfeerindamme') + ', ' +
           link('Winter in Antwerpen', 'https://www.winterinantwerpen.be/nl-BE/programma-2026') + ' en ' +
           link('het WK veldrijden', 'https://www.ostend2027.com/nl/programma') + '. Elke vermelding linkt naar de eigen bron.'],
