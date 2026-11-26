@@ -141,6 +141,8 @@
 .calendar-day[aria-current="date"] .calendar-day-number { color: var(--cal-brick); text-decoration: underline 2px; text-underline-offset: .17em; }
 .calendar-cell .calendar-day.calendar-selected { background: #efe0d6; box-shadow: inset 0 0 0 2px var(--cal-brick); }
 .calendar-day-count {
+  /* Consistent digit widths on narrow screens with enlarged text. */
+  font-family: Arial, "Liberation Sans", sans-serif;
   font-size: .9rem;
   line-height: 1.13;
   font-weight: 710;
