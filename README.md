@@ -31,6 +31,15 @@ Importeer deze GitHub-repository als Pages-project via **Workers & Pages** en ge
 
 De build heeft geen API-sleutels nodig. Zie de [Cloudflare-handleiding voor Git-integratie](https://developers.cloudflare.com/pages/get-started/git-integration/).
 
+## GitHub Pages: alleen een testbuild
+
+De workflow [GitHub Pages build (no deploy)](.github/workflows/pages-build.yml) maakt met Node.js 22 dezelfde `dist/` als Cloudflare. Hij controleert de statische site op de URL-root en bewaart het artefact `github-pages` drie dagen in **Actions**. Start hem via **Run workflow**; hij draait ook bij een wijziging aan de workflow op `main`. Er wordt niets naar GitHub Pages gepubliceerd of aan de hostinginstellingen gewijzigd. De openbare site blijft op Cloudflare Pages.
+
+Voor een latere overstap zijn twee zaken nog nodig:
+
+- **URL-pad:** links en assets beginnen op `/`. Op een GitHub Pages-projectadres onder `/alle-steden/` wijzen die nu buiten de site. Voor een test onder dat pad is ondersteuning voor een basispad nodig. De huidige testbuild verwacht een site op de root van een domein.
+- **Live gegevens:** GitHub Pages bedient statische bestanden, geen Cloudflare Pages Functions. Functies onder `/api/`, zoals live stadsdata, linkcontrole en RAVeL-meldingen, hebben een aparte dienst of een doorstuurlaag nodig. Test die naast de vereiste CORS-regels en headers voor een eventuele overstap. Instellingen in `_headers` en `_routes.json` zijn specifiek voor Cloudflare.
+
 ## Stadsgegevens aanvullen
 
 Elk bestand in [`cities/`](cities/) is RDF in [Turtle](https://www.w3.org/TR/turtle/). Het bestand zelf (`<>`) is een `schema:Dataset`. Via `schema:about` verwijst het naar de Wikidata-IRI van de huidige stadsgemeente. Gebruik dezelfde IRI voor verwijzingen naar de stad vanuit andere bestanden.
