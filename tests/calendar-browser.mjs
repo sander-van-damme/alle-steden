@@ -631,6 +631,25 @@ try {
   }
   assert.equal(conferences.length,4);
 
+  const decemberVerification = [
+    ['genk','Opening van het Winterplein','2026-12-04','Start om 17:00','2026-12-05'],
+    ['genk','Winteravonden in Bokrijk','2026-12-26','16:30–20:30','2026-12-25'],
+    ['lommel','Kerstdorp in Lommel','2026-12-19','14:00–21:00','2026-12-18'],
+    ['lommel','Kerstjaarmarkt van Lommel','2026-12-12','Uur niet vermeld','2026-12-13'],
+    ['eupen','Open Art Sunday in Eupen','2026-12-06','13:00–18:00','2026-12-07'],
+  ];
+  for (const [index,[city,name,yes,hours,no]] of decemberVerification.entries()) {
+    const device=index%2===0?desktop:phone;
+    await device.goto(origin+'/kalender/?stad='+city+'&maand=2026-12');
+    await loaded(device);
+    const candidate=device.locator('.calendar-event').filter({has:device.getByRole('heading',{name,exact:true})});
+    await device.locator('[data-day="'+yes+'"]').click();
+    assert.equal(await candidate.count(),1);
+    assert.ok((await candidate.locator('.calendar-event-meta').innerText()).includes(hours),name);
+    await device.locator('[data-day="'+no+'"]').click();
+    assert.equal(await candidate.count(),0);
+  }
+
   console.log('Kalender in Chromium: maanden, toetsenbord, smartphone, filters, bronfout, toekomstgrens en fallback zonder JavaScript.');
 } finally {
   clearTimeout(timeout);

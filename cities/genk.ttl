@@ -2,6 +2,7 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <> a schema:Dataset ;
     schema:about wd:Q189692 ;
@@ -27,3 +28,30 @@ wd:Q189692 a schema:City ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.96333 ; schema:longitude 5.49869 ] ;
     schema:url <https://id.erfgoed.net/erfgoedobjecten/21620> ;
     dcterms:source <https://id.erfgoed.net/erfgoedobjecten/21620> .
+
+<#winterplein-opening-2026> a schema:Event ;
+    schema:name "Opening van het Winterplein"@nl ;
+    schema:genre "Sport"@nl ;
+    schema:description "Start van de tijdelijke schaatsbaan op de Fruitmarkt. Bekijk de sessies en feestdaguren bij Visit Genk."@nl ;
+    schema:containedInPlace wd:Q189692 ;
+    schema:location [ a schema:Place ; schema:name "Fruitmarkt"@nl ] ;
+    schema:startDate "2026-12-04"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-04T17:00:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.visitgenk.be/nl/winterplein> ;
+    dcterms:source <https://www.visitgenk.be/nl/winterplein> .
+
+<#winteravonden-bokrijk-2026> a schema:Event ;
+    schema:name "Winteravonden in Bokrijk"@nl ;
+    schema:genre "Feest en folklore"@nl ;
+    schema:description "Avondprogramma in het Openluchtmuseum op vijf opeenvolgende dagen. Er is een toegangsticket nodig; controleer de beschikbaarheid bij Bokrijk."@nl ;
+    schema:containedInPlace wd:Q189692 ;
+    schema:location [ a schema:Place ; schema:name "Openluchtmuseum Bokrijk"@nl ] ;
+    schema:startDate "2026-12-26"^^xsd:date ;
+    schema:endDate "2026-12-30"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-26T16:30:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-26T20:30:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-27T16:30:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-27T20:30:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-28T16:30:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-28T20:30:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-29T16:30:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-29T20:30:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-30T16:30:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-30T20:30:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://bokrijk.be/nl/ons-aanbod/agenda/winteravonden/> ;
+    dcterms:source <https://bokrijk.be/nl/ons-aanbod/agenda/winteravonden/>, <https://www.genk.be/activiteiten/detail/18668/winteravonden> .

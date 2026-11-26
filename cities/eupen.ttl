@@ -44,3 +44,14 @@ wd:Q151831 a schema:City ;
     schema:url <https://eupenlives.be/nl/nieuws/54e-kerstmarkt-van-eupen> ;
     dcterms:source <https://eupenlives.be/nl/nieuws/54e-kerstmarkt-van-eupen>,
         <https://eupenlives.be/de/events/event/7978-54-eupener-weihnachtsmarkt> .
+
+<#open-art-sunday-2026-12> a schema:Event ;
+    schema:name "Open Art Sunday in Eupen"@nl ;
+    schema:genre "Tentoonstelling"@nl ;
+    schema:description "Gratis kunstroute in de grensstreek. In Eupen is het Alter Schlachthof een van de deelnemende locaties; andere plekken hebben hun eigen uren."@nl ;
+    schema:containedInPlace wd:Q151831 ;
+    schema:location [ a schema:Place ; schema:name "Alter Schlachthof, Rotenbergplatz 19"@nl ] ;
+    schema:startDate "2026-12-06"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-06T13:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-06T18:00:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://open-art-sunday.eu/> ;
+    dcterms:source <https://open-art-sunday.eu/>, <https://zikuwi.org/> .
