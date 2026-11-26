@@ -1,7 +1,7 @@
 import { addCalendarDays, dateValue, getJson, localToday } from './sources.js';
 
 const publisher = 'https://bibliotheque.andenne.be';
-export const libraryFeed = publisher + '/events.ics';
+export const libraryFeed = publisher + '/?ical=1';
 export const libraryPath = '/api/andenne-library';
 export const libraryMaxBytes = 192 * 1024;
 const place = 'Bibliothèque d’Andenne · Promenade des Ours 37';
