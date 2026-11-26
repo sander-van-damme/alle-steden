@@ -46,3 +46,59 @@ wd:Q940882 a schema:LandmarksOrHistoricalBuildings ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.87871 ; schema:longitude 4.70121 ] ;
     schema:url <https://id.erfgoed.net/erfgoedobjecten/42150> ;
     dcterms:source <https://id.erfgoed.net/erfgoedobjecten/42150> .
+
+# Bevestigde edities, geen doorlopende, jaarlijkse of automatisch planbare evenementen.
+<#leuvense-kerstmarkt-2026> a schema:SaleEvent ;
+    schema:name "Leuvense Kerstmarkt 2026"@nl ;
+    schema:description "Vrije toegang op het Ladeuzeplein en Herbert Hooverplein. Volg er de plaatselijke verkeersregeling, ook met de fiets."@nl ;
+    schema:containedInPlace wd:Q118958 ;
+    schema:location [ a schema:Place ; schema:name "Ladeuzeplein en Herbert Hooverplein"@nl ] ;
+    schema:startDate "2026-12-03"^^xsd:date ;
+    schema:endDate "2026-12-20"^^xsd:date ;
+    schema:subEvent [ a schema:SaleEvent ; schema:startDate "2026-12-03T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-03T23:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-04T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-04T23:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-05T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-05T23:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-06T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-06T22:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-07T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-07T22:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-08T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-08T23:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-09T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-09T23:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-10T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-10T23:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-11T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-11T23:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-12T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-12T23:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-13T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-13T22:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-14T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-14T22:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-15T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-15T23:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-16T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-16T23:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-17T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-17T23:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-18T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-18T23:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-19T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-19T23:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:SaleEvent ; schema:startDate "2026-12-20T12:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-20T21:00:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.wintertijdleuven.be/kerstmarkt> ;
+    dcterms:source <https://www.wintertijdleuven.be/kerstmarkt>,
+        <https://www.leuvensekerstmarkt.com/>, <https://www.politie.be/5388/verkeer/evenementen/kerstmarkt-2026-te-leuven> .
+
+<#vesalius-openingsweekend-2026> a schema:Event ;
+    schema:name "Openingsweekend Vesalius Museum"@nl ;
+    schema:genre "Museumprogramma"@nl ;
+    schema:description "Openingsprogramma aan Minderbroedersstraat 12. Een gratis ticket met tijdslot is verplicht. Reserveer vooraf bij het museum."@nl ;
+    schema:containedInPlace wd:Q118958 ;
+    schema:location [ a schema:Place ; schema:name "Vesalius Museum"@nl ] ;
+    schema:startDate "2026-12-12"^^xsd:date ;
+    schema:endDate "2026-12-13"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-12T10:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-12T17:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-13T10:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-13T17:00:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.vesaliusmuseum.be/nl/openingsweekend> ;
+    dcterms:source <https://www.vesaliusmuseum.be/nl/openingsweekend>,
+        <https://www.visitleuven.be/vesalius-museum> .
+
+<#begijnhof-kaarslicht-2026> a schema:Event ;
+    schema:name "Groot Begijnhof bij kaarslicht"@nl ;
+    schema:genre "Feest en folklore"@nl ;
+    schema:description "Vrije toegang voor de kaarsjesavond in het Groot Begijnhof. Het is een woonerf met kasseien; respecteer de rust van de bewoners."@nl ;
+    schema:containedInPlace wd:Q118958 ;
+    schema:location [ a schema:Place ; schema:name "Groot Begijnhof"@nl ] ;
+    schema:startDate "2026-12-12"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-12T17:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-12T21:30:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.wintertijdleuven.be/groot-begijnhof-bij-kaarslicht> ;
+    dcterms:source <https://www.wintertijdleuven.be/groot-begijnhof-bij-kaarslicht>,
+        <https://www.visitleuven.be/groot-begijnhof> .

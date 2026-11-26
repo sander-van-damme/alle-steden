@@ -355,6 +355,36 @@ try {
   assert.ok(carillonData.sessions.every(({ end }) => end === undefined));
   assert.ok(!plannerCatalogue.flatMap(({events})=>events).some(({id})=>id.endsWith('#kerstbeiaard-2026')));
 
+  await desktop.goto(origin + '/kalender/?stad=leuven&maand=2026-12');
+  await loaded(desktop);
+  const winterLeuven = desktop.locator('.calendar-event').filter({ hasText: 'Leuvense Kerstmarkt 2026' });
+  assert.equal(await winterLeuven.count(),1);
+  await desktop.locator('#calendar-category').selectOption('Markt');
+  for (const [day, hours] of [['03','12:00–23:00'],['04','11:00–23:00'],['07','12:00–22:00'],['20','12:00–21:00']]) {
+    await desktop.locator('[data-day="2026-12-' + day + '"]').click();
+    assert.equal(await winterLeuven.locator('.calendar-event-meta').textContent(),'Leuven · ' + hours);
+  }
+  await desktop.locator('[data-day="2026-12-21"]').click();
+  assert.equal(await winterLeuven.count(),0,'December market never extends beyond the dated edition.');
+
+  await phone.goto(origin + '/kalender/?stad=leuven&maand=2026-12');
+  await loaded(phone);
+  const museumOpen = phone.locator('.calendar-event').filter({ hasText: 'Openingsweekend Vesalius Museum' });
+  const candlelight = phone.locator('.calendar-event').filter({ hasText: 'Groot Begijnhof bij kaarslicht' });
+  await phone.locator('[data-day="2026-12-12"]').tap();
+  assert.equal(await museumOpen.locator('.calendar-event-meta').textContent(),'Leuven · 10:00–17:00');
+  assert.match(await museumOpen.innerText(),/gratis ticket met tijdslot is verplicht/u);
+  assert.equal(await candlelight.locator('.calendar-event-meta').textContent(),'Leuven · 17:00–21:30');
+  await phone.locator('[data-day="2026-12-13"]').tap();
+  assert.equal(await museumOpen.locator('.calendar-event-meta').textContent(),'Leuven · 10:00–17:00');
+  assert.equal(await candlelight.count(),0);
+  await phone.locator('[data-day="2026-12-14"]').tap();
+  assert.equal(await museumOpen.count(),0);
+  const leuvenDates = museumCatalogue.events.filter(({city})=>city==='leuven');
+  assert.equal(leuvenDates.length,3);
+  assert.equal(leuvenDates.reduce((n,card)=>n+card.sessions.length,0),21);
+  assert.ok(!plannerCatalogue.find(({slug})=>slug==='leuven').events.some(({id})=>leuvenDates.some(x=>x.id===id)));
+
   // The mirror will begin returning the same editions when they are underway.
   // Keep the organizer's visit sessions, not the mirror's continuous date range.
   for (const device of [desktop,phone]) {
