@@ -25,6 +25,7 @@ export function cityDirectoryMap(cities, esc) {
         <circle class="directory-pin-ring" r=".1"/>
         <circle class="directory-pin-center" r=".1"/>
       </g>
+      <text class="directory-pin-name" data-pin-name aria-hidden="true" hidden></text>
     </svg>
     <div class="directory-map-focus"><p id="directory-map-label">Kies een stad op de kaart of in de lijst.</p><a id="directory-map-link" hidden>Bekijk stadsfiche</a></div>
   </figure>`;

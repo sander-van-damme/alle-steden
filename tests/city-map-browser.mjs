@@ -33,6 +33,8 @@ try {
   desktop.on('pageerror', e => errors.push(e.message));
   await desktop.goto(origin + '/#steden');
   await checkFooterMapCredit(desktop);
+  const mapName = desktop.locator('[data-pin-name]');
+  assert.equal(await mapName.isVisible(), false);
   assert.equal(await desktop.locator('[data-city-pin]').count(), 138);
   const card = desktop.locator('[data-city-slug="gent"]');
   const pin = desktop.locator('[data-city-pin="gent"]');
@@ -46,6 +48,9 @@ try {
     return Math.abs(matrix.e - location.x) < .01 && Math.abs(matrix.f - location.y) < .01 &&
       layer.previousElementSibling.hasAttribute('data-map-pins') && getComputedStyle(layer).pointerEvents === 'none';
   }));
+  assert.equal(await mapName.textContent(), 'Gent');
+  assert.ok(await mapName.isVisible());
+  assert.equal(await mapName.evaluate(e => getComputedStyle(e).pointerEvents), 'none');
   await desktop.locator('#query').fill('gand');
   assert.equal(await desktop.locator('[data-city-pin]:not([hidden])').count(), 1);
   await card.locator('a').hover();
@@ -55,6 +60,7 @@ try {
   await desktop.locator('#region').selectOption({label:'Wallonië'});
   assert.equal(await desktop.locator('[data-city-pin]:not([hidden])').count(), 0);
   assert.equal(await desktop.locator('[data-pin-highlight]').count(), 0);
+  assert.equal(await mapName.isVisible(), false);
   await desktop.locator('#region').selectOption('');
   await desktop.locator('#query').fill('ant');
   const candidate = desktop.locator('[data-city-pin][tabindex="0"]');
@@ -78,6 +84,9 @@ try {
     await phone.locator('#query').fill('ninove');
     await phone.locator('[data-city-pin="ninove"] .directory-pin-hit').tap();
     assert.equal(await phone.locator('#directory-map-label').textContent(), 'Ninove');
+    const phoneName = phone.locator('[data-pin-name]');
+    assert.equal(await phoneName.textContent(), 'Ninove');
+    assert.ok(await phoneName.isVisible());
     assert.equal(await phone.locator('[data-pin-highlight]').getAttribute('data-pin-highlight'), 'ninove');
     assert.equal(await phone.locator('.directory-pin-center').evaluate(e=>getComputedStyle(e).strokeWidth), '15px');
     assert.ok(await phone.locator('[data-city-slug="ninove"]').evaluate(e=>e.classList.contains('is-active')));

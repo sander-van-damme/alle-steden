@@ -35,3 +35,7 @@
 .directory-pin-ring { stroke: #fff9ed; stroke-width: 20px; }
 .directory-pin-center { stroke: var(--map-highlight); stroke-width: 15px; }
 .directory-map-svg:focus-within .directory-pin-edge { stroke: #3d231e; stroke-width: 25px; }
+.directory-pin-name {
+  pointer-events: none; dominant-baseline: middle; font: 700 19px/1 system-ui, sans-serif;
+  fill: #30221c; stroke: #fff9ed; stroke-width: 5px; stroke-linejoin: round; paint-order: stroke fill;
+}

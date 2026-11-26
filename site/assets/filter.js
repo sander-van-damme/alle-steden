@@ -5,6 +5,8 @@ const count = document.querySelector('#count');
 const empty = document.querySelector('#empty');
 const map = document.querySelector('.directory-map');
 const highlight = map?.querySelector('[data-highlight-layer]');
+const pinName = map?.querySelector('[data-pin-name]');
+const mapBox = pinName?.ownerSVGElement?.viewBox.baseVal;
 const pins = new Map([...document.querySelectorAll('[data-city-pin]')].map(pin => [pin.dataset.cityPin, pin]));
 const label = document.querySelector('#directory-map-label');
 const detail = document.querySelector('#directory-map-link');
@@ -33,12 +35,22 @@ function paint() {
     if (highlight) {
       const dot = entry?.pin?.querySelector('.directory-pin-dot');
       if (dot) {
-        highlight.setAttribute('transform', `translate(${dot.getAttribute('cx')} ${dot.getAttribute('cy')})`);
+        const x = Number(dot.getAttribute('cx')), y = Number(dot.getAttribute('cy'));
+        highlight.setAttribute('transform', `translate(${x} ${y})`);
+        if (pinName && mapBox?.width) {
+          const right = x <= mapBox.width / 2;
+          pinName.textContent = entry.name;
+          pinName.setAttribute('text-anchor', right ? 'start' : 'end');
+          pinName.setAttribute('x', x + (right ? 23 : -23));
+          pinName.setAttribute('y', Math.min(mapBox.height - 16, Math.max(16, y)));
+          pinName.removeAttribute('hidden');
+        }
         highlight.dataset.pinHighlight = next;
         highlight.removeAttribute('hidden');
       } else {
         highlight.setAttribute('hidden', '');
         delete highlight.dataset.pinHighlight;
+        pinName?.setAttribute('hidden', '');
       }
     }
     emphasized = next;
