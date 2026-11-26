@@ -263,6 +263,31 @@ try {
   await desktop.locator('[data-day="2026-12-17"]').click();
   assert.equal(await castle.count(), 0);
 
+  // Geraardsbergen: dated programme with different daily slots and known starts only.
+  await phone.goto(origin + '/kalender/?stad=geraardsbergen&maand=2026-12');
+  await loaded(phone);
+  assert.equal(await phone.locator('.calendar-event').count(), 5);
+  const markt = 'Kerstmarkt van Geraardsbergen', schaatsen = 'Rolschaatsen op het Stationsplein';
+  for (const [day, titles] of [
+    ['13', [['Opening landschapspark Den Bleek', /10:00–12:00/u]]],
+    ['18', [[markt, /18:00–23:00/u], [schaatsen, /16:00–19:00/u]]],
+    ['19', [[markt, /14:00–23:00/u], [schaatsen, /10:00–19:00/u]]],
+    ['20', [[markt, /14:00–20:00/u], [schaatsen, /14:00–18:00/u]]],
+    ['21', []],
+    ['26', [['Vuurshow op de Dender', /^Geraardsbergen · Vanaf 18:00$/u]]],
+    ['27', [['Tractorparade in Geraardsbergen', /^Geraardsbergen · Vanaf 17:30$/u]]],
+    ['28', []],
+  ]) {
+    await phone.locator('[data-day="2026-12-' + day + '"]').tap();
+    assert.equal(await phone.locator('.calendar-event').count(), titles.length);
+    for (const [name, hours] of titles) {
+      const link = phone.getByRole('link', { name, exact: true });
+      assert.match(await link.getAttribute('href'), /^https:\/\/www\.(visit)?geraardsbergen\.be\//u);
+      const card = phone.locator('.calendar-event').filter({ has: link });
+      assert.match(await card.locator('.calendar-event-meta').innerText(), hours);
+    }
+  }
+
   await phone.goto(origin + '/kalender/?stad=oostende&maand=2027-01');
   await loaded(phone);
   await phone.locator('#calendar-category').selectOption('Sport');
