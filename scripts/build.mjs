@@ -11,7 +11,11 @@ import { weeklyEventSessions } from './weekly-event-schedule.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const source = resolve(root, 'cities');
-const output = resolve(root, 'dist');
+const githubPages = process.argv[2] === '--github-pages';
+if (process.argv.length !== (githubPages ? 3 : 2)) throw new Error('Onbekende bouwoptie.');
+const output = resolve(root, githubPages ? 'dist-pages' : 'dist');
+const pagesPrefix = '/alle-steden';
+const productionOrigin = 'https://allesteden.bysander.net';
 const schema = 'https://schema.org/';
 const rdfType = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 const nisCode = 'http://www.wikidata.org/prop/direct/P1567';
@@ -217,7 +221,16 @@ await mkdir(resolve(output, 'data'), { recursive: true });
 // under a content-specific URI so an upgraded planner never imports the previous coverage logic.
 const assetSource = resolve(root, 'site', 'assets');
 const assetNames = (await readdir(assetSource)).filter((name) => /\.(?:m?js|css)$/.test(name)).sort();
-const assets = await Promise.all(assetNames.map(async (name) => [name, await readFile(resolve(assetSource, name))]));
+const assets = await Promise.all(assetNames.map(async (name) => {
+  const data = await readFile(resolve(assetSource, name));
+  if (!githubPages || name !== 'site-paths.js') return [name, data];
+  const source = data.toString('utf8');
+  const marker = "const siteBasePath = '';";
+  if (!source.includes(marker)) throw new Error('Basispad voor GitHub Pages ontbreekt.');
+  const configured = source.replace(marker, 'const siteBasePath = ' + JSON.stringify(pagesPrefix) + ';');
+  await writeFile(resolve(output, 'assets', name), configured);
+  return [name, configured];
+}));
 const assetHash = createHash('sha256');
 for (const [name, bytes] of assets) assetHash.update(name).update('\0').update(bytes).update('\0');
 const assetVersion = 'v-' + assetHash.digest('hex').slice(0, 16);
@@ -226,10 +239,26 @@ await Promise.all(assets.map(([name, bytes]) => writeFile(resolve(output, 'asset
 const withAssets = (html) => html.replace(/((?:src|href)=")\/assets\/([a-z0-9._-]+\.(?:m?js|css))(?=")/gi,
   (_, attribute, name) => attribute + '/assets/' + assetVersion + '/' + name);
 
+function pageHtml(html, canonicalPath) {
+  const versioned = withAssets(html);
+  if (!githubPages) return versioned;
+  const prefixLinks = versioned.replace(/(\s(?:src|href)=")\/(?!\/)/g, '$1' + pagesPrefix + '/');
+  const canonicalUrl = canonicalPath && productionOrigin + canonicalPath;
+  const previewInfo = canonicalPath === '/privacy/'
+    ? ' De verklaring hieronder geldt voor de volledige site. Zie ook de <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">privacyverklaring van GitHub</a> voor deze proefversie.'
+    : '';
+  return prefixLinks
+    .replace('</head>', '  <meta name="robots" content="noindex">\n' +
+      (canonicalUrl ? '  <link rel="canonical" href="' + canonicalUrl + '">\n' : '') + '</head>')
+    .replace(/<main\s[^>]+>/u, (tag) => tag + '\n    <aside class="pages-preview" aria-label="Over deze proefversie">' +
+      'Dit is de proefversie op GitHub Pages. Niet alle live gegevens en controles zijn beschikbaar.' +
+      ' <a href="' + (canonicalUrl || productionOrigin + '/') + '">Naar de volledige site</a>.' + previewInfo + '</aside>');
+}
+
 async function writePage(path, html) {
   const directory = resolve(output, path);
   await mkdir(directory, { recursive: true });
-  await writeFile(resolve(directory, 'index.html'), withAssets(html));
+  await writeFile(resolve(directory, 'index.html'), pageHtml(html, path === '.' ? '/' : '/' + path + '/'));
 }
 
 const plannerCities = cities.filter(({ coordinates }) => coordinates).map(({ slug, name, names, region, cityUrl, coordinates, places, events }) => ({
@@ -306,11 +335,11 @@ await Promise.all([
   writeFile(resolve(output, 'coverage.json'), JSON.stringify(catalogCoverage, null, 2) + '\n'),
   writeFile(resolve(output, 'data', 'cities.json'), JSON.stringify(Object.fromEntries(cities.map(({ slug, name, names, region, cityUrl }) =>
     [slug, { name, names, region, qid: cityUrl.split('/').at(-1) }])))),
-  writeFile(resolve(output, '404.html'), withAssets(layout({
+  writeFile(resolve(output, '404.html'), pageHtml(layout({
     title: 'Pagina niet gevonden · Alle Steden',
     main: '<main id="inhoud" class="wrap detail"><h1>Pagina niet gevonden</h1><p><a href="/">Terug naar de stedenlijst</a></p></main>',
   }))),
   ...cities.map((city) => writePage(`steden/${city.slug}`, cityPage(city, linkIds))),
 ]);
 
-console.log(`${cities.length} steden gebouwd in dist/. ${catalogCoverage.exteriorCities} steden hebben een gedocumenteerde buitenstop.`);
+console.log(`${cities.length} steden gebouwd in ${githubPages ? 'dist-pages' : 'dist'}/. ${catalogCoverage.exteriorCities} steden hebben een gedocumenteerde buitenstop.`);

@@ -1,3 +1,5 @@
+import { unavailableSiteApi } from './site-paths.js';
+
 const sparqlHeaders = { Accept: 'application/sparql-results+json' };
 const portal = 'https://linked.toerismevlaanderen.be';
 const walloon = 'https://geoservices.wallonie.be/arcgis/rest/services/TOURISME/OFFRES_TOURISTIQUES/MapServer';
@@ -171,6 +173,7 @@ export const parameters = (base, params) => {
   return url;
 };
 export const getJson = async (url, { fetcher = fetch, headers = {}, timeout = 10_000, credentials = 'omit' } = {}) => {
+  if (unavailableSiteApi(url)) throw new Error('Deze API is niet beschikbaar in de statische proefversie.');
   const response = await fetcher(url, { headers, signal: AbortSignal.timeout(timeout), credentials, redirect: 'error' });
   if (!response.ok) throw new Error('HTTP ' + response.status);
   const body = await response.json();

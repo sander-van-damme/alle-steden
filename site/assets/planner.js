@@ -1,3 +1,4 @@
+import { sitePath } from './site-paths.js';
 import { getJson } from './sources.js';
 import { calendarDay } from './planner-core.js';
 import { findRoutePois } from './planner-routing.js';
@@ -69,7 +70,7 @@ function renderPassed(view) {
   const cities=el('ol',null,'itinerary-passage-list');
   for(const city of list){
     const item=el('li'); item.dataset.itineraryRole='pass';
-    item.append(link(city.name,'/steden/'+encodeURIComponent(city.slug)+'/')); cities.append(item);
+    item.append(link(city.name,sitePath('/steden/'+encodeURIComponent(city.slug)+'/'))); cities.append(item);
   }
   section.append(cities);
   if(state==='partial')section.append(el('p','De lijst kan onvolledig zijn.','planner-hint'));
@@ -304,7 +305,7 @@ async function calculate(request) {
   }
 }
 try{
-  const catalog=await getJson(new URL('/planner-data.json',location.origin),{credentials:'same-origin'});
+  const catalog=await getJson(new URL(sitePath('/planner-data.json'),location.origin),{credentials:'same-origin'});
   if(!Array.isArray(catalog)||!catalog.length)throw new Error('Geen steden');
   cities=catalog.filter(city=>typeof city?.slug==='string'&&Number.isFinite(city.lat)&&Number.isFinite(city.lon))
     .map(city=>({...city,places:Array.isArray(city.places)?city.places:[],events:Array.isArray(city.events)?city.events:[]}));

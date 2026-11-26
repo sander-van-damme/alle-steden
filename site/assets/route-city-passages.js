@@ -1,3 +1,4 @@
+import { sitePath } from './site-paths.js';
 // Modified NGI AdminVector 4.1 (CC BY 4.0). See docs/route-city-boundaries.md.
 import { getJson } from './sources.js';
 
@@ -110,7 +111,7 @@ export function prepareRouteCityBoundaries(snapshot) {
 let boundaryCache;
 export async function loadRouteCityBoundaries({origin=globalThis.location?.origin,fetcher,signal}={}) {
   if (!origin||signal?.aborted) return {state:'unavailable'};
-  const url=new URL(routeCityBoundaryPath,origin);
+  const url=new URL(sitePath(routeCityBoundaryPath),origin);
   if (!fetcher&&boundaryCache?.url===url.href) return boundaryCache.value;
   try {
     // This same-origin request contains no route, date, or other visitor parameters.

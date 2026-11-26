@@ -1,4 +1,4 @@
-name: GitHub Pages build (no deploy)
+name: GitHub Pages preview
 
 on:
   workflow_dispatch:
@@ -10,10 +10,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: github-pages-preview
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,23 +26,26 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
-      - run: npm run build
-      - name: Check static artifact at the URL root
-        run: |
-          python3 -m http.server 4181 --bind 127.0.0.1 --directory dist > /tmp/pages-preview.log 2>&1 &
-          server="$!"
-          trap 'kill "$server"' EXIT
-          origin=http://127.0.0.1:4181
-          curl -fsS --retry 5 --retry-connrefused "$origin/" -o /tmp/pages-home.html
-          grep -Fq 'Steden van België' /tmp/pages-home.html
-          css=$(grep -oE '/assets/v-[a-f0-9]+/site\.css' /tmp/pages-home.html)
-          test -n "$css"
-          for path in "$css" /kalender/ /planner/ /steden/gent/ /privacy/ /404.html /calendar-data.json /planner-data.json /data/gent.ttl; do
-            curl -fsS "$origin$path" -o /dev/null
-          done
-          test ! -e dist/functions
-          test "$(curl -sS -o /dev/null -w '%{http_code}' "$origin/api/city-live?city=gent&source=flanders")" = 404
+      - run: npm run build:pages
+      - run: npm install --no-save --package-lock=false playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/pages-browser.mjs
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: dist
+          path: dist-pages
           retention-days: 3
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

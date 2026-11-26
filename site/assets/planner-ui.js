@@ -1,3 +1,4 @@
+import { sitePath } from './site-paths.js';
 import { visitorUrl } from './sources.js';
 import { regions } from './planner-regions.js';
 
@@ -648,7 +649,7 @@ function renderTrip(trip, openRoute = false) {
       // still get the connector as part of the ordered route heading.
       cityLabel.append(element('span', 'visually-hidden', 'naar '));
     }
-    cityLabel.append(link(city.name, city.slug && `/steden/${encodeURIComponent(city.slug)}/`));
+    cityLabel.append(link(city.name, city.slug && sitePath(`/steden/${encodeURIComponent(city.slug)}/`)));
     title.append(cityLabel);
   });
   const date = renderTripDate(trip);

@@ -31,14 +31,11 @@ Importeer deze GitHub-repository als Pages-project via **Workers & Pages** en ge
 
 De build heeft geen API-sleutels nodig. Zie de [Cloudflare-handleiding voor Git-integratie](https://developers.cloudflare.com/pages/get-started/git-integration/).
 
-## GitHub Pages: alleen een testbuild
+## GitHub Pages: statische proefversie
 
-De workflow [GitHub Pages build (no deploy)](.github/workflows/pages-build.yml) maakt met Node.js 22 dezelfde `dist/` als Cloudflare. Hij controleert de statische site op de URL-root en bewaart het artefact `github-pages` drie dagen in **Actions**. Start hem via **Run workflow**; hij draait ook bij een wijziging aan de workflow op `main`. Er wordt niets naar GitHub Pages gepubliceerd of aan de hostinginstellingen gewijzigd. De openbare site blijft op Cloudflare Pages.
+De [GitHub Pages-workflow](.github/workflows/pages-build.yml) bouwt met `npm run build:pages` naar `dist-pages/`, test de site op `/alle-steden/` en publiceert vanaf `main` op [sander-van-damme.github.io/alle-steden/](https://sander-van-damme.github.io/alle-steden/). Selecteer eenmalig **Settings → Pages → Source → GitHub Actions**. Start daarna een nieuwe momentopname via **Actions → GitHub Pages preview → Run workflow**; wijzigen van het workflowbestand op `main` start de build ook. Het artefact `github-pages` blijft drie dagen beschikbaar.
 
-Voor een latere overstap zijn twee zaken nog nodig:
-
-- **URL-pad:** links en assets beginnen op `/`. Op een GitHub Pages-projectadres onder `/alle-steden/` wijzen die nu buiten de site. Voor een test onder dat pad is ondersteuning voor een basispad nodig. De huidige testbuild verwacht een site op de root van een domein.
-- **Live gegevens:** GitHub Pages bedient statische bestanden, geen Cloudflare Pages Functions. Functies onder `/api/`, zoals live stadsdata, linkcontrole en RAVeL-meldingen, hebben een aparte dienst of een doorstuurlaag nodig. Test die naast de vereiste CORS-regels en headers voor een eventuele overstap. Instellingen in `_headers` en `_routes.json` zijn specifiek voor Cloudflare.
+De proefversie gebruikt dezelfde stadsbestanden, houdt links en assets onder `/alle-steden/` en vermeldt dat diensten via `/api/` niet beschikbaar zijn. Rechtstreekse openbare bronnen en de fietsrouter kunnen nog werken. Links gaan rechtstreeks naar hun oorsprong; RAVeL zonder bronresultaat geldt niet als gecontroleerd. De proefversie vraagt niet om indexering en verwijst naar de bijbehorende pagina op de volledige site. Het productieadres `allesteden.bysander.net` en `npm run build` blijven op Cloudflare Pages.
 
 ## Stadsgegevens aanvullen
 

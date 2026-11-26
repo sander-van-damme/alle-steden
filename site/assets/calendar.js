@@ -1,3 +1,4 @@
+import { sitePath } from './site-paths.js';
 import { addCalendarDays, compact, getJson, localToday, visitorUrl, sources } from './sources.js';
 import { calendarEvent, calendarMonth, eventTime, eventsByDay, firstMonth, labelDay, labelMonth, lastMonth,
   mergeCalendarEvents, monthDays, moveMonth, scopeDates } from './calendar-core.js';
@@ -28,7 +29,7 @@ function eventCard(item, cities, selectedDay, month) {
   dateLabel.dateTime = selectedDay || date;
   const body = node('div', 'calendar-event-body');
   const place = node('a', 'calendar-event-city', cities[item.city].name);
-  place.href = '/steden/' + item.city + '/';
+  place.href = sitePath('/steden/' + item.city + '/');
   const meta = node('p', 'calendar-event-meta');
   meta.append(place, ' · ' + eventTime(item, selectedDay));
   body.append(heading, meta);
@@ -81,7 +82,7 @@ function statusText(coverage, liveSpan, count, pending, scope) {
 }
 
 async function start() {
-  const data = await getJson('/calendar-data.json', { credentials: 'same-origin' });
+  const data = await getJson(sitePath('/calendar-data.json'), { credentials: 'same-origin' });
   if (!Array.isArray(data.cities) || !Array.isArray(data.events)) throw new Error('Ongeldige kalendergegevens');
   const cities = data.cities.filter(({ slug, name, region }) => /^[a-z0-9-]+$/.test(slug) && compact(name) && compact(region));
   if (!cities.length) throw new Error('Geen steden in kalendergegevens');

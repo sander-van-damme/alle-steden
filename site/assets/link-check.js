@@ -1,3 +1,5 @@
+import { hasSiteApi } from './site-paths.js';
+
 // Link checks are opt-in on activation, never on initial render or visibility.
 const staticId = /^[a-f0-9]{24}$/;
 const pivotId = /^(?:ALD|LOD)-[A-Z0-9]{2,4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
@@ -36,7 +38,7 @@ export function createLinkChecker({
   const inFlight = new Map();
   let calls = 0;
   return (source, id) => {
-    if (!origin || !isLinkRecord(source, id)) return null;
+    if (!hasSiteApi || !origin || !isLinkRecord(source, id)) return null;
     const key = source + ':' + id;
     const previous = cache.get(key);
     if (previous && previous.until > now()) return Promise.resolve(previous.value);
