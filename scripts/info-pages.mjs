@@ -101,10 +101,17 @@ export function privacyPage(layout) {
         <li>Je browser kan webbestanden en kaartbeelden tijdelijk bewaren. Een stad of kalendermaand in het webadres kan in je browsergeschiedenis staan en meegaan als je de link deelt.</li>
       </ul>
     </section>
+    <section><h2>Logs en statistieken</h2>
+      <ul class="info-sources">
+        <li>Cloudflare bewaart de standaard ${link('live logs van Pages Functions', 'https://developers.cloudflare.com/pages/functions/debugging-and-logging/#limits')} niet. Dat zegt niets over verkeerslogs, beveiligingslogs of exports.</li>
+        <li>Volgens Cloudflare zijn samengevatte cijfers in ${link('Web Analytics', 'https://developers.cloudflare.com/web-analytics/faq/#what-is-the-period-of-time-i-can-access-data-in-web-analytics')} voor de afgelopen zes maanden raadpleegbaar. Dat is geen bewaartermijn voor ruwe meetgegevens.</li>
+      </ul>
+    </section>
     <section><h2>Je rechten en wat nog ontbreekt</h2>
       <ul class="info-sources">
+        <li><strong>Verantwoordelijke en privacycontact:</strong> Sander van Damme. Mail naar ${link('allesteden@bysander.net', 'mailto:allesteden@bysander.net')}.</li>
         <li>Afhankelijk van de verwerking kun je inzage, verbetering, wissing, beperking of overdraagbaarheid vragen, of bezwaar maken. Je kunt een klacht indienen bij de ${link('Gegevensbeschermingsautoriteit', gba)}.</li>
-        <li>Dit overzicht is nog niet volledig. De verantwoordelijke en het privacycontact, de rechtsgronden, de instellingen voor verkeerslogs, de bewaartermijnen en eventuele doorgifte buiten de EER zijn nog niet bevestigd.</li>
+        <li>Dit overzicht is nog niet volledig. De rechtsgronden, de instellingen voor verkeerslogs, de bewaartermijnen en eventuele doorgifte buiten de EER zijn nog niet bevestigd.</li>
       </ul>
     </section>`);
 }
