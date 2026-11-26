@@ -7,6 +7,7 @@ import { displayedPlaces, placeProviders } from './place-providers.js';
 import { isHistoriaVenue } from './historia-visit.js';
 import { livePlaceFragment } from './place-rdf.js';
 import { enhanceVerifiedLinks, isLinkRecord } from './link-check.js';
+import { creditLinks, liveCityCredit, staticCityCredit } from './city-credits.js';
 
 const root = document.querySelector('[data-city]');
 const el = (tag, text, classname) => {
@@ -26,23 +27,34 @@ const plainHeading = (card) => {
   return compact(heading?.textContent);
 };
 
-function sourceLine(item) {
-  const paragraph = el('p', '', 'entry-source');
-  const keys = [...new Set([item.source, ...(item.alternateSources ?? [])])].filter((key) => key !== 'wikidata' && sources[key]);
-  if (!keys.length) return null;
-  keys.forEach((key, i) => {
-    const source = sources[key];
-    if (i) paragraph.append(' · ');
-    paragraph.append(link(source.label, source.visitorHref ?? source.href));
-    if (source.credit) paragraph.append(' · ' + source.credit);
-    if (source.license) {
-      const license = source.license.includes('/by/4.0') ? 'CC BY 4.0'
-        : source.license.includes('/zero/') ? 'CC0' : 'Gebruiksvoorwaarden';
-      paragraph.append(' (', link(license, source.license), ')');
-    }
-  });
-  return paragraph;
+function renderCredits(root) {
+  const section = root.querySelector('[data-city-credits]');
+  const list = section?.querySelector('[data-credit-items]');
+  if (!list) return () => {};
+  const groups = new Map();
+  let last;
+  return (group, credits) => {
+    groups.set(group, credits);
+    const staticCredits = [...root.querySelectorAll('[data-static-results] > li:not([hidden])')]
+      .map(({ dataset }) => staticCityCredit({ url: dataset.itemSourceUrl, label: dataset.itemSourceLabel }));
+    const all = creditLinks([...staticCredits, ...[...groups.values()].flat()]);
+    const signature = JSON.stringify(all);
+    if (signature === last) return;
+    last = signature;
+    const focused = list.contains(document.activeElement) ? document.activeElement.href : undefined;
+    list.replaceChildren(...all.map(({ label, href, references, terms }) => {
+      const row = el('li');
+      row.append(href ? link(label, href) : label);
+      for (const credit of references) row.append(' · ', credit);
+      for (const term of terms) row.append(' · ', link(term.label, term.href));
+      return row;
+    }));
+    section.hidden = !all.length;
+    if (focused) [...list.querySelectorAll('a')].find((a) => a.href === focused)?.focus({ preventScroll: true });
+  };
 }
+
+const itemCredits = (item) => [item.source, ...(item.alternateSources ?? [])].map(liveCityCredit);
 
 const visitorNotices = new Map([
   ['Q3330123', {
@@ -85,10 +97,10 @@ function appendHours(card, item) {
   if (!item.hours || card.querySelector('[data-hours], .entry-meta strong')) return;
   const row = el('p', '', 'entry-meta');
   row.dataset.hours = '';
+  if (item.hoursSource) row.dataset.hoursSource = item.hoursSource;
   row.append(el('strong', officialHours?'Gewone openingsuren: ':'Openingsuren: '), item.hours);
   if (item.hoursSource === 'osm') {
-    row.append(' · ', link('Bekijk op de kaart', item.hoursUrl), ' · ',
-      link('© OpenStreetMap-bijdragers (ODbL)', sources.osm.href));
+    row.append(' · ', link('Bekijk op de kaart', item.hoursUrl));
   }
   card.append(row);
   if (item.hoursNote) {
@@ -145,8 +157,9 @@ function buildCard(item) {
   if (where) card.append(el('p', where, 'entry-meta'));
   if (item.description) card.append(el('p', item.description, 'entry-description'));
   appendHours(card, item);
-  const source = item.source && sourceLine(item);
-  if (source) card.append(source);
+  const source = sources[item.source];
+  const sourceUrl = visitorUrl(source?.visitorHref ?? source?.href);
+  if (sourceUrl) card.dataset.itemSourceUrl = sourceUrl;
   return card;
 }
 
@@ -188,7 +201,7 @@ function placeControls(section, list, onMore) {
   };
 }
 
-function enhanceSection(section, city, type) {
+function enhanceSection(section, city, type, updateCredits) {
   const list = section.querySelector('[data-results]');
   const status = section.querySelector('[data-status]');
   const retry = section.querySelector('[data-retry]');
@@ -245,6 +258,10 @@ function enhanceSection(section, city, type) {
       list.replaceChildren(...visible.map(buildCard));
       if (focused) [...list.querySelectorAll('a')].find((a) => a.getAttribute('href') === focused)?.focus({ preventScroll: true });
       list.hidden = !visible.length;
+      const hoursCredits = [...section.querySelectorAll('[data-hours-source]')]
+        .filter((row) => !row.closest('[hidden]'))
+        .map(({ dataset }) => liveCityCredit(dataset.hoursSource));
+      updateCredits(type, [...visible.flatMap(itemCredits), ...hoursCredits]);
       if (settled && !fragmentReached && requestedFragment.startsWith('bron-')) {
         const target = document.getElementById(requestedFragment);
         if (target) {
@@ -296,11 +313,10 @@ function enhanceSection(section, city, type) {
   load();
 }
 
-function enhanceLocalRoutes(section, city) {
+function enhanceLocalRoutes(section, city, updateCredits) {
   const list = section.querySelector('[data-routes-results]');
   const status = section.querySelector('[data-routes-status]');
   const retry = section.querySelector('[data-routes-retry]');
-  const credit = section.querySelector('[data-routes-credit]');
   async function load() {
     retry.hidden = true;
     retry.disabled = true;
@@ -316,9 +332,9 @@ function enhanceLocalRoutes(section, city) {
         return card;
       }));
       list.hidden = !items.length;
-      credit.replaceChildren('Bron: ', link(andenneOutdoor.attribution, andenneOutdoor.sourceHref), ' (',
-        link('CC BY 4.0', andenneOutdoor.license), ')');
-      credit.hidden = !items.length;
+      updateCredits('routes', items.length ? [{
+        label: andenneOutdoor.attribution, href: andenneOutdoor.sourceHref, license: andenneOutdoor.license,
+      }] : []);
       status.textContent = !items.length ? 'Geen routes uit deze bron beschikbaar. Bekijk de routes bij Andenne Tourisme.'
         : partial ? 'Een deel van de routes ontbreekt. Bekijk het volledige aanbod bij Andenne Tourisme.' : '';
       retry.hidden = !partial;
@@ -335,14 +351,15 @@ function enhanceLocalRoutes(section, city) {
 
 if (root) {
   enhanceVerifiedLinks(root);
+  const updateCredits = renderCredits(root);
   let names = [];
   try { names = JSON.parse(root.dataset.aliases ?? '[]'); } catch { /* The primary name is sufficient. */ }
   const city = { slug: root.dataset.city, region: root.dataset.region, qid: root.dataset.qid,
     name: root.dataset.name, code: root.dataset.code, names };
   const routes = root.querySelector('[data-local-routes]');
-  if (routes) enhanceLocalRoutes(routes, city);
+  if (routes) enhanceLocalRoutes(routes, city, updateCredits);
   for (const type of ['places', 'events']) {
     const section = root.querySelector('[data-live-' + type + ']');
-    if (section) enhanceSection(section, city, type);
+    if (section) enhanceSection(section, city, type, updateCredits);
   }
 }

@@ -9,9 +9,9 @@ const launch = shell ? { executablePath: await shell.executablePath(), args: she
 const browser = await chromium.launch(launch);
 const origin = 'https://alle-steden.test';
 const id = (n) => String(n).padStart(24, '0');
-const record = (i, title) => `<li><h3><a href="https://destination.test/original-${i}"
+const record = (i, title) => `<li data-item-source-url="https://province.test/provenance"><h3><a href="https://destination.test/original-${i}"
   data-link-source="static" data-link-id="${id(i)}">${title}</a></h3>
-  <p class="entry-source"><a href="https://province.test/provenance">Gemeente</a></p></li>`;
+  </li>`;
 const body = `<!doctype html><html lang="nl"><body><main data-city="test"><ul>
   ${record(1, 'Werkende link')}${record(2, 'Dode link')}${record(3, 'Onbekende link')}${record(4, 'Te lang')}
   <li><a href="https://destination.test/unsupported" data-link-source="wikidata" data-link-id="Q325">Onbekende bron</a></li>

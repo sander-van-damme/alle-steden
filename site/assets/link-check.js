@@ -123,14 +123,14 @@ function showBroken(root, anchor, original) {
   fallback.href = original;
   fallback.textContent = 'Probeer de oorspronkelijke link';
   note.append(fallback);
-  const source = card?.querySelector('.entry-source a, a.entry-source');
-  if (source && source.href !== original && anchorUrl(source, doc.location.origin)) {
-    const provenance = source.cloneNode(false);
-    provenance.removeAttribute('id');
-    provenance.removeAttribute('data-link-source');
-    provenance.removeAttribute('data-link-id');
-    provenance.textContent = 'Bekijk de bron';
-    note.append(' · ', provenance);
+  const sourceHref = card?.dataset.itemSourceUrl ?? card?.querySelector('.entry-source a, a.entry-source')?.href;
+  if (sourceHref) {
+    const provenance = doc.createElement('a');
+    provenance.href = sourceHref;
+    if (provenance.href !== original && anchorUrl(provenance, doc.location.origin)) {
+      provenance.textContent = 'Bekijk de bron';
+      note.append(' · ', provenance);
+    }
   }
   if (card) card.append(note);
   else root.prepend(note);

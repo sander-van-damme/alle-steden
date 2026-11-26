@@ -2,6 +2,7 @@ import { calendarMain, calendarHead } from './calendar-template.mjs';
 import { cityDirectoryMap } from './city-directory-map.mjs';
 
 import { visitorUrl } from '../site/assets/sources.js';
+import { creditLinks, staticCityCredit } from '../site/assets/city-credits.js';
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 })[char]);
@@ -190,15 +191,21 @@ function verifyAttributes(url, linkIds) {
   return id ? ` data-link-source="static" data-link-id="${id}"` : '';
 }
 
-function entrySource(source, linkIds) {
-  try {
-    const url = new URL(typeof source === 'string' ? source : source?.url);
-    if (!visitorUrl(url.href)) return '';
-    const label = typeof source === 'object' ? source?.label : null;
-    return `<a class="entry-source" href="${escapeHtml(url.href)}"${verifyAttributes(typeof source === 'string' ? source : source?.url, linkIds)}>Bron: ${escapeHtml(label || url.hostname.replace(/^www\./, ''))}</a>`;
-  } catch {
-    return '';
-  }
+function entryProvenance(source) {
+  const url = visitorUrl(typeof source === 'string' ? source : source?.url);
+  if (!url) return '';
+  const label = typeof source === 'object' ? source.label : null;
+  return ` data-item-source-url="${escapeHtml(url)}"${label ? ` data-item-source-label="${escapeHtml(label)}"` : ''}`;
+}
+
+function cityCredits(items) {
+  const markup = creditLinks(items.map(({ source }) => staticCityCredit(source))).map(({ label, href, references, terms }) =>
+    `<li><a href="${escapeHtml(href)}">${escapeHtml(label)}</a>${references.map((credit) => ' · ' + escapeHtml(credit)).join('')}${terms
+      .map((term) => ` · <a href="${escapeHtml(term.href)}">${escapeHtml(term.label)}</a>`).join('')}</li>`).join('');
+  return `<section class="city-credits" aria-labelledby="city-credits-title" data-city-credits${markup ? '' : ' hidden'}>
+    <h2 id="city-credits-title">Bronnen</h2>
+    <ul data-credit-items>${markup}</ul>
+  </section>`;
 }
 
 function entryList(title, intro, kind, items, linkIds) {
@@ -206,13 +213,12 @@ function entryList(title, intro, kind, items, linkIds) {
   const cards = items.map(({ id, name, description, url, start, end, openingHours, exterior, source }) => {
     const website = visitorUrl(url);
     const hours = (Array.isArray(openingHours) ? openingHours : [openingHours]).filter(Boolean).join(' · ');
-    return `<li${id ? ` data-item-id="${escapeHtml(id)}"` : ''}>
+    return `<li${id ? ` data-item-id="${escapeHtml(id)}"` : ''}${entryProvenance(source)}>
       <h3>${website ? `<a href="${escapeHtml(website)}"${verifyAttributes(url, linkIds)}>${escapeHtml(name)} ${arrow}</a>` : escapeHtml(name)}</h3>
       ${entryDate(start, end)}
       ${exterior === true ? '<span class="entry-badge" data-exterior>Vanop de openbare weg te bekijken</span>' : ''}
       ${hours ? `<p class="entry-meta"><strong>Openingsuren:</strong> ${escapeHtml(hours)}</p>` : ''}
       ${description ? `<p class="entry-description">${escapeHtml(description)}</p>` : ''}
-      ${entrySource(source, linkIds)}
     </li>`;
   }).join('');
 
@@ -235,7 +241,6 @@ function localRoutes(slug) {
     <ul class="entry-list" data-routes-results hidden></ul>
     <p class="source-status" data-routes-status role="status"></p>
     <button type="button" class="button secondary retry" data-routes-retry hidden>Opnieuw proberen</button>
-    <p class="entry-source" data-routes-credit hidden></p>
     <p><a href="https://www.andennetourisme.be/toutes-les-balades-a-proximite-dandenne/">Alle routes bij Andenne Tourisme ${arrow}</a></p>
   </section>`;
 }
@@ -268,16 +273,14 @@ export function cityPage(city, linkIds) {
           <a class="city-map-link" href="${escapeHtml(mapUrl)}">Bekijk op de kaart ${arrow}</a>
         </div>` : ''}
       </header>
-      <nav class="city-nav" aria-label="Op deze pagina">
-        <a href="#places">Bezienswaardigheden</a><a href="#events">Evenementen</a>
-        ${slug === 'andenne' ? '<a href="#routes">Wandel- en fietsroutes</a>' : ''}
-      </nav>
+      ${slug === 'andenne' ? '<nav class="city-nav" aria-label="Op deze pagina"><a href="#routes">Wandel- en fietsroutes</a></nav>' : ''}
       <div class="visit-grid">
         ${entryList('Bezienswaardigheden', 'Openingsuren staan erbij als ze bekend zijn. Bij buitenstops is toegang tot gebouwen niet bevestigd.', 'places', places, linkIds)}
         ${entryList('Evenementen', '', 'events', events, linkIds)}
       </div>
       ${localRoutes(slug)}
       <p class="calendar-city-link"><a class="button secondary" href="/kalender/?stad=${encodeURIComponent(slug)}">Bekijk de kalender voor ${escapeHtml(name)} ${arrow}</a></p>
+      ${cityCredits([...places, ...events])}
     </main>`,
   });
 }

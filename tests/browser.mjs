@@ -22,6 +22,14 @@ const json = (route, body) => route.fulfill({
   headers: { 'Access-Control-Allow-Origin': '*' },
 });
 async function fixture(page, { upstreamFailure = false } = {}) {
+  await page.route('https://inventaris.onroerenderfgoed.be/aanduidingsobjecten?**', (route) => json(route, [
+    { id: 5865, naam: 'Historisch gebouw A', locatie_samenvatting: 'Gent',
+      locatie: { gemeenten_niscodes: ['44021'] }, status: { actief: true },
+      aanduidingstype: { uri: 'https://id.erfgoed.net/thesauri/aanduidingstypes/1' } },
+    { id: 5866, naam: 'Historisch gebouw B', locatie_samenvatting: 'Gent',
+      locatie: { gemeenten_niscodes: ['44021'] }, status: { actief: true },
+      aanduidingstype: { uri: 'https://id.erfgoed.net/thesauri/aanduidingstypes/1' } },
+  ]));
   await page.route('https://query.wikidata.org/sparql?**', (route) => upstreamFailure ? route.abort() : json(route, {
     results: { bindings: [{
       item: { value: 'http://www.wikidata.org/entity/Q11111111' },
@@ -81,6 +89,15 @@ try {
   assert.equal(await desktop.locator('a[href$=".ttl"], a[href*="wikidata.org"], #stadsdata').count(), 0);
   assert.equal(await desktop.getByRole('button', { name: /Turtle/ }).count(), 0);
   assert.ok(await desktop.getByRole('link', { name: /Bekijk de kalender voor Gent/ }).isVisible());
+  assert.equal(await desktop.locator('a[href="#places"], a[href="#events"]').count(), 0);
+  const credits = desktop.getByRole('region', { name: 'Bronnen' });
+  assert.equal(await credits.getByRole('link', { name: 'Agentschap Onroerend Erfgoed' }).count(), 1);
+  assert.equal(await credits.getByRole('link', { name: 'Modellicentie voor gratis hergebruik' }).count(), 1);
+  assert.equal(await desktop.getByRole('link', { name: 'Historisch gebouw A' }).getAttribute('href'),
+    'https://inventaris.onroerenderfgoed.be/aanduidingsobjecten/5865');
+  assert.equal(await credits.getByRole('link', { name: '© OpenStreetMap-bijdragers' }).count(), 1);
+  assert.equal(await credits.getByRole('link', { name: 'ODbL' }).count(), 1);
+  assert.equal(await desktop.locator('.entry-list .entry-source').count(), 0);
   assert.equal(await desktop.getByRole('link', { name: 'Live proefmuseum' }).getAttribute('href'), 'https://example.com/museum');
   const rdf = await desktop.request.get(base + '/data/gent.ttl');
   assert.equal(rdf.status(), 200);
@@ -116,6 +133,11 @@ try {
   const columns = await mobile.locator('.visit-grid').evaluate((element) =>
     getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length);
   assert.equal(columns, 1);
+  assert.equal(await mobile.locator('a[href="#places"], a[href="#events"]').count(), 0);
+  const mobileCredits = mobile.getByRole('region', { name: 'Bronnen' });
+  assert.ok(await mobileCredits.getByRole('link', { name: 'Toerisme Vlaanderen' }).isVisible());
+  assert.equal(await mobileCredits.getByText('Wikidata', { exact: true }).count(), 0);
+  assert.equal(await mobileCredits.getByRole('link', { name: 'Agentschap Onroerend Erfgoed' }).count(), 1);
   await mobile.unroute('https://query.wikidata.org/sparql?**');
   await mobile.route('https://query.wikidata.org/sparql?**', (route) => json(route, {
     results: { bindings: [{ item: { value: 'http://www.wikidata.org/entity/Q22222222' }, name: { value: 'Na opnieuw laden' } }] },
@@ -193,7 +215,11 @@ try {
     await cordalPlaces.nth(1).locator('h3 a').getAttribute('href'));
   assert.ok(await artPhone.locator('#bron-namurart-64').count());
   assert.match(await cordalPlaces.nth(1).innerText(),/Buitenkunst.*Rue des Fripiers/su);
-  assert.match(await cordalPlaces.nth(1).innerText(),/Ville de Namur.*CC BY 4\.0/su);
+  const artCredits = artPhone.getByRole('region', { name: 'Bronnen' });
+  const namurCredit = artCredits.getByRole('listitem').filter({hasText:'Ville de Namur'});
+  assert.equal(await namurCredit.count(),1);
+  assert.match(await namurCredit.innerText(),/Ville de Namur.*CC BY 4\.0/su);
+  assert.doesNotMatch(await cordalPlaces.nth(1).innerText(),/CC BY/u);
   assert.doesNotMatch(await cordalPlaces.nth(1).innerText(),/24\/7|Openingsuren|DO NOT DISPLAY/u);
   assert.equal(await artPhone.locator('[data-live-events]').getByText('Mini sculptures Cordal',{exact:false}).count(),0);
   assert.equal(await artPhone.evaluate(() => document.documentElement.scrollWidth),390);
@@ -225,7 +251,11 @@ try {
   await trip.waitFor();
   assert.equal(await trip.count(),1);
   assert.match(await trip.getAttribute('href'),/mb_id=195160/);
-  assert.match(await outdoor.innerText(), /Wandelroute · 5,5 km · Vertrek: Bonneville.*GAL Meuse@Campagnes.*CC BY 4\.0/su);
+  assert.match(await outdoor.innerText(), /Wandelroute · 5,5 km · Vertrek: Bonneville/u);
+  const routesCredit = routePhone.getByRole('region', { name: 'Bronnen' }).getByRole('listitem')
+    .filter({hasText:'GAL Meuse@Campagnes'});
+  assert.equal(await routesCredit.count(),1);
+  assert.match(await routesCredit.innerText(),/GAL Meuse@Campagnes.*CC BY 4\.0/su);
   assert.match(await outdoor.innerText(),/Een deel van de routes ontbreekt/);
   assert.doesNotMatch(await outdoor.innerText(),/24\/7|Openingsuren|DO NOT DISPLAY/u);
   assert.equal(await routePhone.locator('[data-live-events]').getByText('Histoires Agricoles - Bonneville',{exact:false}).count(),0);
@@ -241,8 +271,12 @@ try {
   }));
   await routePhone.goto(base + '/steden/verviers/');
   const seroule = routePhone.locator('[data-live-places] li').filter({hasText:'Parc de Séroule'});
-  await seroule.getByRole('link', {name:'CC BY 4.0'}).waitFor();
-  assert.match(await seroule.innerText(), /actuele toegang en openingsuren niet bevestigd[\s\S]*Ville de Verviers/);
+  await seroule.waitFor();
+  assert.match(await seroule.innerText(), /actuele toegang en openingsuren niet bevestigd/);
+  const verCredit = routePhone.getByRole('region', { name: 'Bronnen' }).getByRole('listitem')
+    .filter({hasText:'Ville de Verviers'});
+  await verCredit.getByRole('link', {name:'CC BY 4.0'}).waitFor();
+  assert.equal(await verCredit.count(),1);
   assert.equal(await routePhone.getByText('Parc Moreau',{exact:true}).count(),0);
 
   let historiaStatus=200, historiaRequests=0;

@@ -30,7 +30,7 @@ export function aboutPage(layout) {
   return page(layout, 'about', 'Over Alle Steden',
     'Een gids voor de Belgische gemeenten met een officiële stadstitel. Bekijk plekken per stad, zoek iets op datum of maak een fietsroute op afstand.',
     `<h2>Waar de informatie vandaan komt</h2>
-      <p>Een deel zoeken we op bij de bron wanneer je de gids gebruikt. Andere gegevens vullen we aan uit de erfgoedinventaris of bij de organisator. De precieze bron vind je ook bij de plek of activiteit zelf.</p>
+      <p>Een deel zoeken we op bij de bron wanneer je de gids gebruikt. Andere gegevens vullen we aan uit de erfgoedinventaris of bij de organisator. Onderaan de stadsfiche staan de bronnen voor de getoonde plekken en activiteiten.</p>
       ${sourceGroup('Steden en bezienswaardigheden', [
         [link('Lijst van Belgische steden', 'https://nl.wikipedia.org/wiki/Lijst_van_Belgische_steden') + ' en ' + from('wikidata'), 'Voor de stedenlijst, namen en locaties; Wikidata helpt ook om bezienswaardigheden te vinden.'],
         [from('flanders', 'Toerisme Vlaanderen') + ', ' + from('erfg') + ' en ' + from('wallonia', 'Tourisme Wallonie (PIVOT)'), 'Voor bezoekersplekken en erfgoed. De inventaris van ' + link('het Waalse erfgoed', 'https://territoire.wallonie.be/') + ' helpt ook om plekken te kiezen die je vanop straat kunt bekijken.'],
