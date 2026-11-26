@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdtemp, rm, symlink } from 'node:fs/promises';
+import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -11,16 +12,24 @@ const port = Number(process.env.GITHUB_PAGES_TEST_PORT ?? 4181);
 const local = 'http://127.0.0.1:' + port;
 const mount = await mkdtemp(resolve(tmpdir(), 'alle-steden-pages-'));
 await symlink(resolve('dist-pages'), resolve(mount, 'alle-steden'), 'dir');
+const status = (path) => new Promise((resolve) => {
+  const req = request(local + path, { method: 'HEAD' }, (response) => {
+    response.resume();
+    response.once('end', () => resolve(response.statusCode));
+  });
+  req.once('error', () => resolve(0));
+  req.end();
+});
 const staticServer = spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.1', '--directory', mount], { stdio: 'ignore' });
 try {
   for (let attempt = 0; ; attempt++) {
-    if (await fetch(local + prefix + '/').then((r) => r.ok, () => false)) break;
+    if (await status(prefix + '/') === 200) break;
     assert.ok(attempt < 25, 'static project server becomes ready');
     await delay(100);
   }
   // Use the static server, not scripts/preview.mjs (which can execute Functions).
   process.env.PLANNER_PREVIEW_URL = local;
-  assert.equal((await fetch(local + '/api/city-live?city=gent&source=flanders')).status, 404);
+  assert.equal(await status('/api/city-live?city=gent&source=flanders'), 404);
   await withPlanner(0, async (browser) => {
     for (const layout of [desktop, phone]) {
       const page = await browser.newPage(layout);

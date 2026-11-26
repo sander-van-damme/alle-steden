@@ -33,9 +33,15 @@ De build heeft geen API-sleutels nodig. Zie de [Cloudflare-handleiding voor Git-
 
 ## GitHub Pages: statische proefversie
 
-De [GitHub Pages-workflow](.github/workflows/pages-build.yml) bouwt met `npm run build:pages` naar `dist-pages/`, test de site op `/alle-steden/` en publiceert vanaf `main` op [sander-van-damme.github.io/alle-steden/](https://sander-van-damme.github.io/alle-steden/). Selecteer eenmalig **Settings → Pages → Source → GitHub Actions**. Start daarna een nieuwe momentopname via **Actions → GitHub Pages preview → Run workflow**; wijzigen van het workflowbestand op `main` start de build ook. Het artefact `github-pages` blijft drie dagen beschikbaar.
+De [GitHub Pages-workflow](.github/workflows/pages-build.yml) bouwt met `npm run build:pages` naar `dist-pages/`, test de site op `/alle-steden/` en publiceert vanaf `main` op [sander-van-damme.github.io/alle-steden/](https://sander-van-damme.github.io/alle-steden/). Selecteer eenmalig **Settings → Pages → Source → GitHub Actions**. Start daarna een nieuwe momentopname via **Actions → GitHub Pages preview → Run workflow**; wijzigen van het workflowbestand of de bijbehorende browsertest op `main` start de build ook. Het artefact `github-pages` blijft drie dagen beschikbaar.
 
 De proefversie gebruikt dezelfde stadsbestanden, houdt links en assets onder `/alle-steden/` en vermeldt dat diensten via `/api/` niet beschikbaar zijn. Rechtstreekse openbare bronnen en de fietsrouter kunnen nog werken. Links gaan rechtstreeks naar hun oorsprong; RAVeL zonder bronresultaat geldt niet als gecontroleerd. De proefversie vraagt niet om indexering en verwijst naar de bijbehorende pagina op de volledige site. Het productieadres `allesteden.bysander.net` en `npm run build` blijven op Cloudflare Pages.
+
+## Losse Cloudflare Worker voor de API voorbereiden
+
+`npm run build:worker` maakt een bundel in `worker/dist/`. De build gebruikt de huidige Pages-handlers en de twee catalogi uit de gewone sitebuild, met een vaste versie van Wrangler in dry-runmodus. Bij een eerste build kan npm die versie moeten downloaden. Dit commando vraagt geen Cloudflare-sleutel, uploadt niets en zet de Worker of een publiek Worker-adres niet aan.
+
+De Worker kent alleen de bestaande `/api/`-routes. Hij bewaart hun methodes, validatie en headers en stelt de ingebouwde catalogi niet als publieke bestanden beschikbaar. De linkcontrole blijft bedoeld voor gebruik via dezelfde site; de Worker opent geen CORS voor GitHub Pages. Vóór een eventuele koppeling is een afzonderlijke, expliciete keuze nodig voor de API-host, routing, sleutels en toegangsregels. De Cloudflare Pages Functions blijven voor productie actief zoals voordien.
 
 ## Stadsgegevens aanvullen
 

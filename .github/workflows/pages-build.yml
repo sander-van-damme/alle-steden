@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/pages-build.yml
+      - tests/pages-browser.mjs
 
 permissions:
   contents: read
