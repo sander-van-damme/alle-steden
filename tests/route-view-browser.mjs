@@ -242,6 +242,60 @@ async function verifyDistanceMarkers(context,label) {
   } finally { await page.close(); }
 }
 
+async function verifyCrowdedStopHit(context) {
+  const page=await context.newPage();
+  const fixture=html.replace("let map = renderRouteView(trip);", `
+    trip.returnRoute=null; trip.distanceDriven=true; trip.visits=[];
+    const stops=[
+      {key:'west',name:'Westelijke stop',lat:51.066,lon:3.688,effort:15},
+      {key:'east',name:'Oostelijke stop',lat:51.066,lon:3.693,effort:15},
+    ];
+    trip.pois={items:stops};
+    let map=renderRouteView(trip,{routeNotices:false,onStopToggle(key){
+      const visit=stops.find(stop=>stop.key===key);
+      const already=trip.visits.some(stop=>stop.key===key);
+      trip.visits=already?trip.visits.filter(stop=>stop.key!==key):[...trip.visits,{...visit,kind:'activity',minutes:15}];
+      map.updateRouteViewMarkers({...trip,visits:trip.visits});
+    }});
+  `);
+  try {
+    await serveRouteFixture(page,fixture);
+    await page.route('https://tile.openstreetmap.org/**',route=>route.abort());
+    await page.goto(origin);
+    await openDetails(page,'mobile');
+    const view=page.locator('.route-map-viewport');
+    await view.scrollIntoViewIfNeeded();
+    const west=view.locator('[data-route-stop-key="west"][transform]');
+    const east=view.locator('[data-route-stop-key="east"][transform]');
+    const popup=page.getByRole('dialog');
+    const center=pin=>pin.evaluate(node=>{
+      const m=node.getScreenCTM(); return [m.e,m.f];
+    });
+    const tapCenter=async pin=>page.touchscreen.tap(...await center(pin));
+    const close=async()=>popup.getByRole('button',{name:'Sluit stopkaartje'}).tap();
+    await west.waitFor(); await east.waitFor();
+    const [a,b]=await Promise.all([center(west),center(east)]);
+    const gap=Math.hypot(a[0]-b[0],a[1]-b[1]);
+    assert.ok(gap>=10&&gap<=20,'Fixture must exercise 10–20 CSS px center separation, got '+gap);
+    await tapCenter(west);
+    assert.equal(await popup.getByRole('heading').innerText(),'Westelijke stop','Center tap must not go to the overlapping later hit circle');
+    await close();
+    await tapCenter(east);
+    assert.equal(await popup.getByRole('heading').innerText(),'Oostelijke stop');
+    await popup.getByRole('button',{name:'Voeg stop toe'}).tap();
+    assert.equal(await east.getAttribute('data-route-stop-state'),'planned');
+    await close();
+    await tapCenter(west);
+    assert.equal(await popup.getByRole('heading').innerText(),'Westelijke stop','Planning nearby stop must not steal this center tap');
+    await close();
+    const points=page.locator('.route-map-marker-details');
+    await points.locator('summary').tap();
+    await points.getByRole('button',{name:'Geplande stop · Oostelijke stop'}).tap();
+    assert.equal(await popup.getByRole('heading').innerText(),'Oostelijke stop','Kaartpunten remains an independent fallback');
+    console.log('390px: actual center taps, '+gap.toFixed(1)+' CSS px apart, before/after planning and Kaartpunten fallback');
+  } finally { await page.close(); }
+}
+
 for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{width:390,height:820}]]) {
   if (live && label === 'mobile') break; // one public router call is sufficient
   const browser = await chromium.launch(launchOptions);
@@ -342,6 +396,7 @@ for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{
     if (!live) {
       await verifyAutomaticNotices(context,label);
       await verifyDistanceMarkers(context,label);
+      if (label==='mobile') await verifyCrowdedStopHit(context);
     }
     console.log(label, {tileCount,loadedTiles, real:live, replayedRouterResponse: !!replay, points:counts[0], altitudePoints:counts[1]});
   } finally {

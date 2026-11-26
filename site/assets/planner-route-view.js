@@ -407,6 +407,22 @@ function createMap(doc, outbound, inbound, markers, label, edited, compact = fal
     selectMarker(previous);
     if(previous){center=project(marker.point); fitted=false; zoom=Math.max(zoom,13); schedule();}
   }
+  function pointerStop(event, fallback) {
+    if (!fallback.key || !event.detail) return fallback;
+    // The 44 px touch targets can overlap. For pointer input, prefer the
+    // visible center nearest the tap, not the last-painted transparent halo.
+    const distance = (node) => {
+      const m=node?.hasAttribute('transform') && node.getScreenCTM();
+      return m ? (m.e-event.clientX)**2+(m.f-event.clientY)**2 : Infinity;
+    };
+    let closest=fallback, best=distance(markerNodes.find(entry=>entry.marker===fallback)?.node);
+    for (const entry of markerNodes) {
+      if (!entry.marker.key || entry.marker===fallback) continue;
+      const next=distance(entry.node);
+      if (next<best) { best=next; closest=entry.marker; }
+    }
+    return closest;
+  }
   function makeMarker(marker) {
     const label=marker.key?(marker.planned?'Geplande stop · ':'Mogelijke stop · ')+marker.name:marker.icon+' '+marker.name;
     const mark=svg(doc,'g',{class:`route-pin route-pin-${marker.type}`,'data-route-marker':marker.icon,
@@ -427,7 +443,7 @@ function createMap(doc, outbound, inbound, markers, label, edited, compact = fal
         }
       });
     }
-    mark.addEventListener('click',()=>activateMarker(marker,'map'));
+    mark.addEventListener('click',event=>activateMarker(pointerStop(event,marker),'map'));
     const item=node(doc,'li',`route-map-stop-${marker.type}`);
     item.append(markerButton);
     markerList.append(item);
