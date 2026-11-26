@@ -60,3 +60,24 @@ test('Le Totem joins only the verified PIVOT centre and preserves unrelated phot
   assert.deepEqual([preferred[0].source, ...preferred[0].alternateSources],['fwbCulturalCentres','wallonia']);
   assert.deepEqual(displayedPlaces(scope,[],[[old,photo]]).map(p=>p.name),[old.name,photo.name]);
 });
+
+test('Sambre–Entre-Sambre-et-Meuse venues resolve by exact establishment, not by organizer or postcode alone',()=>{
+  const cases=[
+    ['charleroi','52011','0413.303.835','Charleroi','6000','Boulevard Jacques Bertrand 1-3',50.4113273816,4.4413037099,'https://www.eden-charleroi.be/'],
+    ['couvin','93014','0451.563.506','Couvin','5660','Rue du Pilori 6',50.05194195,4.4966144238,'https://ccccc.be/'],
+    ['philippeville','93056','0432.510.726','Philippeville','5600','Rue de France 1A',50.196248,4.5426169616,'https://www.culture-philippeville.be/'],
+    ['thuin','56078','0459.237.194','Thuin','6530','Rue des Nobles 32',50.3391843,4.2854883453,'https://www.centreculturelhautesambre.be/'],
+  ];
+  for(const [slug,code,id,localite,code_postal,rue,lat,lon,website] of cases){
+    const scope={slug,code,region:'Wallonië'}, record={bce:id,denomination:'Centrum',localite,code_postal,rue,geolocalisation:{lat,lon}};
+    assert.equal(fwbCulturalCentresQuery(scope).searchParams.get('where'),"bce = '"+id+"'");
+    const [place]=normalizeFwbCulturalCentre(payload(record),scope).items;
+    assert.equal(place.website,website);
+    assert.equal(place.sourceId,id);
+    assert.equal(place.category,'Cultuurcentrum');
+    assert.equal(place.address,rue+' · '+code_postal+' '+localite);
+    assert.equal(place.hours,undefined);
+    assert.throws(()=>normalizeFwbCulturalCentre(payload({...record,rue:'Off-site performance'}),scope),/niet meer bevestigd/);
+  }
+  for(const slug of ['chatelet','binche','walcourt','sambreville']) assert.equal(fwbCulturalCentresQuery({slug,region:'Wallonië',code:'12345'}),undefined);
+});

@@ -13,10 +13,18 @@ const venues = Object.freeze({
     'Foyer socioculturel d’Antoing','https://www.foyerculturelantoing.be/'],
   bastenaken: ['82039','0460.595.491','Bastogne','6600','Place de Piconrue 2b',50.0047876,5.7199979,
     'Pôle Culture · Centre culturel de Bastogne','https://centreculturelbastogne.be/agenda/','Place en Piconrue 2B'],
+  charleroi: ['52011','0413.303.835','Charleroi','6000','Boulevard Jacques Bertrand 1-3',50.41132738,4.44130371,
+    'Eden · Centre culturel de Charleroi','https://www.eden-charleroi.be/'],
+  couvin: ['93014','0451.563.506','Couvin','5660','Rue du Pilori 6',50.05194195,4.49661442,
+    'Centre culturel Christian Colle','https://ccccc.be/'],
   'libramont-chevigny': ['84077','0416.170.382','Libramont','6800','Avenue de Houffalize 56d',49.92631195,5.3834156,
     'Le Totem · Centre culturel de Libramont','https://centreculturel.letotem.be/','Avenue d’Houffalize 56D'],
   peruwelz: ['57064','0443.534.775','Peruwelz','7600','Rue des Français 59',50.51332805,3.59275705,
     'Arrêt 59 · Centre culturel','https://www.xn--arrt59-kva.be/'],
+  philippeville: ['93056','0432.510.726','Philippeville','5600','Rue de France 1A',50.196248,4.54261696,
+    'Les Halles · Centre culturel de Philippeville','https://www.culture-philippeville.be/'],
+  thuin: ['56078','0459.237.194','Thuin','6530','Rue des Nobles 32',50.3391843,4.28548835,
+    'Centre culturel Haute Sambre','https://www.centreculturelhautesambre.be/'],
 });
 
 function venueFor(city) {
