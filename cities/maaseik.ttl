@@ -1,5 +1,6 @@
 @prefix schema: <https://schema.org/> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
 
@@ -27,3 +28,33 @@ wd:Q110989 a schema:City ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.09514 ; schema:longitude 5.79215 ] ;
     schema:url <https://id.erfgoed.net/erfgoedobjecten/73404> ;
     dcterms:source <https://id.erfgoed.net/erfgoedobjecten/73404> .
+
+<#sinterklaasmarkt-2026> a schema:SaleEvent ;
+    schema:name "Sinterklaasmarkt Maaseik"@nl ;
+    schema:genre "Markt"@nl ;
+    schema:containedInPlace wd:Q110989 ;
+    schema:location [ a schema:Place ; schema:name "Markt, Maaseik"@nl ] ;
+    schema:startDate "2026-12-02T08:00:00+01:00"^^xsd:dateTime ;
+    schema:endDate "2026-12-02T16:00:00+01:00"^^xsd:dateTime ;
+    schema:url <https://www.maaseik.be/nl/sinterklaasmarkt> ;
+    dcterms:source <https://www.maaseik.be/nl/sinterklaasmarkt>,
+        <https://www.maaseik.be/nl/werk-ondernemen/ondernemen/ambulante-handel/markten/marktkalender> .
+
+<#kerstmarkt-neeroeteren-2026> a schema:SaleEvent ;
+    schema:name "Kerstmarkt Neeroeteren"@nl ;
+    schema:genre "Markt"@nl ;
+    schema:containedInPlace wd:Q110989 ;
+    schema:location [ a schema:Place ; schema:name "Neeroeteren"@nl ] ;
+    schema:startDate "2026-12-14T17:00:00+01:00"^^xsd:dateTime ;
+    schema:endDate "2026-12-14T22:00:00+01:00"^^xsd:dateTime ;
+    schema:url <https://www.maaseik.be/nl/werk-ondernemen/ondernemen/ambulante-handel/markten/marktkalender> ;
+    dcterms:source <https://www.maaseik.be/nl/werk-ondernemen/ondernemen/ambulante-handel/markten/marktkalender> .
+
+<#opootere-kerstmis-2026> a schema:SaleEvent ;
+    schema:name "Opootere Kerstmis"@nl ;
+    schema:genre "Markt"@nl ;
+    schema:containedInPlace wd:Q110989 ;
+    schema:location [ a schema:Place ; schema:name "Centrum van Opoeteren"@nl ] ;
+    schema:startDate "2026-12-19"^^xsd:date ;
+    schema:url <https://www.maaseik.be/nl/opootere-kerstmis> ;
+    dcterms:source <https://www.maaseik.be/nl/opootere-kerstmis> .

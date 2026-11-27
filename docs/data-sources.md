@@ -316,3 +316,9 @@ Vanaf 27 november 2026 staan drie extra kunstwerken op de stadsfiche: [De Golf](
 - [Tournai Ramdam Festival](https://www.ramdamfestival.be/), Doornik: 15–25 januari 2027.
 
 Beide periodes zijn overgenomen van de organisatoren. Per stad één datumvermelding, zonder afgeleide dagelijkse uren, vertoningen, toegankelijkheid of jaarlijkse herhaling.
+
+## Drie decembermarkten in Maaseik · 27 november 2026
+
+- De [stedelijke marktkalender](https://www.maaseik.be/nl/werk-ondernemen/ondernemen/ambulante-handel/markten/marktkalender) bevestigt [Sinterklaasmarkt Maaseik](https://www.maaseik.be/nl/sinterklaasmarkt) op 2 december, 8–16 uur, en Kerstmarkt Neeroeteren op 14 december, 17–22 uur.
+- [Opootere Kerstmis](https://www.maaseik.be/nl/opootere-kerstmis) staat op 19 december in Opoeteren. De programmatekst maakt onderscheid tussen onderdelen en het tijdveld van de editie, dus geen algemeen openingsuur uit het tijdveld overgenomen.
+- Drie feitelijke edities zonder nieuw live endpoint, coördinaten of herhaling. De [stedelijke vrijetijdsagenda](https://www.maaseik.be/nl/zoekpagina-uitdatabank) gebruikt de [UiTdatabank](https://www.maaseik.be/nl/vrije-tijd-cultuur/evenementenactiviteiten/zelf-organiseren/maak-je-evenement-bekend/uitdatabank); geen publieke, herbruikbare gemeentelijke bulkfeed voor deze activiteiten gevonden.
