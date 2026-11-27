@@ -858,6 +858,26 @@ try {
     }
   }
 
+  for (const device of [desktop,phone]) {
+    await device.goto(origin+'/kalender/?stad=poperinge&maand=2026-12');
+    await loaded(device);
+    const event=(name)=>device.locator('.calendar-event').filter({has:device.getByRole('heading',{name,exact:true})});
+    const history=event('Living History Weekend in Talbot House'), wipers=event('The Wipers Times');
+    for (const [day,weekend,expo] of [['10',0,0],['11',0,1],['19',1,1],['20',1,1],['21',0,1],['24',0,0],['25',0,0],['31',0,0]]) {
+      await device.locator('[data-day="2026-12-'+day+'"]').click();
+      assert.equal(await history.count(),weekend);
+      assert.equal(await wipers.count(),expo);
+      for (const list of [history,wipers]) if (await list.count()) {
+        assert.match(await list.locator('.calendar-event-meta').innerText(),/10:00–17:30/u);
+        assert.match(await list.innerText(),/Pottestraat 5/u);
+        assert.match(await list.getByRole('link').first().getAttribute('href'),/^https:\/\/www\.talbothouse\.be\/nl\/events\//u);
+      }
+    }
+    await device.goto(origin+'/kalender/?stad=poperinge&dag=2027-01-01');
+    await loaded(device);
+    assert.equal(await wipers.count(),0);
+  }
+
   const expoTitle = 'Albert Servaes. Pionier van het expressionisme';
   for (const device of [desktop, phone]) {
     await device.goto(origin+'/kalender/?stad=deinze&maand=2026-12');

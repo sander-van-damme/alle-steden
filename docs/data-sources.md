@@ -301,3 +301,7 @@ Vanaf 27 november 2026 staan drie extra kunstwerken op de stadsfiche: [De Golf](
 ### 27 november 2026 · Drinkwaterpunten van Stad Brussel
 
 - Gemeentelijke CC0-gegevens voor de fietsplanner buiten de winterstop; zie [de bron en selectie](route-services-sources.md#stad-brussel--drinkwaterpunten).
+
+### 27 november 2026 · Twee evenementen van Talbot House
+
+- Handmatig gecontroleerde eerstehandse agenda-items voor Poperinge: [Living History Weekend](https://www.talbothouse.be/nl/events/talbot-house-living-history-weekend) (19–20 december), [The Wipers Times](https://www.talbothouse.be/nl/events/wipers-times-tentoonstelling) (11 december 2026–11 december 2027). Uren en vier sluitingsdagen volgen de [bezoekersinformatie](https://www.talbothouse.be/nl/contact); Pottestraat 5 is de ingang. De gemeentelijke RSS is niet geïntegreerd: geen bevestigde hergebruikvoorwaarden, gestructureerde tijden of browser-CORS.
