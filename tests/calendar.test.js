@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calendarEvent, dayAgenda, eventTime, eventsByDay, mergeCalendarEvents, monthDays, moveMonth, scopeDates } from '../site/assets/calendar-core.js';
+import { calendarDay, calendarEvent, dayAgenda, eventTime, eventsByDay, mergeCalendarEvents, monthDays, moveMonth, scopeDates } from '../site/assets/calendar-core.js';
 import { fetchCalendarMonth, liveCalendarSpan } from '../site/assets/calendar-live.js';
 import { calendarMain } from '../scripts/calendar-template.mjs';
 
@@ -274,4 +274,11 @@ test('day agenda puts that day’s starts before ongoing editions without changi
   assert.equal(ordered.length,selected.length);
   assert.equal(selected[0].name,'Expo 00');
   assert.equal(entries[0].name,'Expo 00');
+});
+
+test('validates calendar day links without rollover or out-of-range months', () => {
+  assert.equal(calendarDay('2028-02-29'),'2028-02-29');
+  for (const invalid of ['2027-02-29','2026-12-32','2026-12-03T14:00:00Z','1999-12-31','2101-01-01', null]) {
+    assert.equal(calendarDay(invalid),undefined);
+  }
 });

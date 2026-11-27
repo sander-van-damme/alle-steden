@@ -911,6 +911,13 @@ try {
     const day = device.locator('[data-day="2026-10-15"]');
     assert.match(await day.getAttribute('aria-label'), /50 evenementen$/u);
     if (device===phone) await day.tap(); else await day.click();
+    const selectedUrl = new URL(device.url());
+    assert.equal(selectedUrl.searchParams.get('dag'),'2026-10-15');
+    assert.equal(selectedUrl.searchParams.get('stad'),'brussel');
+    await device.reload();
+    await loaded(device);
+    assert.equal(await day.evaluate(e=>e.parentElement.getAttribute('aria-selected')),'true');
+    assert.equal(await day.getAttribute('tabindex'),'0');
     assert.equal(await cards.first().textContent(),'Inhuldiging op donderdag');
     assert.equal(await cards.nth(1).textContent(),'Testexpo 00');
     assert.equal(await more.innerText(),'Toon meer (2)');
@@ -919,6 +926,17 @@ try {
     assert.equal(await cards.last().textContent(),'Testexpo 48');
     await device.locator('#calendar-clear-day').click();
     assert.equal(await cards.first().textContent(),'Testexpo 00');
+    assert.equal(new URL(device.url()).searchParams.has('dag'),false);
+    await device.goto(origin+'/kalender/?dag=2026-10-15&maand=2026-09&stad=brussel');
+    await loaded(device);
+    assert.equal(await cards.first().textContent(),'Inhuldiging op donderdag');
+    assert.equal(new URL(device.url()).searchParams.get('maand'),'2026-10');
+    await device.locator('#calendar-prev').click();
+    assert.equal(new URL(device.url()).searchParams.has('dag'),false);
+    await device.goto(origin+'/kalender/?dag=2026-10-32&maand=2026-10&stad=brussel');
+    await loaded(device);
+    assert.equal(await cards.first().textContent(),'Testexpo 00');
+    assert.equal(new URL(device.url()).searchParams.has('dag'),false);
     await device.unroute(catalog);
   }
 

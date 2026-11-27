@@ -12,6 +12,8 @@ export const firstMonth = '2000-01';
 export const lastMonth = '2100-12';
 export const calendarMonth = (value) => typeof value === 'string' && /^\d{4}-\d{2}$/.test(value)
   && value >= firstMonth && value <= lastMonth && dateValue(value + '-01') ? value : undefined;
+export const calendarDay = (value) => typeof value === 'string' && dateOnly(value)
+  && calendarMonth(value.slice(0, 7)) ? dateValue(value) : undefined;
 export const labelMonth = (month) => monthName.format(dayObject(month + '-01'));
 export const labelDay = (day) => dayName.format(dayObject(day));
 export const maxCalendarEventDays = 366;

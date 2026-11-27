@@ -1,6 +1,6 @@
 import { sitePath } from './site-paths.js';
 import { addCalendarDays, compact, getJson, localToday, visitorUrl, sources } from './sources.js';
-import { calendarEvent, calendarMonth, dayAgenda, eventTime, eventsByDay, firstMonth, labelDay, labelMonth, lastMonth,
+import { calendarDay, calendarEvent, calendarMonth, dayAgenda, eventTime, eventsByDay, firstMonth, labelDay, labelMonth, lastMonth,
   mergeCalendarEvents, monthDays, moveMonth, scopeDates } from './calendar-core.js';
 import { fetchCalendarMonth, liveCalendarSpan } from './calendar-live.js';
 
@@ -97,9 +97,9 @@ async function start() {
     city: requestedCity?.slug ?? '',
     category: '',
   };
-  let month = calendarMonth(search.get('maand')) ?? today.slice(0, 7);
-  let selectedDay = '';
-  let focusedDay = month === today.slice(0, 7) ? today : month + '-01';
+  let selectedDay = calendarDay(search.get('dag')) ?? '';
+  let month = (selectedDay && selectedDay.slice(0, 7)) || (calendarMonth(search.get('maand')) ?? today.slice(0, 7));
+  let focusedDay = selectedDay || (month === today.slice(0, 7) ? today : month + '-01');
   let pending = false;
   let live = { items: [], coverage: [] };
   let abort;
@@ -124,7 +124,7 @@ async function start() {
 
   const updateUrl = () => {
     const url = new URL(location.href);
-    for (const [param, value] of [['maand', month], ['gewest', scope.region], ['stad', scope.city]]) {
+    for (const [param, value] of [['maand', month], ['gewest', scope.region], ['stad', scope.city], ['dag', selectedDay]]) {
       if (value) url.searchParams.set(param, value);
       else url.searchParams.delete(param);
     }
@@ -306,15 +306,13 @@ async function start() {
   find('calendar-clear-day').addEventListener('click', () => {
     selectedDay = '';
     agendaLimit = pageSize;
+    updateUrl();
     render({ focus: true });
   });
   calendarGrid.addEventListener('click', (event) => {
     const day = event.target.closest('button[data-day]')?.dataset.day;
     if (!day) return;
-    selectedDay = day;
-    agendaLimit = pageSize;
-    focusedDay = day;
-    render({ focus: true });
+    selectMonth(month, day, { focus: true });
   });
   calendarGrid.addEventListener('keydown', (event) => {
     const day = event.target.closest('button[data-day]')?.dataset.day;
@@ -347,6 +345,7 @@ async function start() {
     }
   });
 
+  if (search.has('dag')) updateUrl();
   interactive.hidden = false;
   find('calendar-fallback').hidden = true;
   void loadLive();
