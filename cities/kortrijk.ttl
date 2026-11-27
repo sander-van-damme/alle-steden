@@ -27,3 +27,28 @@ wd:Q12995 a schema:City ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.82757 ; schema:longitude 3.26561 ] ;
     schema:url <https://id.erfgoed.net/erfgoedobjecten/59642> ;
     dcterms:source <https://id.erfgoed.net/erfgoedobjecten/59642> .
+
+# Publieke kunst op de stadsfiche; geen afgeleide pin of bezoekuren.
+<https://www.kortrijk.be/musea/de-golf#kunstwerk> a schema:TouristAttraction, schema:VisualArtwork ;
+    schema:name "De Golf"@nl ;
+    schema:description "De sculpturale fontein van Olivier Strebelle staat op het Schouwburgplein."@nl ;
+    schema:containedInPlace wd:Q12995 ;
+    schema:address "Schouwburgplein, Kortrijk"@nl ;
+    schema:url <https://www.kortrijk.be/musea/de-golf> ;
+    dcterms:source <https://www.kortrijk.be/peters-en-meters-beeldenpatrimonium> .
+
+<https://www.kortrijk.be/musea/rhizome-structures#kunstwerk> a schema:TouristAttraction, schema:VisualArtwork ;
+    schema:name "Rhizome Structures"@nl ;
+    schema:description "De metalen sculptuur van Tom Dekyvere staat in de groenzone van Budabeach, aan de kant van de Handelskaai. Ze verwijst naar zijn vroegere tijdelijke installatie op de Collegebrug."@nl ;
+    schema:containedInPlace wd:Q12995 ;
+    schema:address "Budabeach, kant Handelskaai, Kortrijk"@nl ;
+    schema:url <https://www.kortrijk.be/musea/rhizome-structures> ;
+    dcterms:source <https://www.kortrijk.be/peters-en-meters-beeldenpatrimonium> .
+
+<https://www.kortrijk.be/musea/verdrag-van-kortrijk#kunstwerk> a schema:TouristAttraction, schema:VisualArtwork ;
+    schema:name "Verdrag van Kortrijk"@nl ;
+    schema:description "Kijk omhoog in de doorgang van het historisch stadhuis aan de Grote Markt: daar hangt het lichtkunstwerk van Maud Bekaert en Chris Pype. De toegang tot de doorgang kan beperkt zijn."@nl ;
+    schema:containedInPlace wd:Q12995 ;
+    schema:address "Doorgang historisch stadhuis, Grote Markt, Kortrijk"@nl ;
+    schema:url <https://www.kortrijk.be/musea/verdrag-van-kortrijk> ;
+    dcterms:source <https://www.kortrijk.be/peters-en-meters-beeldenpatrimonium> .

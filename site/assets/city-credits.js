@@ -14,6 +14,7 @@ const staticProviders = {
   'visit.gent.be': { label: 'Visit Gent' },
   'brussel.be': { label: 'Stad Brussel' },
   'antwerpen.be': { label: 'Stad Antwerpen' },
+  'kortrijk.be': { label: 'Stad Kortrijk' },
 };
 
 export function staticCityCredit(source) {
