@@ -259,6 +259,13 @@ const cityRideLinks = {
         service: { name: 'Veeruren en status', href: 'https://www.agentschapmdk.be/nl/veerdiensten/veerdienst-langerbrugge' } },
     ],
   },
+  roeselare: {
+    intro: 'Start bij KOERS aan het Polenplein 15. De lussen zijn bewegwijzerd; de kaarten staan bij Visit Roeselare.',
+    rides: [
+      { name: 'Roeselaarse Koersverhalen', href: 'https://www.visitroeselare.be/nl/zien-en-doen/fietsroutes/roeselaarse-koersverhalen',
+        details: '35 km samen · Jempi Monseréroute: 13 km · Wielerheldenroute: 22 km' },
+    ],
+  },
 };
 
 function localRoutes(slug) {

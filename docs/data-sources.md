@@ -322,3 +322,8 @@ Beide periodes zijn overgenomen van de organisatoren. Per stad één datumvermel
 - De [stedelijke marktkalender](https://www.maaseik.be/nl/werk-ondernemen/ondernemen/ambulante-handel/markten/marktkalender) bevestigt [Sinterklaasmarkt Maaseik](https://www.maaseik.be/nl/sinterklaasmarkt) op 2 december, 8–16 uur, en Kerstmarkt Neeroeteren op 14 december, 17–22 uur.
 - [Opootere Kerstmis](https://www.maaseik.be/nl/opootere-kerstmis) staat op 19 december in Opoeteren. De programmatekst maakt onderscheid tussen onderdelen en het tijdveld van de editie, dus geen algemeen openingsuur uit het tijdveld overgenomen.
 - Drie feitelijke edities zonder nieuw live endpoint, coördinaten of herhaling. De [stedelijke vrijetijdsagenda](https://www.maaseik.be/nl/zoekpagina-uitdatabank) gebruikt de [UiTdatabank](https://www.maaseik.be/nl/vrije-tijd-cultuur/evenementenactiviteiten/zelf-organiseren/maak-je-evenement-bekend/uitdatabank); geen publieke, herbruikbare gemeentelijke bulkfeed voor deze activiteiten gevonden.
+
+### 27 november 2026 · Roeselaarse Koersverhalen
+
+- [Visit Roeselare](https://www.visitroeselare.be/nl/zien-en-doen/fietsroutes/roeselaarse-koersverhalen) bevestigt 35 km totaal met de bewegwijzerde Jempi Monseréroute (13 km) en Wielerheldenroute (22 km), beide vanaf KOERS aan het Polenplein 15. De stadsfiche verwijst naar de aanbieder voor de routekaarten; geen GPX, museumuren, live toegangsclaim of koppeling aan de planner overgenomen.
+- De Groene Ronde is niet toegevoegd: de titel van de bezoekersfiche en de detailtekst geven verschillende afstanden.
