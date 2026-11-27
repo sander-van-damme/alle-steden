@@ -240,6 +240,18 @@ function entryList(title, intro, kind, items, linkIds) {
 }
 
 function localRoutes(slug) {
+  if (slug === 'poperinge') {
+    return `<section id="routes" class="entries calendar-city-link" aria-labelledby="routes-title">
+      <div class="entries-heading"><h2 id="routes-title">Fietsroutes</h2>
+        <p>De twee hoofdroutes vertrekken op de Grote Markt. Kaart en GPX vind je bij Toerisme Poperinge.</p></div>
+      <ul class="entry-list">
+        <li><h3><a href="https://www.toerismepoperinge.be/Aanbod/fietsen/fietslussen/hoppelandfietsroute">Hoppelandfietsroute ${arrow}</a></h3>
+          <p class="entry-meta">53,4 km · kortere lussen: 30,8 en 23,8 km</p></li>
+        <li><h3><a href="https://www.toerismepoperinge.be/actief-genieten/fietsen/fietslussen/pop-14-18-fietsroute">POP 14-18 fietsroute ${arrow}</a></h3>
+          <p class="entry-meta">41 km · langs sporen van de Eerste Wereldoorlog</p></li>
+      </ul>
+    </section>`;
+  }
   if (slug !== 'andenne') return '';
   return `<section id="routes" class="entries calendar-city-link" aria-labelledby="routes-title" data-local-routes>
     <div class="entries-heading"><h2 id="routes-title">Wandel- en fietsroutes</h2>
