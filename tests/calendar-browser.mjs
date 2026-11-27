@@ -891,6 +891,37 @@ try {
     assert.equal(visits.some(({name})=>name==='De Brielmeersen'),true);
   }
 
+  const busyDayCatalog = {
+    cities: [{slug:'brussel',name:'Brussel',region:'Brussels Hoofdstedelijk Gewest'}],
+    events: [
+      ...Array.from({length:49}, (_, i) => ({
+        city:'brussel', name:'Testexpo '+String(i).padStart(2,'0'), start:'2026-10-01', end:'2026-10-31',
+      })),
+      {city:'brussel',name:'Inhuldiging op donderdag',start:'2026-10-15T14:00:00+02:00'},
+    ],
+  };
+  for (const device of [desktop, phone]) {
+    const catalog = origin+'/calendar-data.json';
+    await device.route(catalog, route => route.fulfill({json:busyDayCatalog}));
+    await device.goto(origin+'/kalender/?maand=2026-10&stad=brussel');
+    await loaded(device);
+    const cards = device.locator('#calendar-events h3');
+    const more = device.locator('#calendar-more');
+    assert.equal(await cards.first().textContent(),'Testexpo 00','Month order is unchanged');
+    const day = device.locator('[data-day="2026-10-15"]');
+    assert.match(await day.getAttribute('aria-label'), /50 evenementen$/u);
+    if (device===phone) await day.tap(); else await day.click();
+    assert.equal(await cards.first().textContent(),'Inhuldiging op donderdag');
+    assert.equal(await cards.nth(1).textContent(),'Testexpo 00');
+    assert.equal(await more.innerText(),'Toon meer (2)');
+    await more.click();
+    assert.equal(await cards.count(),50);
+    assert.equal(await cards.last().textContent(),'Testexpo 48');
+    await device.locator('#calendar-clear-day').click();
+    assert.equal(await cards.first().textContent(),'Testexpo 00');
+    await device.unroute(catalog);
+  }
+
   console.log('Kalender in Chromium: maanden, toetsenbord, smartphone, filters, bronfout, toekomstgrens en fallback zonder JavaScript.');
 } finally {
   clearTimeout(timeout);

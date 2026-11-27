@@ -1,6 +1,6 @@
 import { sitePath } from './site-paths.js';
 import { addCalendarDays, compact, getJson, localToday, visitorUrl, sources } from './sources.js';
-import { calendarEvent, calendarMonth, eventTime, eventsByDay, firstMonth, labelDay, labelMonth, lastMonth,
+import { calendarEvent, calendarMonth, dayAgenda, eventTime, eventsByDay, firstMonth, labelDay, labelMonth, lastMonth,
   mergeCalendarEvents, monthDays, moveMonth, scopeDates } from './calendar-core.js';
 import { fetchCalendarMonth, liveCalendarSpan } from './calendar-live.js';
 
@@ -186,7 +186,7 @@ async function start() {
 
     find('calendar-clear-day').hidden = !selectedDay;
     find('calendar-agenda-title').textContent = selectedDay ? labelDay(selectedDay) : 'Evenementen deze maand';
-    const selection = selectedDay ? perDay.get(selectedDay) ?? [] : shown;
+    const selection = selectedDay ? dayAgenda(perDay.get(selectedDay) ?? [], selectedDay) : shown;
     find('calendar-status').textContent = statusText(live.coverage, liveCalendarSpan(span, today), selection.length, pending, scope);
     const itemList = find('calendar-events');
     if (selection.length) {

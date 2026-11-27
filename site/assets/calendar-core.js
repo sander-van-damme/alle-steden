@@ -146,6 +146,17 @@ export function eventsByDay(items, days) {
     ? item.sessions.some((session) => session.day === day) : item.day <= day && item.last >= day)]));
 }
 
+// Keep the catalog order within each group. Put the starts relevant to the
+// chosen day ahead of ongoing events before the agenda is paginated.
+export function dayAgenda(items, day) {
+  const starts = [], ongoing = [];
+  for (const item of items) {
+    const startsToday = item.sessions ? item.sessions.some((session) => session.day === day) : item.day === day;
+    (startsToday ? starts : ongoing).push(item);
+  }
+  return starts.concat(ongoing);
+}
+
 export function eventTime(item, selectedDay = '') {
   const time = (date) => clock.format(new Date(date));
   const sessionTime = ({ start, end, day }) => end

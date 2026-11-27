@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calendarEvent, eventTime, eventsByDay, mergeCalendarEvents, monthDays, moveMonth, scopeDates } from '../site/assets/calendar-core.js';
+import { calendarEvent, dayAgenda, eventTime, eventsByDay, mergeCalendarEvents, monthDays, moveMonth, scopeDates } from '../site/assets/calendar-core.js';
 import { fetchCalendarMonth, liveCalendarSpan } from '../site/assets/calendar-live.js';
 import { calendarMain } from '../scripts/calendar-template.mjs';
 
@@ -253,4 +253,25 @@ test('calendar lists actual starts without implying an end or an all-day slot', 
     { start, end: '2027-01-29T13:10:00+01:00' },
   ] }, 'oostende');
   assert.equal(eventTime(better), '12:35–13:10');
+});
+
+
+test('day agenda puts that day’s starts before ongoing editions without changing month order or counts', () => {
+  const day = '2026-12-06';
+  const item = (name, start, end, extras) => calendarEvent({ name, start, end, ...extras }, 'brussel');
+  const shows = Array.from({length: 49}, (_, i) => item('Expo ' + String(i).padStart(2,'0'), '2026-11-01', '2027-01-01'));
+  const entries = mergeCalendarEvents([
+    ...shows, calendarEvent(overnight, 'brussel'),
+    item('Festival', day), item('Inhuldiging', day + 'T14:00:00+01:00'),
+    item('Markt', day + 'T08:00:00+01:00', day + 'T12:00:00+01:00', {scheduleBased:true}),
+    item('Ouder programma', '2026-11-30', '2026-12-08', {sessions:[{start:day+'T16:00:00+01:00'}]}),
+    item('Alleen zaterdag', '2026-11-30', '2026-12-08', {sessions:[{start:'2026-12-05T23:30:00+01:00',end:day+'T01:30:00+01:00'}]}),
+  ]);
+  const selected = eventsByDay(entries, [day]).get(day);
+  const ordered = dayAgenda(selected,day);
+  assert.deepEqual(ordered.slice(0,4).map(({name})=>name), ['Ouder programma','Festival','Markt','Inhuldiging']);
+  assert.deepEqual(ordered.slice(4).map(({name})=>name), [...shows.map(({name})=>name),'Nachtconcert']);
+  assert.equal(ordered.length,selected.length);
+  assert.equal(selected[0].name,'Expo 00');
+  assert.equal(entries[0].name,'Expo 00');
 });
