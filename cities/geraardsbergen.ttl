@@ -86,3 +86,20 @@ wd:Q110475581 a schema:LandmarksOrHistoricalBuildings ;
     schema:startDate "2026-12-27T17:30:00+01:00"^^xsd:dateTime ;
     schema:url <https://www.geraardsbergen.be/kerst2026> ;
     dcterms:source <https://www.geraardsbergen.be/kerst2026> .
+
+<#krakelingen-en-tonnekensbrand-2027> a schema:Festival ;
+    schema:name "Krakelingen & Tonnekensbrand"@nl ;
+    schema:genre "Feest en folklore"@nl ;
+    schema:containedInPlace wd:Q499532 ;
+    schema:startDate "2027-02-21"^^xsd:date ;
+    schema:url <https://www.visitgeraardsbergen.be/krakelingen-and-tonnekensbrand> ;
+    dcterms:source <https://www.visitgeraardsbergen.be/krakelingen-and-tonnekensbrand> .
+
+<#eerste-toog-2027> a schema:SaleEvent ;
+    schema:name "Jaarmarkt Eerste Toog"@nl ;
+    schema:genre "Markt"@nl ;
+    schema:containedInPlace wd:Q499532 ;
+    schema:startDate "2027-03-01"^^xsd:date ;
+    schema:url <https://www.visitgeraardsbergen.be/eerste-toog> ;
+    dcterms:source <https://www.visitgeraardsbergen.be/eerste-toog>,
+        <https://www.geraardsbergen.be/eloket/formulier/42/standplaats-jaarmarkt-eerste-toog-maandag-1-maart-2027-aanvraagformulier> .
