@@ -57,35 +57,37 @@ export function plannerPage(cities) {
       <section id="planner-itinerary" aria-labelledby="planner-itinerary-title">
         <form id="planner-itinerary-form" class="planner-panel itinerary-form" aria-labelledby="planner-itinerary-title">
           <h2 id="planner-itinerary-title" class="visually-hidden">Je fietsroute maken</h2>
-          <div class="itinerary-grid itinerary-first">
-            <label for="itinerary-start">Vertrekstad
-              <select id="itinerary-start" required><option value="">Kies een stad</option>${cityOptions}</select>
-            </label>
-            <label for="itinerary-type">Type rit
-              <select id="itinerary-type">
-                <option value="single">Enkele rit</option><option value="loop">Lusrondrit</option>
+          <div class="itinerary-essentials">
+            <div class="itinerary-grid itinerary-first">
+              <label for="itinerary-start">Vertrekstad
+                <select id="itinerary-start" required><option value="">Kies een stad</option>${cityOptions}</select>
+              </label>
+              <label for="itinerary-type">Type rit
+                <select id="itinerary-type">
+                  <option value="single">Enkele rit</option><option value="loop">Lusrondrit</option>
+                </select>
+              </label>
+            </div>
+            <fieldset class="planner-distance itinerary-distance">
+              <legend>Fietsafstand</legend>
+              <div class="planner-controls planner-range-controls">
+                <div class="planner-slider-label">
+                  <label for="itinerary-min-km">Minimaal</label> <output for="itinerary-min-km" id="itinerary-min-output" aria-hidden="true">15 km</output>
+                  <input id="itinerary-min-km" aria-label="Minimale fietsafstand" type="range" min="0" max="160" step="5" value="15">
+                </div>
+                <div class="planner-slider-label">
+                  <label for="itinerary-max-km">Maximaal</label> <output for="itinerary-max-km" id="itinerary-max-output" aria-hidden="true">45 km</output>
+                  <input id="itinerary-max-km" aria-label="Maximale fietsafstand" type="range" min="5" max="160" step="5" value="45">
+                </div>
+              </div>
+            </fieldset>
+            <label for="itinerary-stop-budget" class="itinerary-budget">Tijd voor stops
+              <select id="itinerary-stop-budget">
+                <option value="">Geen voorkeur</option><option value="15">15 minuten</option>
+                <option value="45">45 minuten</option><option value="90">90 minuten</option>
               </select>
             </label>
           </div>
-          <fieldset class="planner-distance itinerary-distance">
-            <legend>Fietsafstand</legend>
-            <div class="planner-controls planner-range-controls">
-              <div class="planner-slider-label">
-                <label for="itinerary-min-km">Minimaal</label> <output for="itinerary-min-km" id="itinerary-min-output" aria-hidden="true">15 km</output>
-                <input id="itinerary-min-km" aria-label="Minimale fietsafstand" type="range" min="0" max="160" step="5" value="15">
-              </div>
-              <div class="planner-slider-label">
-                <label for="itinerary-max-km">Maximaal</label> <output for="itinerary-max-km" id="itinerary-max-output" aria-hidden="true">45 km</output>
-                <input id="itinerary-max-km" aria-label="Maximale fietsafstand" type="range" min="5" max="160" step="5" value="45">
-              </div>
-            </div>
-          </fieldset>
-          <label for="itinerary-stop-budget" class="itinerary-budget">Tijd voor stops
-            <select id="itinerary-stop-budget">
-              <option value="">Geen voorkeur</option><option value="15">15 minuten</option>
-              <option value="45">45 minuten</option><option value="90">90 minuten</option>
-            </select>
-          </label>
           <details class="itinerary-advanced" id="itinerary-advanced">
             <summary>Route verfijnen</summary>
             <div class="itinerary-advanced-body">

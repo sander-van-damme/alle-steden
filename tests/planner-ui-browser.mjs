@@ -10,6 +10,18 @@ await withPlanner(process.env.PLANNER_UI_PORT??4486,async(browser,origin)=>{
     assert.equal(await page.locator(loc.date).isVisible(),false);
     assert.equal(await page.locator(loc.end).isVisible(),false);
     assert.equal(await form.locator('[name=cityCount]').count(),0);
+    const essentials=await page.locator('.itinerary-essentials').boundingBox();
+    const first=await page.locator('.itinerary-first').boundingBox();
+    const distance=await page.locator('.itinerary-distance').boundingBox();
+    if(device===desktop){
+      assert.ok(essentials.width>950 && distance.x>first.x+first.width);
+      assert.ok(Math.abs(distance.y-first.y)<6,'distance and city fields align across the desktop');
+    }else{
+      assert.ok(distance.y>=first.y+first.height,'distance follows the city fields on mobile');
+    }
+    assert.ok((await page.locator(loc.start).boundingBox()).height>=44);
+    assert.ok((await page.locator(loc.max).boundingBox()).height>=44);
+
     await setRange(page,25,50);
     const maximum=page.locator(loc.max);
     if(await maximum.getAttribute('type')==='range'){
@@ -30,6 +42,9 @@ await withPlanner(process.env.PLANNER_UI_PORT??4486,async(browser,origin)=>{
     assert.equal(calls.routes.length,0,'editing options is not a search');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),device.viewport.width);
     if(process.env.PLANNER_UI_SCREENSHOT)await page.screenshot({path:process.env.PLANNER_UI_SCREENSHOT+'-'+device.viewport.width+'.png'});
+    await page.emulateMedia({forcedColors:'active'});
+    assert.equal(await page.locator(loc.start).evaluate(el=>getComputedStyle(el).appearance),'auto');
+    assert.equal(await page.locator(loc.max).evaluate(el=>getComputedStyle(el).appearance),'auto');
     assert.deepEqual(calls.errors,[]); await page.close();
   }
   console.log('Keyboard distance range, tap targets, progressive controls, optional visits and no horizontal overflow on desktop and touch.');
