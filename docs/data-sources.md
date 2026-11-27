@@ -36,6 +36,10 @@ Interne werklijst voor de agenda, stadsfiches en fietsplanner. Niet gelinkt vanu
 
 In Oostende zijn alleen de zeven WK-wedstrijdstarten uit het [officiële programma](https://www.ostend2027.com/nl/programma) opgenomen, met uren onder voorbehoud en zonder einduren. Geen bulkinname uit de [Belgian Cycling-kalender](https://www.belgiancycling.be/fr/termes-conditions/) wegens voorbehouden hergebruiksrechten. Het Antwerpse festivalprogramma heeft geen gedocumenteerde, gelicentieerde gebeurtenis-API gevonden voor deze presentatie; de stadscredit geldt niet als toestemming voor willekeurige gesyndiceerde bronnen. Dit zijn eenmalige vermeldingen, geen jaarlijkse herhaling.
 
+## Gedateerde organisatorvermelding · stripmuur Kimia
+
+Op 27 november 2026: één kalendervermelding voor Brussel uit de [aankondiging van Stad Brussel](https://www.brussel.be/inhuldiging-stripmuur-kimia). De zichtbare aankondiging vermeldt 3 december om 14 u en Antwerpsesteenweg 441; geen einduur. De downloadbare iCal heeft een afwijkend beginuur en wordt niet ingelezen. Alleen feitelijke gegevens met bronlink, geen afbeeldingen of gekopieerde tekst. Geen vaste plek, plannerstop of kalenderintegratie.
+
 ## Al actief
 
 | ID · status | Bron, gebruik en hergebruik | Wat ontbreekt / vervolg |

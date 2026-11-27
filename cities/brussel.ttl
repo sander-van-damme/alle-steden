@@ -49,3 +49,17 @@ wd:Q1255327 a schema:LandmarksOrHistoricalBuildings ;
     schema:endDate "2027-01-03T17:00:00+01:00"^^xsd:dateTime ;
     schema:url <https://artsetpublics.be/agenda/dimanche-que-gratuit-au-musee-mode-dentelle-2/> ;
     dcterms:source <https://artsetpublics.be/agenda/dimanche-que-gratuit-au-musee-mode-dentelle-2/> .
+
+<#inhuldiging-kimia-2026> a schema:Event ;
+    schema:name "Inhuldiging stripmuur Kimia"@nl ;
+    schema:genre "Stripkunst"@nl ;
+    schema:description "In de Noordwijk wordt de nieuwe stripmuur van Shamisa Debroey ingehuldigd. Afspraak aan de Antwerpsesteenweg 441."@nl ;
+    schema:containedInPlace wd:Q239 ;
+    schema:location [ a schema:Place ;
+        schema:name "Stripmuur Kimia"@nl ;
+        schema:address "Antwerpsesteenweg 441, 1000 Brussel"@nl ;
+        schema:geo [ a schema:GeoCoordinates ; schema:latitude 50.870154 ; schema:longitude 4.360398 ]
+    ] ;
+    schema:startDate "2026-12-03T14:00:00+01:00"^^xsd:dateTime ;
+    schema:url <https://www.brussel.be/inhuldiging-stripmuur-kimia> ;
+    dcterms:source <https://www.brussel.be/inhuldiging-stripmuur-kimia> .
