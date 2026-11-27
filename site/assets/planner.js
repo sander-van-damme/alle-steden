@@ -304,6 +304,12 @@ function renderSelected(model,index) {
   const minutes=duration(trip.bikeMinutes);
   metrics.append(km,(minutes?' · ca. '+minutes+' fietsen':'')+' · '+dayName.format(new Date(trip.date+'T12:00:00Z')));
   header.append(heading,metrics);
+  if(trip.landmarks?.length){
+    const landmarks=el('p',null,'itinerary-route-landmarks');
+    landmarks.dataset.itineraryLandmarks='';
+    landmarks.append(el('strong','Onderweg: '),trip.landmarks.map(place=>place.name).join(' · '));
+    header.append(landmarks);
+  }
   const view={model,trip,controller:new AbortController(),stops:new Map(),candidates:[],nearby:[],extras:{},
     passedSlot:el('div'),serviceSlot:el('div'),extrasStatus:el('p',null,'planner-hint itinerary-extras-status')};
   selected=view;

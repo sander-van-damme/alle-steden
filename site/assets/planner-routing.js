@@ -37,8 +37,8 @@ function readCoordinate(point) {
 }
 
 function normalizedWaypoints(waypoints) {
-  if (!Array.isArray(waypoints) || waypoints.length < 2 || waypoints.length > 4) {
-    throw new RangeError('Geef twee tot vier punten voor de fietsroute.');
+  if (!Array.isArray(waypoints) || waypoints.length < 2 || waypoints.length > 6) {
+    throw new RangeError('Geef twee tot zes punten voor de fietsroute.');
   }
   const points = waypoints.map(readCoordinate);
   if (points.some((point) => !point)) throw new RangeError('Alle routepunten moeten in of vlak bij België liggen.');

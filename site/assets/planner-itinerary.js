@@ -1,5 +1,6 @@
 import { approxKm, calendarDay, scenicEvidence, validDay, validRoute, visitWindows } from './planner-core.js';
 import { fetchRoute as fetchBikeRoute, distanceToRoute } from './planner-routing.js';
+import { exteriorAlong, landmarkRouteFits, landmarkWaypoints, riddenLandmarks } from './planner-landmarks.js';
 
 export const distanceRouteLimits = Object.freeze({ min: 0, max: 250, results: 3, attempts: 9 });
 const earthKm = 6371;
@@ -205,12 +206,14 @@ export async function generateDistanceRoutes(cities, options = {}, { fetchRoute 
   const target = Math.max(2, min + (max - min) * .58);
   const heading = finish ? bearingTo(start, finish) : 0;
   const candidates = new Set(), tracks = new Set(), trips = [];
+  const anchors = new Map();
   const budget = AbortSignal.timeout(28_000);
   const routingSignal = signal ? AbortSignal.any([signal, budget]) : budget;
-  let checkedRoutes = 0, failedRoutes = 0, scale = 1;
+  let checkedRoutes = 0, failedRoutes = 0, scale = 1, reserveRefinement = false;
 
   for (let n = 0; n < bearings.length && checkedRoutes < attempts && trips.length < limit && !budget.aborted; n++) {
     signal?.throwIfAborted();
+    if (reserveRefinement && checkedRoutes >= attempts - 1) break;
     const variant = n >= 3 ? (n % 2 ? .86 : 1.15) : 1;
     const aim = Math.max(1.4, target * variant * scale);
     const points = finish ? destinationCandidate(start, finish, shape, heading, aim, n) :
@@ -246,13 +249,50 @@ export async function generateDistanceRoutes(cities, options = {}, { fetchRoute 
       if (!tracks.has(key) && (shape !== 'loop' || actualLoop)) {
         tracks.add(key);
         const score = 100 - 45 * Math.abs(route.km - target) / max + scenicEvidence(route).score;
-        trips.push(asTrip(route, start, finish, date, shape, score, n, actualLoop, options.departure));
+        const trip = asTrip(route, start, finish, date, shape, score, n, actualLoop, options.departure);
+        const nearby = exteriorAlong(route, cities);
+        const proposal = landmarkWaypoints(route,points,nearby);
+        anchors.set(trip.id, {points, nearby, proposal});
+        if (proposal) reserveRefinement = true;
+        trips.push(trip);
       }
     }
     onProgress({ countCandidates: candidates.size, checkedRoutes, failedRoutes });
   }
   signal?.throwIfAborted();
   trips.sort((a, b) => b.score - a.score || a.km - b.km);
+  // Refinements are optional and bounded. A slow or unhelpful second route
+  // request must not discard the original distance-qualified ride.
+  const enrichment = AbortSignal.timeout(9_000);
+  let refinements = 0;
+  for (const [index, trip] of trips.entries()) {
+    const {points, proposal, nearby: original} = anchors.get(trip.id);
+    let nearby = original;
+    if (refinements < 2 && checkedRoutes < attempts && !enrichment.aborted) {
+      if (proposal && !candidates.has(candidateKey(proposal.points))) {
+        candidates.add(candidateKey(proposal.points));
+        refinements++; checkedRoutes++;
+        const refinementSignal = AbortSignal.any([enrichment, AbortSignal.timeout(7_500), ...(signal ? [signal] : [])]);
+        try {
+          const routed = await fetchRoute(proposal.points, { signal: refinementSignal });
+          if (!refinementSignal.aborted && followsAnchors(routed, proposal.points) &&
+              (shape !== 'loop' || circuitShape(routed, points[2])) &&
+              (!tracks.has(routeKey(routed)) || routeKey(routed) === routeKey(trip.route))) {
+            const observed = exteriorAlong(routed,cities);
+            if (landmarkRouteFits(trip.route,routed,min,max,nearby,observed,proposal.selected)) {
+              tracks.delete(routeKey(trip.route)); tracks.add(routeKey(routed));
+              trips[index] = { ...asTrip(routed,start,finish,date,shape,trip.score,index,trip.loop,options.departure), id:trip.id };
+              nearby = observed;
+            }
+          }
+        } catch {
+          signal?.throwIfAborted();
+        }
+      }
+    }
+    trips[index].landmarks = riddenLandmarks(nearby);
+  }
+  signal?.throwIfAborted();
   const notes = trips.length ? [] : [
     failedRoutes && failedRoutes === checkedRoutes ? 'De fietsrouter kon de routes niet berekenen. Probeer opnieuw.'
       : shape === 'loop' ? 'Geen lus gevonden binnen deze afstand. Maak het afstandsbereik ruimer of kies heen en terug.'

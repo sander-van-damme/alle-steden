@@ -53,6 +53,37 @@ await withPlanner(process.env.PLANNER_PREVIEW_PORT??4173,async(browser,origin)=>
     if(process.env.PLANNER_SCREENSHOT)await page.screenshot({path:process.env.PLANNER_SCREENSHOT+'-'+device.viewport.width+'.png'});
     await page.close();
   }
+  if(!live)for(const device of [desktop,phone]){
+    const page=await browser.newPage(device);
+    const landmark=[3.8035,50.67295];
+    const exterior={id:'refinement-landmark',name:'Testbelfort aan de fietsroute',source:'https://example.org/belfort',
+      lon:landmark[0],lat:landmark[1],exterior:true};
+    const start=points.aat,end=points.lessen;
+    const calls=await wirePage(page,{catalog:data=>data.map(city=>city.slug==='aat'?
+      {...city,places:[exterior]}:city.slug==='lessen'?{...city,places:[]}:city),
+      travel:({via})=>near(via[0],start)&&near(via.at(-1),end)&&via.length===2?{length:15000}:
+        via.some(p=>near(p,landmark,.0001))?{length:15200}:{length:60000},
+      pois:()=>({empty:true}),services:()=>({empty:true})});
+    await gotoPlanner(page,origin,'/planner/?city=aat');
+    await openAdvanced(page);
+    await page.locator(loc.end).selectOption('lessen');
+    await setRange(page,10,25);
+    await build(page);
+    const trip=selected(page); await trip.waitFor({timeout:35000});
+    assert.equal(await parsedKm(page),15.2);
+    assert.match(await trip.locator('[data-itinerary-landmarks]').innerText(),/Onderweg: Testbelfort/);
+    assert.equal(await trip.locator('.route-pin-landmark').count(),1);
+    assert.ok(calls.routes.some(({via})=>via.some(p=>near(p,landmark,.0001))));
+    const track=await downloadGpx(page);
+    assert.ok(track.points.some(p=>near(p,landmark,.0001)));
+    assert.ok(track.waypoints.includes(exterior.name));
+    assert.match(track.xml,/geen stop ingepland/);
+    assert.equal(await trip.locator(loc.stops+' [data-itinerary-role=activity]').count(),0);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),device.viewport.width);
+    assert.deepEqual(calls.errors,[]);
+    if(process.env.PLANNER_LANDMARK_SCREENSHOT)await page.screenshot({path:process.env.PLANNER_LANDMARK_SCREENSHOT+'-'+device.viewport.width+'.png'});
+    await page.close();
+  }
   if(!live){
     const page=await browser.newPage(phone);
     const calls=await wirePage(page,{travel:()=>({length:32_400}),pois:()=>({empty:true}),services:()=>({empty:true})});

@@ -23,6 +23,8 @@
 .route-map-line-1 { stroke: var(--route-brick); stroke-width: 4; stroke-dasharray: 8 6; }
 .route-pin circle { fill: var(--route-pine); stroke: #fff; stroke-width: 2.5; }
 .route-pin-poi circle { fill: #714820; }
+.route-pin-landmark circle { fill: #754026; }
+.route-map-stop-landmark button { color: #754026; }
 .route-pin-selected circle, .route-pin-active circle { fill: var(--route-brick); stroke-width: 3; }
 .route-pin text { fill: #fff; font: 700 10px system-ui, sans-serif; }
 .route-map-controls { position: absolute; top: .55rem; left: .55rem; display: flex; align-items: center; flex-wrap: wrap; gap: .26rem; }

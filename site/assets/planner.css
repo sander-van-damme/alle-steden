@@ -404,6 +404,7 @@
 .itinerary-route-heading { padding: .75rem 0 .48rem; border-top: 1px solid var(--planner-rule); }
 .itinerary-route-heading h2 { font-size: clamp(1.4rem, 3.5vw, 2.25rem); }
 .itinerary-route-metrics { margin: .28rem 0 0; color: var(--muted); font-size: .94rem; }
+.itinerary-route-landmarks { margin: .3rem 0 0; color: var(--muted); font-size: .88rem; }
 .itinerary-route-metrics strong { color: var(--ink); font-weight: 750; font-variant-numeric: tabular-nums; }
 .itinerary-route > div:empty { display: none; }
 .itinerary-band { border-top: 1px solid var(--planner-rule); padding: .5rem 0 0; }

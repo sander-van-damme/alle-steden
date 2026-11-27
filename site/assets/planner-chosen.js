@@ -99,6 +99,8 @@ export function makeStopCandidates(trip, catalog, passage, nearby, { date, filte
     if (!item.id || !position || position.distanceToRouteKm > maxAlongKm || !matchesActivity(item,'place',filters)) return [];
     return [{ ...item, ...position, kind:'nearby', effort:estimateVisit(item,'place'), website:safeUrl(item.url), documented:false }];
   });
+  const passed = (item) => trip.landmarks?.some(place => place.key === placeId(item) ||
+    comparableName(place.name) === comparableName(item.name) && approxKm(item,place) <= .03);
   const rank = item => finite(budget) && item.effort > budget ? 2 : 0;
   const key = item => item.kind === 'event' ? [placeId(item),'event',item.earliest,item.latest].join('|')
     : [placeId(item),item.kind === 'exterior' ? 'outside':'visitor'].join('|');
@@ -112,6 +114,7 @@ export function makeStopCandidates(trip, catalog, passage, nearby, { date, filte
     map.set(value,points);
   };
   for (const item of [...fromLocal, ...fromNearby].sort(compare)) {
+    if (['exterior','nearby'].includes(item.kind) && passed(item)) continue;
     const id = key(item);
     if (unique.has(id)) continue;
     if (item.kind !== 'event') {

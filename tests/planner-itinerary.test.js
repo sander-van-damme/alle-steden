@@ -122,3 +122,45 @@ test('optional activities obey actual dates, published hours and filters; no inv
   assert.equal(options[0].key,explicitVisitOptions(city,date)[0].key);
   assert.ok(!explicitVisitOptions(city,date,{exclude:['museum']}).some(({id})=>id==='museum'));
 });
+
+test('documented exterior landmarks already passed or routed via are not visits', async ()=>{
+  const any=(id,name,position,lonOffset=.003,exterior=true)=>({
+    id,name,...interpol(center,neighbor,position),lon:interpol(center,neighbor,position).lon+lonOffset,
+    exterior,source:'https://example.org/landmark',activityTags:['heritage'],
+  });
+  const visible=any('zicht','Kasteel aan de weg',.05,0);
+  const cathedral=any('kerk','Kathedraal langs de route',.5);
+  const museum=any('museum','Museum zonder buitenaanzicht',.55,.003,false);
+  const noSource={...any('onbevestigd','Stadhuis zonder bron',.7),source:null};
+  const start={...center,places:[visible,cathedral,museum,noSource]};
+  const calls=[];
+  const outcome=await generateDistanceRoutes([start,neighbor],{date,city:'aat',finish:'lessen',minKm:1,maxKm:30,limit:1},{
+    fetchRoute:async points=>{calls.push(points);return track(points);}
+  });
+  assert.equal(calls.length,2);
+  assert.deepEqual(calls[1].map(x=>x.id??x.slug),['aat','kerk','lessen']);
+  const trip=outcome.trips[0];
+  assert.deepEqual(trip.landmarks.map(p=>p.id),['zicht','kerk']);
+  assert.deepEqual(trip.visits,[]);
+  assert.ok(trip.route.coordinates.some(([x,y])=>x===cathedral.lon&&y===cathedral.lat));
+  assert.equal(trip.bikeMinutes,Math.ceil(trip.route.minutes));
+});
+
+test('landmark enrichment keeps a good original when the detour exceeds the distance or harms road evidence', async ()=>{
+  const at=interpol(center,neighbor,.55);
+  const start={...center,places:[{...at,lon:at.lon+.003,name:'Stadhuis',id:'town-hall',exterior:true,source:'https://example.org/stadhuis'}]};
+  for (const variant of ['long','major','outage','not-passed']) {
+    const outcome=await generateDistanceRoutes([start,neighbor],{date,city:'aat',finish:'lessen',minKm:1,maxKm:25,limit:1},{
+      fetchRoute:async points=>{
+        if(points.length===2)return track(points,{km:14,signals:{majorRoadKm:0,mappedKm:14}});
+        if(variant==='outage')throw new Error('upstream down');
+        if(variant==='not-passed')return track([start,neighbor],{km:14,signals:{majorRoadKm:0,mappedKm:14}});
+        return track(points,{km:variant==='long'?27:14,signals:{majorRoadKm:variant==='major'?2:0,mappedKm:14}});
+      }
+    });
+    assert.equal(outcome.checkedRoutes,2,variant);
+    assert.equal(outcome.trips[0].km,14,variant);
+    assert.deepEqual(outcome.trips[0].landmarks,[],variant);
+    assert.deepEqual(outcome.trips[0].route.waypoints,[[start.lon,start.lat],[neighbor.lon,neighbor.lat]],variant);
+  }
+});

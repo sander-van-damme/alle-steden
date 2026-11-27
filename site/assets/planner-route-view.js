@@ -55,11 +55,14 @@ export function createRouteGpx(trip) {
   const legs = legsFor(trip);
   if (!routeParts(trip.route).length || trip.returnRoute && !routeParts(trip.returnRoute).length) return null;
   const name = (trip.cities ?? []).map((c) => c.name).filter(Boolean).join(' → ') || 'Fietsroute';
-  const waypoints = (trip.edited === true || trip.exactStops === true || trip.distanceDriven === true) ? (trip.visits ?? []).flatMap((visit) => {
+  const optional = trip.visits ?? [];
+  const asId = (id) => String(id).replace(/^https?:\/\/www\.wikidata\.org\/(?:wiki|entity)\//i, '');
+  const highlights = (trip.landmarks ?? []).filter(place => !optional.some(visit => visit.id && asId(visit.id) === asId(place.id)));
+  const waypoints = (trip.edited === true || trip.exactStops === true || trip.distanceDriven === true) ? [...highlights.map(place => ({...place,kind:'landmark'})), ...optional].flatMap((visit) => {
     if (visit.kind === 'through') return [];
     const p = stopPoint(visit);
     const offRoute = trip.distanceDriven === true && visit.kind === 'activity' && visit.distanceToRouteKm > .01;
-    const desc = offRoute ? '<desc>'+xml(Math.round(visit.distanceToRouteKm*1000)+' m hemelsbreed van de route; omweg niet berekend.')+'</desc>' : '';
+    const desc = offRoute ? '<desc>'+xml(Math.round(visit.distanceToRouteKm*1000)+' m hemelsbreed van de route; omweg niet berekend.')+'</desc>' : visit.kind === 'landmark' ? '<desc>Buitenaanzicht langs de route, geen stop ingepland.</desc>' : '';
     return p && visit.name ? [`<wpt lat="${p[1].toFixed(7)}" lon="${p[0].toFixed(7)}"><name>${xml(visit.name)}</name>${desc}</wpt>`] : [];
   }) : [];
   const segments = legs.map((leg) => '<trkseg>\n' + leg.coordinates.map(([lon, lat], i) => {
@@ -311,6 +314,9 @@ function routeMarkers(trip, outbound, editable = false) {
     const type=visit.kind==='pause'?'pause':'visit';
     return {point:stopPoint(visit),name:visit.name,icon:(type==='pause'?'R':'B')+(++byKind[type]),type};
   });
+  const landmarks = (trip.landmarks ?? []).map(place => ({
+    point:stopPoint(place), name:'Langs '+place.name, icon:'★', type:'landmark',
+  }));
   const pois = (trip.pois?.items ?? []).slice(0, 12);
   if (selected && !pois.some((poi) => poi === selected || selected.id && selected.id === poi.id)) pois.unshift(selected);
   const poiMarkers = pois.filter((poi) => !visits.some((visit) => editable && poi.key && visit.key
@@ -328,8 +334,8 @@ function routeMarkers(trip, outbound, editable = false) {
     point: stopPoint(item), name: item.name, type: 'service-' + item.category,
     icon: symbols[item.category] + (++counts[item.category]),
   }));
-  const arranged=editable?[...cities,...visitMarkers.filter(marker=>!marker.key),...services,...poiMarkers,
-    ...visitMarkers.filter(marker=>marker.key)]:[...cities,...visitMarkers,...poiMarkers,...services];
+  const arranged=editable?[...cities,...visitMarkers.filter(marker=>!marker.key),...services,...poiMarkers,...landmarks,
+    ...visitMarkers.filter(marker=>marker.key)]:[...cities,...visitMarkers,...poiMarkers,...landmarks,...services];
   return arranged.filter((marker) => marker.point && marker.name);
 }
 
@@ -475,6 +481,7 @@ function createMap(doc, outbound, inbound, markers, label, edited, compact = fal
     caption.replaceChildren(node(doc,'p','',inbound.length?'Volle lijn: heen · gestreepte lijn: terug':'Volle lijn: fietsroute'));
     if (next.some(({type})=>type==='visit')) caption.append(node(doc,'p','',
       edited?'B = geplande bezoekstop':'B = bezoeklocatie; het fietstraject toont de rit tussen de stadsankers.'));
+    if (next.some(({type})=>type==='landmark')) caption.append(node(doc,'p','','★ buitenaanzicht'));
     if (next.some(({type})=>type==='pause')) caption.append(node(doc,'p','','R = pauze'));
     if (next.some(({type})=>type==='poi')) caption.append(node(doc,'p','',popup?'+ mogelijke stop':'P = mogelijke stop'));
     if (next.some(({type})=>type==='planned-stop')) caption.append(node(doc,'p','','✓ geplande stop'));
