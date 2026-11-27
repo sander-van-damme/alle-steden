@@ -126,6 +126,25 @@ function unifyMuseumIdentities(city, records) {
       ...(item.source !== 'fwbMuseums' && !item.address && recognized.address && { address: recognized.address }) };
   });
 }
+// The tourist catalogue and the municipal inventory use different points
+// within the same park. The villa is a separate building, not the garden.
+const brusselsParkAliases = new Map([
+  ['240982', ['Sobieskipark', 'Parc Sobieski', 'Q20669823']],
+  ['263133', ['Tuinen van de Bloemist', 'Jardins du Fleuriste', 'Q3162682']],
+]);
+
+function mergeBrusselsParkIdentities(city, records, expanded) {
+  const parks = new Map(expanded && city.slug === 'brussel'
+    ? records.filter(item => item.source === 'brusselsParks').map(item => [item.id, item]) : []);
+  return records.map(item => {
+    if (item.source !== 'visitBrussels' || item.postalCode !== '1020' || item.category !== 'Park of tuin') return item;
+    const alias = brusselsParkAliases.get(item.sourceId);
+    if (!alias || item.labels?.nl !== alias[0] || item.labels?.fr !== alias[1]) return item;
+    const park = parks.get('http://www.wikidata.org/entity/' + alias[2]);
+    return park ? { ...item, id: park.id, name: park.name, website: park.website } : item;
+  });
+}
+
 export function displayedPlaces(city, stored, groups, expanded = true) {
   const records = [...stored, ...interleavePlaceSources(groups)];
   const diest = expanded && city.slug==='diest' && new Map(records.filter(item=>item.source==='visitDiest' && visitDiestIdentity(item))
@@ -145,7 +164,7 @@ export function displayedPlaces(city, stored, groups, expanded = true) {
   const cultural = libramont ? trusted.map(item => item.id === 'pivot:LOD-A0-006W-0T1G'
     ? { ...item, id:libramont.id, name:libramont.name, category:libramont.category, website:libramont.website,
       hours:undefined, osm:[] } : item) : trusted;
-  return mergePlaces(unifyMuseumIdentities(city, cultural), placeViewLimit(city, expanded)).map(item=>{
+  return mergePlaces(mergeBrusselsParkIdentities(city, unifyMuseumIdentities(city, cultural), expanded), placeViewLimit(city, expanded)).map(item=>{
     const authority=exactDiest(item) ?? (historia && isHistoriaVenue(item) ? historia : undefined);
     return authority ? {...item,website:authority.website,hours:authority.hours,hoursNote:authority.hoursNote,
       hoursSource:authority.source} : item;
