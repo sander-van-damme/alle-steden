@@ -7,6 +7,7 @@ import { bindItineraryEditor } from './planner-itinerary-ui.js';
 import { renderRouteNotices, renderRouteView } from './planner-route-view.js';
 import { localRouteServices } from './route-local-services.js';
 import { findBrusselsToilets, mergeRouteFacilities } from './brussels-toilets.js';
+import { findBrusselsPumps, mergeBrusselsPumps } from './brussels-pumps.js';
 import { makeStopCandidates, pointAtKm, routeLegs, stopMinuteOptions } from './planner-chosen.js';
 
 const form = document.querySelector('#planner-itinerary-form');
@@ -218,6 +219,7 @@ async function loadPassages(view) {
     if(view.localServices.length)updateServices(view);
     if(view.passage.cities.some(city=>city.slug==='brussel'))void loadBrusselsToilets(view);
     const regions=view.passage?.regions??[];
+    if(regions.includes('Brussels Hoofdstedelijk Gewest'))void loadBrusselsPumps(view);
     const endpoints=[view.trip.startCity?.region,view.trip.destinationCity?.region];
     if(regions.includes('Vlaanderen')||(view.passage?.state!=='ok'&&endpoints.includes('Vlaanderen')))void loadServices(view);
   }
@@ -259,8 +261,20 @@ async function loadBrusselsToilets(view) {
   }
   updateServices(view);
 }
+async function loadBrusselsPumps(view) {
+  try {
+    const points=await findBrusselsPumps(view.trip,view.passage,{signal:view.controller.signal});
+    if(selected!==view)return;
+    view.brusselsPumps=points;
+  } catch {
+    // Optional catalog: keep any other results available.
+    return;
+  }
+  updateServices(view);
+}
 function updateServices(view) {
-  view.services={items:mergeRouteFacilities(view.brusselsToilets??[],[...(view.localServices??[]),...(view.flemishServices??[])])};
+  const points=mergeRouteFacilities(view.brusselsToilets??[],[...(view.localServices??[]),...(view.flemishServices??[])]);
+  view.services={items:mergeBrusselsPumps(view.brusselsPumps??[],points)};
   renderServices(view);syncMarkers(view);renderAvailability(view);
 }
 function renderSelected(model,index) {

@@ -293,3 +293,7 @@ Vanaf 27 november 2026, `gentArt` op de stadsfiche van Gent. De [metadata van St
 ## Buitenkunst in Kortrijk
 
 Vanaf 27 november 2026 staan drie extra kunstwerken op de stadsfiche: [De Golf](https://www.kortrijk.be/musea/de-golf), [Rhizome Structures](https://www.kortrijk.be/musea/rhizome-structures) en [Verdrag van Kortrijk](https://www.kortrijk.be/musea/verdrag-van-kortrijk). De [locatielijst van Stad Kortrijk](https://www.kortrijk.be/peters-en-meters-beeldenpatrimonium) geeft de precieze plek in woorden. Een browsersteekproef vóór de wijziging vond geen van de drie onder 49 getoonde plekken, maar niet alle bestaande providers waren bereikbaar. De [stedelijke wandelgids](https://www.kortrijk.be/musea/kunst-publieke-ruimte-wandeling) is beschikbaar bij de stad. Geen rechtenbevestiging of betrouwbare machineleesbare kaart met geverifieerde pins gevonden; alleen afzonderlijke plaats- en naamfeiten, zonder bronfoto's of gereproduceerde beschrijvingen. Geen gegarandeerde toegang, werktijden, kaartpin, agenda of fietsplanner. Het lichtwerk hangt in de doorgang, niet in een tentoonstellingszaal. De [Street Art Cities-export](https://streetartcities.com/open-data) wordt niet gebruikt: integratie buiten onderzoek vergt uitdrukkelijke toestemming.
+
+### 27 november 2026 · Fietspompen van Brussel Mobiliteit
+
+- Gewestelijke CC0-bron voor de fietsplanner, geen kalender- of stadsfichekaarten. De [bron en selectie](route-services-sources.md#brussel-mobiliteit--regionale-fietspompen) staan los van de gemeentelijke toiletten.

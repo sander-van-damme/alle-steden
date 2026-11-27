@@ -155,7 +155,7 @@ await withPlanner(process.env.PLANNER_BRUSSELS_MAP_PORT ?? 4496, async (browser,
     const page = await browser.newPage(layout);
     const crossing = [[4.34615,50.84464],[4.34944,50.84652],[4.35235,50.84704],[4.35505,50.84649],[4.35839,50.84756]];
     const url = 'https://opendata.brussels.be/api/explore/v2.1/catalog/datasets/toilettes-urinoirs-publics-openbare-toiletten-urinoirs-vbx/records?**';
-    let calls = 0;
+    let calls = 0, pumpCalls = 0;
     await wirePage(page, {travel:({via})=>({length:24_000,
       ...((via[0][0]>4.3&&via[0][0]<4.4) && {points:[via[0],...crossing,via.at(-1)]})}),
       services:()=>({empty:true}),pois:()=>({empty:true})});
@@ -169,6 +169,15 @@ await withPlanner(process.env.PLANNER_BRUSSELS_MAP_PORT ?? 4496, async (browser,
           address_modified_nl:i?'Gastplaats':'49, Magdalenasteenweg',geo_point_2d:{lon:4.35537,lat:50.84511},
         }))}});
     });
+    await page.route('https://data.mobility.brussels/geoserver/bm_bike/wfs?**', route=>{
+      pumpCalls++;
+      assert.equal(new URL(route.request().url()).searchParams.get('typeName'),'bm_bike:bicyclepump');
+      return route.fulfill({headers:{'access-control-allow-origin':'*'},json:{type:'FeatureCollection',
+        crs:{properties:{name:'urn:ogc:def:crs:EPSG::4326'}},features:[{
+          type:'Feature',id:'bicyclepump.5',properties:{gid:5,type:'P',name_nl:'Fietspomp Noordstation'},
+          geometry:{type:'Point',coordinates:[4.355,50.8466]},
+        }] }});
+    });
     await cityEntry(page,origin,'brussel');
     await openAdvanced(page);
     await page.locator(loc.date).fill(chosenDate);
@@ -176,11 +185,14 @@ await withPlanner(process.env.PLANNER_BRUSSELS_MAP_PORT ?? 4496, async (browser,
     await setRange(page,15,35);
     await build(page);
     const services=selected(page).locator(loc.service);
-    await services.getByText('1 toilet langs de route',{exact:true}).waitFor({timeout:25_000});
+    await services.getByText('1 toilet · 1 fietsvoorziening langs de route',{exact:true}).waitFor({timeout:25_000});
     assert.equal(calls,1);
+    assert.equal(pumpCalls,1);
     await selected(page).locator('.route-pin-service-toilet').first().waitFor();
     await activate(page,services.locator('summary'));
     assert.ok(await services.getByRole('link',{name:/Magdalenasteenweg/}).isVisible());
+    assert.ok(await services.getByRole('link',{name:'Fietspomp Noordstation'}).isVisible());
+    await selected(page).locator('.route-pin-service-repair').first().waitFor();
     assert.equal(await services.getByText('Gastplaats').count(),0);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),layout.viewport.width);
     await cityEntry(page,origin);
@@ -191,6 +203,7 @@ await withPlanner(process.env.PLANNER_BRUSSELS_MAP_PORT ?? 4496, async (browser,
     await build(page);
     await selected(page).locator(loc.cities).waitFor({timeout:20_000});
     assert.equal(calls,1);
+    assert.equal(pumpCalls,1);
     assert.equal(await selected(page).getByText('49, Magdalenasteenweg').count(),0);
   }
 });
