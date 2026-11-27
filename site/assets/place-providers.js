@@ -39,6 +39,7 @@ export function placeProviders(city, { expanded = true, origin = globalThis.loca
     })),
     ...(expanded && city.slug === 'brussel' ? [
       { key: 'visitBrussels', added: true, run: async () => (await import('./visit-brussels-places.js')).getVisitBrusselsPlaces(city, options) },
+      { key: 'brusselsParks', added: true, run: async () => (await import('./brussels-parks.js')).getBrusselsParks(city, options) },
     ] : []),
     ...museumSource,
   ];
