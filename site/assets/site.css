@@ -95,6 +95,9 @@ input, select { min-width: 0; width: 100%; padding: .65rem .7rem; background: va
 .entry-list:empty { display: none; }
 .entry-list li { min-width: 0; border-bottom: 1px solid var(--line); padding: .8rem 0; overflow-wrap: anywhere; }
 .entry-list h3 { margin: 0; font-size: 1.05rem; line-height: 1.28; }
+/* Make real visit links recognizable without relying on the ink colour. */
+.entry-list h3 a { text-decoration: underline; text-decoration-thickness: max(1px, .085em); text-underline-offset: .19em; text-decoration-skip-ink: auto; }
+.entry-list h3 a:hover, .entry-list h3 a:focus-visible { text-decoration-thickness: .15em; }
 .entry-list p { margin: .28rem 0 0; color: var(--muted); font-size: .92rem; }
 .entry-list .entry-meta { color: var(--accent); }
 .entry-badge { display: block; margin: .36rem 0 .12rem; padding-left: .5rem; border-left: 2px solid var(--signal); color: #683f30; font-size: .81rem; font-weight: 650; }

@@ -218,7 +218,7 @@ function entryList(title, intro, kind, items, linkIds) {
     const website = visitorUrl(url);
     const hours = (Array.isArray(openingHours) ? openingHours : [openingHours]).filter(Boolean).join(' · ');
     return `<li${id ? ` data-item-id="${escapeHtml(id)}"` : ''}${entryProvenance(source)}>
-      <h3>${website ? `<a href="${escapeHtml(website)}"${verifyAttributes(url, linkIds)}>${escapeHtml(name)} ${arrow}</a>` : escapeHtml(name)}</h3>
+      <h3>${website ? `<a href="${escapeHtml(website)}"${verifyAttributes(url, linkIds)}>${escapeHtml(name)}</a>` : escapeHtml(name)}</h3>
       ${entryDate(start, end)}
       ${exterior === true ? '<span class="entry-badge" data-exterior>Vanop de openbare weg te bekijken</span>' : ''}
       ${hours ? `<p class="entry-meta"><strong>Openingsuren:</strong> ${escapeHtml(hours)}</p>` : ''}
