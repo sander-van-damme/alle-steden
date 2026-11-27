@@ -134,7 +134,7 @@ export function visitorUrl(value) {
 
 // Corrections require a verified target for the same record (see
 // docs/walloon-link-audit.md). Match both the provider identity and the precise
-// outdated URL so later upstream corrections and unrelated links stay intact.
+// outdated or missing URL so later upstream corrections and unrelated links stay intact.
 const auditedPlaceLinks = new Map([
   ['wallonia:LOD-A0-001U-0385', new Map([
     ['https://www.chevaux-de-sport.be/', 'https://chevaux-de-sport.be/'],
@@ -147,6 +147,9 @@ const auditedPlaceLinks = new Map([
   ])],
   ['wallonia:ALD-01-08H4-2GG8', new Map([
     ['http://www.bovomoulin.be/', null],
+  ])],
+  ['wikidata:Q1170767', new Map([
+    [undefined, 'https://historischehuizen.stad.gent/nl/sint-pietersabdij/bezoek/praktisch'],
   ])],
   ['wikidata:Q137408167', new Map([
     ['https://www.bouillonmedievalexperience.be/fr', 'https://www.bouillonmedievalexperience.be/'],

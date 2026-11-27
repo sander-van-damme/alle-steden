@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { Parser } from 'n3';
 import { getBrusselsPlaces, getFlemishHeritage, getWallonia, interleavePlaceSources,
-  mergePlaces, wikidataQuery } from '../site/assets/sources.js';
+  mergePlaces, getWikidata, wikidataQuery } from '../site/assets/sources.js';
 import { placeSnapshotTurtle } from '../site/assets/place-rdf.js';
 
 const city = { slug: 'tongeren-borgloon', name: 'Tongeren-Borgloon', qid: 'Q125378487', code: '73111', region: 'Vlaanderen' };
@@ -15,6 +15,23 @@ test('Wikidata adds bounded recent dissolved municipalities, not arbitrary nearb
   assert.match(query, /\?old wdt:P576 \?ended/);
   assert.match(query, /LIMIT 42/);
   assert.doesNotMatch(query, /wikibase:around|P131\+/);
+});
+
+test('Wikidata abbey gains a verified visitor destination without changing a future upstream URL', async () => {
+  const row = (qid, site) => ({
+    item: { value: 'http://www.wikidata.org/entity/' + qid },
+    name: { value: 'Sint-Pietersabdij' },
+    ...(site && { site: { value: site } }),
+  });
+  const results = async (...rows) => getWikidata({ name:'Gent', qid:'Q1296' }, {
+    fetcher: () => Response.json({ results: { bindings: rows } }),
+  });
+  const [abbey, sameName] = await results(row('Q1170767'), row('Q999999'));
+  assert.equal(abbey.website, 'https://historischehuizen.stad.gent/nl/sint-pietersabdij/bezoek/praktisch');
+  assert.equal(sameName.website, 'https://www.wikidata.org/entity/Q999999');
+  const [later] = await results(row('Q1170767', 'https://example.com/abbey'));
+  assert.equal(later.website, 'https://example.com/abbey');
+  assert.equal(abbey.hours, '');
 });
 
 test('Flemish heritage adapter enforces the protected monument definition and exact current municipality', async () => {
