@@ -320,10 +320,13 @@ function routeMarkers(trip, outbound, editable = false) {
     ...(editable&&poi.key?{key:poi.key,visit:poi,planned:false}:{}),
     type: selected && (poi === selected || selected.id && selected.id === poi.id) ? 'selected' : 'poi',
   }));
-  const counts = { toilet: 0, repair: 0 };
-  const services = (trip.services?.items ?? []).slice(0, 12).map((item) => ({
+  const symbols = { toilet: 'T', repair: 'F', water: 'W' };
+  const counts = { toilet: 0, repair: 0, water: 0 };
+  const facilities = trip.services?.items ?? [];
+  const services = [...facilities.filter(x=>x.category!=='water').slice(0,12), ...facilities.filter(x=>x.category==='water').slice(0,4)]
+    .filter(item=>Object.hasOwn(symbols,item.category)).map((item) => ({
     point: stopPoint(item), name: item.name, type: 'service-' + item.category,
-    icon: (item.category === 'toilet' ? 'T' : 'F') + (++counts[item.category]),
+    icon: symbols[item.category] + (++counts[item.category]),
   }));
   const arranged=editable?[...cities,...visitMarkers.filter(marker=>!marker.key),...services,...poiMarkers,
     ...visitMarkers.filter(marker=>marker.key)]:[...cities,...visitMarkers,...poiMarkers,...services];
@@ -475,7 +478,9 @@ function createMap(doc, outbound, inbound, markers, label, edited, compact = fal
     if (next.some(({type})=>type==='pause')) caption.append(node(doc,'p','','R = pauze'));
     if (next.some(({type})=>type==='poi')) caption.append(node(doc,'p','',popup?'+ mogelijke stop':'P = mogelijke stop'));
     if (next.some(({type})=>type==='planned-stop')) caption.append(node(doc,'p','','✓ geplande stop'));
-    if (next.some(({type})=>type.startsWith('service-'))) caption.append(node(doc,'p','','T = toilet · F = fietshulp'));
+    const serviceLegend=[['toilet','T = toilet'],['repair','F = fietshulp'],['water','W = drinkwater']]
+      .filter(([category])=>next.some(({type})=>type==='service-'+category)).map(([,label])=>label);
+    if (serviceLegend.length) caption.append(node(doc,'p','',serviceLegend.join(' · ')));
     if (markerList.children.length) caption.append(markerDetails ?? markerList);
     selectMarker(previous?next.find(marker=>markerKey(marker)===previous)??null:null);
     if (focused) {

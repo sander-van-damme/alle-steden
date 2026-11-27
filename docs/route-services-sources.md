@@ -21,3 +21,7 @@ De browser vraagt deze algemene lijst alleen op bij een geselecteerde route die 
 ## Brussel Mobiliteit · regionale fietspompen
 
 De [regionale catalogus](https://data.mobility.brussels/en/info/bicyclepump/) biedt het vaste GeoJSON WFS-bestand `bm_bike:bicyclepump` onder CC0 aan. Bij een geselecteerde route die het Brussels Hoofdstedelijk Gewest raakt haalt de browser dit op zonder cookies, verwijzer, routepunten of datum. Alleen punten van type `P` binnen 650 m van de route komen in aanmerking. Type `R` is niet als pomp gevalideerd. Een nabij bestaand punt met een pomp blijft staan; een afzonderlijk punt met alleen gereedschap blijft afzonderlijk. Er verschijnen maximaal zes fietsvoorzieningen. De feed bevestigt locatie, niet of de pomp werkt. Een onbereikbare bron laat andere resultaten staan.
+
+## Stad Brussel · drinkwaterpunten
+
+De [municipale CC0-catalogus](https://opendata.brussels.be/explore/assets/fontaines-d-eau-potable-gerees-par-la-ville-de-bruxelles/) telt bij de controle 48 punten. Alleen actieve punten met publieke toegang zonder uurrooster in de gemeente Brussel komen in aanmerking. De [gemeentelijke winterstop](https://www.brussels.be/drink-water) (15 november t/m 1 maart) gaat vóór de datastatus: tijdens die winterstop haalt de planner de lijst niet op. De browser vergelijkt de vaste catalogus lokaal met het gekozen traject, tot 650 m ernaast. Binnen 35 m toont hij één punt, met maximaal vier suggesties. De kaart toont de locatie, geen garantie op werking. Geen winkelnetwerk, routeaanpassing of GPX-stop.

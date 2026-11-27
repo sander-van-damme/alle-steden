@@ -297,3 +297,7 @@ Vanaf 27 november 2026 staan drie extra kunstwerken op de stadsfiche: [De Golf](
 ### 27 november 2026 · Fietspompen van Brussel Mobiliteit
 
 - Gewestelijke CC0-bron voor de fietsplanner, geen kalender- of stadsfichekaarten. De [bron en selectie](route-services-sources.md#brussel-mobiliteit--regionale-fietspompen) staan los van de gemeentelijke toiletten.
+
+### 27 november 2026 · Drinkwaterpunten van Stad Brussel
+
+- Gemeentelijke CC0-gegevens voor de fietsplanner buiten de winterstop; zie [de bron en selectie](route-services-sources.md#stad-brussel--drinkwaterpunten).

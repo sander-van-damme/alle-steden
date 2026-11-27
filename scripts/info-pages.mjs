@@ -4,6 +4,7 @@ import { forestNoticeSource } from '../site/assets/route-forest-notices.js';
 import { ravelNoticeSource } from '../site/assets/ravel-source.js';
 import { brusselsToiletsSource } from '../site/assets/brussels-toilets.js';
 import { brusselsPumpsSource } from '../site/assets/brussels-pumps.js';
+import { brusselsWaterSource } from '../site/assets/brussels-water.js';
 import { routeServicesSource } from '../site/assets/route-services.js';
 
 const gba = 'https://www.gegevensbeschermingsautoriteit.be/klacht-indienen';
@@ -70,6 +71,7 @@ export function aboutPage(layout) {
         [link('Pin je punt', routeServicesSource.url) + ' en ' + link('ChasseOnWeb', forestNoticeSource.map), 'Bij een gekozen fietsroute zoeken we waar relevant naar Vlaamse fietsvoorzieningen van Toerisme Vlaanderen / OpenStreetMap of Waalse bosmeldingen van de Service public de Wallonie. Een melding is geen bevestiging dat een pad open of dicht is.'],
         [link(brusselsToiletsSource.label, brusselsToiletsSource.url) + ' (' + link('CC BY 4.0', brusselsToiletsSource.license) + ')', 'Bewerkte selectie van openbare toiletten op straatniveau in de gemeente Stad Brussel. Alleen punten dicht bij de route; geen actuele openingsuren of toegangsgarantie.'],
         [link(brusselsPumpsSource.label, brusselsPumpsSource.url) + ' (' + link('CC0', brusselsPumpsSource.license) + ')', 'Locaties van fietspompen bij een rit door het Brussels Hoofdstedelijk Gewest. De bron geeft geen actuele staat van de pompen.'],
+        [link(brusselsWaterSource.label, brusselsWaterSource.url) + ' (' + link('CC0', brusselsWaterSource.license) + ')', 'Openbare drinkwaterpunten in de gemeente Stad Brussel. De planner houdt rekening met de ' + link('winterstop', brusselsWaterSource.season) + '.'],
         [link('Stadsplan van Aat', 'https://visitath.be/wp-content/uploads/2025/12/OTATH_plan-Ath_570x320mm_2025_WEB.pdf') + ' en ' + from('osm', 'OpenStreetMap-bijdragers'), 'Voor twee openbare toiletten in Aat. De kaart geeft geen actuele openingsuren of toegangsvoorwaarden.'],
         [link('RAVeL-meldingen · Service public de Wallonie', ravelNoticeSource.overview) + ' (' + link('CC BY 4.0', cc) + ')', 'Bij een gekozen Waalse fietsroute tonen we gepubliceerde werken of incidenten nabij het traject. Gemelde periodes en omleidingen kunnen veranderen.'],
         [link('GAL Meuse@Campagnes', andenneOutdoor.sourceHref) + ' en ' + link('Andenne Tourisme', andenneOutdoor.visitorHref), 'Voor de aparte wandel- en fietsroutes bij Andenne.'],
@@ -97,7 +99,7 @@ export function privacyPage(layout) {
       <ul class="info-sources">
         <li>${link('BRouter', brouter)} krijgt coördinaten van routepunten om de rit te berekenen. De routekaart vraagt kaartbeelden rechtstreeks op bij ${link('OpenStreetMap', osm)}.</li>
         <li>Voor je gekozen rit kan je browser automatisch het gebied opvragen bij Pin je punt en ChasseOnWeb; bij ChasseOnWeb ook voor de gekozen datum. Voor stopideeën kan Wikidata enkele punten op de route krijgen.</li>
-        <li>Bij een rit door de gemeente Stad Brussel vraagt je browser de openbare toilettenlijst rechtstreeks bij Stad Brussel op. De aanbieder ziet je IP-adres, maar krijgt geen routepunten, datum of cookies van de site. Je browser zoekt lokaal welke toiletten dicht bij de route liggen.</li>
+        <li>Bij een rit door de gemeente Stad Brussel vraagt je browser de openbare toilettenlijst rechtstreeks bij Stad Brussel op, en buiten de winterstop ook de lijst met drinkwaterpunten. De aanbieder ziet je IP-adres, maar krijgt geen routepunten, datum of cookies van de site. Je browser zoekt lokaal welke voorzieningen dicht bij de route liggen.</li>
         <li>Bij een rit door het Brussels Hoofdstedelijk Gewest haalt je browser de openbare pompenlijst op bij Brussel Mobiliteit. De aanbieder ziet je IP-adres, maar krijgt geen routepunten, datum of cookies van de site.</li>
         <li>Cloudflare vraagt voor RAVeL alleen de algemene meldingenlijst op. Je browser vergelijkt die lokaal met je route en datum, bepaalt de doorkruiste stadsgemeenten en maakt het GPX-bestand.</li>
       </ul>

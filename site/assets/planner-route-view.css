@@ -102,6 +102,7 @@
 
 .route-pin-service-toilet circle { fill: #3056a5; }
 .route-pin-service-repair circle { fill: #576324; }
+.route-pin-service-water circle { fill: #286c76; }
 .route-map-stop-service-toilet button { color: #3056a5; }
 .route-map-stop-service-repair button { color: #485315; }
 .route-notices[hidden], .route-notice-matches[hidden] { display: none; }

@@ -8,6 +8,7 @@ import { renderRouteNotices, renderRouteView } from './planner-route-view.js';
 import { localRouteServices } from './route-local-services.js';
 import { findBrusselsToilets, mergeRouteFacilities } from './brussels-toilets.js';
 import { findBrusselsPumps, mergeBrusselsPumps } from './brussels-pumps.js';
+import { findBrusselsWater } from './brussels-water.js';
 import { makeStopCandidates, pointAtKm, routeLegs, stopMinuteOptions } from './planner-chosen.js';
 
 const form = document.querySelector('#planner-itinerary-form');
@@ -84,7 +85,9 @@ function renderServices(view) {
   const details=el('details',null,'itinerary-band itinerary-details');
   details.open=Boolean(view.serviceSlot.firstElementChild?.open); details.dataset.itineraryServices='';
   const toilets=points.filter(p=>p.category==='toilet').length, repairs=points.filter(p=>p.category==='repair').length;
-  const words=[toilets?toilets+' '+(toilets===1?'toilet':'toiletten'):'',repairs?repairs+' '+(repairs===1?'fietsvoorziening':'fietsvoorzieningen'):''];
+  const water=points.filter(p=>p.category==='water').length;
+  const words=[toilets?toilets+' '+(toilets===1?'toilet':'toiletten'):'',repairs?repairs+' '+(repairs===1?'fietsvoorziening':'fietsvoorzieningen'):'',
+    water?water+' '+(water===1?'drinkwaterpunt':'drinkwaterpunten'):''];
   details.append(el('summary',words.filter(Boolean).join(' · ')+' langs de route'));
   const list=el('ul',null,'itinerary-service-list');
   for(const poi of points){
@@ -92,7 +95,7 @@ function renderServices(view) {
     row.append(link(poi.name,poi.url),el('small','km '+fmt(poi.kmAlongRoute)+' · '+Math.round(poi.distanceToRouteKm*1000)+' m van de route'));
     list.append(row);
   }
-  details.append(list,el('p','Opening en toegang kunnen verschillen.','planner-hint'));
+  details.append(list,el('p',water?'Toegang en werking kunnen verschillen.':'Opening en toegang kunnen verschillen.','planner-hint'));
   details.append(link('© OpenStreetMap-bijdragers','https://www.openstreetmap.org/copyright'));
   view.serviceSlot.replaceChildren(details);
 }
@@ -217,7 +220,10 @@ async function loadPassages(view) {
     renderPassed(view); choices(view);
     view.localServices=localRouteServices(view.trip,view.passage);
     if(view.localServices.length)updateServices(view);
-    if(view.passage.cities.some(city=>city.slug==='brussel'))void loadBrusselsToilets(view);
+    if(view.passage.cities.some(city=>city.slug==='brussel')){
+      void loadBrusselsToilets(view);
+      void loadBrusselsWater(view);
+    }
     const regions=view.passage?.regions??[];
     if(regions.includes('Brussels Hoofdstedelijk Gewest'))void loadBrusselsPumps(view);
     const endpoints=[view.trip.startCity?.region,view.trip.destinationCity?.region];
@@ -272,9 +278,18 @@ async function loadBrusselsPumps(view) {
   }
   updateServices(view);
 }
+async function loadBrusselsWater(view) {
+  try {
+    const points=await findBrusselsWater(view.trip,view.passage,{signal:view.controller.signal});
+    if(selected!==view||!points.length)return;
+    view.brusselsWater=points;
+  } catch { return; } // Optional municipal data; no extra error or empty block.
+  updateServices(view);
+}
 function updateServices(view) {
   const points=mergeRouteFacilities(view.brusselsToilets??[],[...(view.localServices??[]),...(view.flemishServices??[])]);
-  view.services={items:mergeBrusselsPumps(view.brusselsPumps??[],points)};
+  view.services={items:[...mergeBrusselsPumps(view.brusselsPumps??[],points),...(view.brusselsWater??[])]
+    .sort((a,b)=>a.kmAlongRoute-b.kmAlongRoute)};
   renderServices(view);syncMarkers(view);renderAvailability(view);
 }
 function renderSelected(model,index) {

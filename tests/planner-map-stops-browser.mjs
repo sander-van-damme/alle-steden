@@ -155,7 +155,7 @@ await withPlanner(process.env.PLANNER_BRUSSELS_MAP_PORT ?? 4496, async (browser,
     const page = await browser.newPage(layout);
     const crossing = [[4.34615,50.84464],[4.34944,50.84652],[4.35235,50.84704],[4.35505,50.84649],[4.35839,50.84756]];
     const url = 'https://opendata.brussels.be/api/explore/v2.1/catalog/datasets/toilettes-urinoirs-publics-openbare-toiletten-urinoirs-vbx/records?**';
-    let calls = 0, pumpCalls = 0;
+    let calls = 0, pumpCalls = 0, waterCalls = 0;
     await wirePage(page, {travel:({via})=>({length:24_000,
       ...((via[0][0]>4.3&&via[0][0]<4.4) && {points:[via[0],...crossing,via.at(-1)]})}),
       services:()=>({empty:true}),pois:()=>({empty:true})});
@@ -178,6 +178,14 @@ await withPlanner(process.env.PLANNER_BRUSSELS_MAP_PORT ?? 4496, async (browser,
           geometry:{type:'Point',coordinates:[4.355,50.8466]},
         }] }});
     });
+    await page.route('https://opendata.brussels.be/api/explore/v2.1/catalog/datasets/fontaines-d-eau-potable-gerees-par-la-ville-de-bruxelles/records?**',route=>{
+      waterCalls++;
+      assert.deepEqual([...new URL(route.request().url()).searchParams.keys()],['select','limit']);
+      return route.fulfill({headers:{'access-control-allow-origin':'*'},json:{total_count:1,results:[{
+        id_opendata:'FTB_000112',municipality_nl:'Brussel',name_nl:'Watertappunt Grétry',status_nl:'actief',
+        access_type_nl:'toegankelijk 24u/24',geo_point_2d:{lon:4.352,lat:50.8472},
+      }]}});
+    });
     await cityEntry(page,origin,'brussel');
     await openAdvanced(page);
     await page.locator(loc.date).fill(chosenDate);
@@ -195,15 +203,25 @@ await withPlanner(process.env.PLANNER_BRUSSELS_MAP_PORT ?? 4496, async (browser,
     await selected(page).locator('.route-pin-service-repair').first().waitFor();
     assert.equal(await services.getByText('Gastplaats').count(),0);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),layout.viewport.width);
+    assert.equal(waterCalls,0);
+    await page.locator(loc.date).fill('2027-04-10');
+    await build(page);
+    await services.getByText(/1 drinkwaterpunt langs de route/).waitFor({timeout:25_000});
+    await selected(page).locator('.route-pin-service-water').first().waitFor();
+    await selected(page).getByText('T = toilet · F = fietshulp · W = drinkwater',{exact:true}).waitFor();
+    await activate(page,services.locator('summary'));
+    assert.ok(await services.getByRole('link',{name:'Watertappunt Grétry'}).isVisible());
+    assert.equal(waterCalls,1);
     await cityEntry(page,origin);
     await openAdvanced(page);
-    await page.locator(loc.date).fill(chosenDate);
+    await page.locator(loc.date).fill('2027-04-10');
     await page.locator(loc.end).selectOption('lessen');
     await setRange(page,15,35);
     await build(page);
     await selected(page).locator(loc.cities).waitFor({timeout:20_000});
     assert.equal(calls,1);
     assert.equal(pumpCalls,1);
+    assert.equal(waterCalls,1);
     assert.equal(await selected(page).getByText('49, Magdalenasteenweg').count(),0);
   }
 });
