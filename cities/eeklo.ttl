@@ -53,3 +53,33 @@ wd:Q12440 a schema:City ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.1670832 ; schema:longitude 3.573504 ] ;
     schema:url <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/het-leen/praktisch/openingsuren-en-toegang.html> ;
     dcterms:source <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/het-leen/praktisch/openingsuren-en-toegang.html>, <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/het-leen/praktisch/bereikbaarheid.html>, <https://www.openstreetmap.org/node/1212451377> .
+
+<#eik-europa-2026> a schema:Event ;
+    schema:name "De eik als cultus- en cultuurboom in Europa"@nl ;
+    schema:genre "Lezing"@nl ;
+    schema:description "Lezing in Het Leen, Gentsesteenweg 80. Gratis, vanaf 18 jaar; vooraf inschrijven is nodig."@nl ;
+    schema:location <#het-leen-eeklose-toegang> ;
+    schema:startDate "2026-12-06"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-06T09:30:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-06T11:30:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/het-leen/bos-en-arboretum/het-leen-natuurlijk.html> ;
+    dcterms:source <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/het-leen/bos-en-arboretum/het-leen-natuurlijk.html>, <https://dms.oost-vlaanderen.be/download/61fecb7a-7c7a-49e3-a05a-ce664aadee2b/Wegwijzer%20gratis%20en%20betaalbare%20uitstappen.pdf> .
+
+<#winter-in-het-bos-2027> a schema:Event ;
+    schema:name "Winter in het bos"@nl ;
+    schema:genre "Natuurwandeling"@nl ;
+    schema:description "Begeleide winterwandeling in Het Leen, Gentsesteenweg 80. Gratis, vanaf 18 jaar; vooraf inschrijven is nodig."@nl ;
+    schema:location <#het-leen-eeklose-toegang> ;
+    schema:startDate "2027-01-31"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2027-01-31T09:30:00+01:00"^^xsd:dateTime ; schema:endDate "2027-01-31T11:30:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.eeklo.be/activiteiten/detail/7323/het-leen-natuurlijk-winter-in-het-bos> ;
+    dcterms:source <https://www.eeklo.be/activiteiten/detail/7323/het-leen-natuurlijk-winter-in-het-bos> .
+
+<#het-bos-ontwaakt-2027> a schema:Event ;
+    schema:name "Het bos ontwaakt"@nl ;
+    schema:genre "Natuurwandeling"@nl ;
+    schema:description "Begeleide wandeling in Het Leen, Gentsesteenweg 80. Gratis, vooraf inschrijven is nodig."@nl ;
+    schema:location <#het-leen-eeklose-toegang> ;
+    schema:startDate "2027-02-28"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2027-02-28T09:30:00+01:00"^^xsd:dateTime ; schema:endDate "2027-02-28T11:30:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.eeklo.be/activiteiten/detail/7391/het-leen-natuurlijk-het-bos-ontwaakt> ;
+    dcterms:source <https://www.eeklo.be/activiteiten/detail/7391/het-leen-natuurlijk-het-bos-ontwaakt> .

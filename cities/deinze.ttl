@@ -80,3 +80,13 @@ wd:Q2438902 a schema:Park ;
     schema:url <https://www.mudel.be/activiteiten/detail/15692/albert-servaes-pionier-van-het-expressionisme> ;
     dcterms:source <https://www.mudel.be/activiteiten/detail/15692/albert-servaes-pionier-van-het-expressionisme>,
         <https://www.mudel.be/contact/24/museum-van-deinze-en-de-leiestreek> .
+
+<#verwen-de-dieren-2026> a schema:Event ;
+    schema:name "Verwen de dieren"@nl ;
+    schema:genre "Natuuractiviteit"@nl ;
+    schema:description "Bezoek aan de dieren in De Brielmeersen. Afspraak aan de picknicktoren. Gratis, vooraf inschrijven is nodig."@nl ;
+    schema:location wd:Q2438902 ;
+    schema:startDate "2026-12-06"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-06T10:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-06T12:00:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/de-brielmeersen/ontspannen/de-brielmeersen-natuurlijk.html> ;
+    dcterms:source <https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/de-brielmeersen/ontspannen/de-brielmeersen-natuurlijk.html>, <https://dms.oost-vlaanderen.be/download/61fecb7a-7c7a-49e3-a05a-ce664aadee2b/Wegwijzer%20gratis%20en%20betaalbare%20uitstappen.pdf> .

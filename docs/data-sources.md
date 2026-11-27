@@ -40,6 +40,10 @@ In Oostende zijn alleen de zeven WK-wedstrijdstarten uit het [officiële program
 
 Op 27 november 2026: één kalendervermelding voor Brussel uit de [aankondiging van Stad Brussel](https://www.brussel.be/inhuldiging-stripmuur-kimia). De zichtbare aankondiging vermeldt 3 december om 14 u en Antwerpsesteenweg 441; geen einduur. De downloadbare iCal heeft een afwijkend beginuur en wordt niet ingelezen. Alleen feitelijke gegevens met bronlink, geen afbeeldingen of gekopieerde tekst. Geen vaste plek, plannerstop of kalenderintegratie.
 
+## Gedateerde organisatorvermeldingen · Het Leen en De Brielmeersen
+
+Op 27 november 2026: vier eindige activiteiten in Eeklo en Deinze. De [provinciale gids, p. 15](https://dms.oost-vlaanderen.be/download/61fecb7a-7c7a-49e3-a05a-ce664aadee2b/Wegwijzer%20gratis%20en%20betaalbare%20uitstappen.pdf), [Het Leen](https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/het-leen/bos-en-arboretum/het-leen-natuurlijk.html) en [De Brielmeersen](https://oost-vlaanderen.be/ontspannen/recreatiedomeinen/de-brielmeersen/ontspannen/de-brielmeersen-natuurlijk.html) bevestigen de twee activiteiten op 6 december en hun begin- en einduur. De provincie is ook organisator op de stadsfiches voor [31 januari](https://www.eeklo.be/activiteiten/detail/7323/het-leen-natuurlijk-winter-in-het-bos) en [28 februari](https://www.eeklo.be/activiteiten/detail/7391/het-leen-natuurlijk-het-bos-ontwaakt). Alleen de genoemde edities en tijden, met oorspronkelijke links en de inschrijfplicht; geen afbeeldingen, live tickets of automatische feed. De activiteiten krijgen geen bevestigde fietsstop. De openingsuren van recreatiedomeinen blijven los van activiteiten of de winterstop van het bosinfocentrum.
+
 ## Al actief
 
 | ID · status | Bron, gebruik en hergebruik | Wat ontbreekt / vervolg |
