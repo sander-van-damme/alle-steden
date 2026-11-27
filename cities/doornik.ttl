@@ -86,3 +86,14 @@ wd:Q2742228 a schema:LandmarksOrHistoricalBuildings ;
     schema:endDate "2027-01-25"^^xsd:date ;
     schema:url <https://www.ramdamfestival.be/> ;
     dcterms:source <https://www.ramdamfestival.be/> .
+
+# Eén bezoekdag met verschillende uren per locatie, geen doorlopende openstelling.
+<#sint-niklaas-belfort-musea-2026> a schema:Event ;
+    schema:name "Sint-Niklaas: gratis naar het belfort en drie musea"@nl ;
+    schema:genre "Museumprogramma"@nl ;
+    schema:description "Van 11 tot 17 uur: het natuurhistorisch museum en vivarium, het MuFIm en het museum voor militaire geschiedenis. Het belfort is gratis toegankelijk van 13 tot 17 uur."@nl ;
+    schema:location wd:Q173219 ;
+    schema:isAccessibleForFree true ;
+    schema:startDate "2026-12-06"^^xsd:date ;
+    schema:url <https://www.visittournai.be/agenda/saint-nicolas-a-loffice-de-tourisme-au-beffroi-et-dans-les-musees/> ;
+    dcterms:source <https://www.tournai.be/agenda/saint-nicolas-a-loffice-de-tourisme-au-beffroi-et-dans-les-musees> .
