@@ -40,6 +40,7 @@ export function aboutPage(layout) {
         [from('fwbCulturalCentres'), 'Voor gecontroleerde cultuurplekken op de stadsfiche. Voor programma en toegang volg je de link naar het cultuurcentrum.'],
         [from('historiaVisit'), 'Voor gewone museumuren, laatste toegang en vaste sluitingsdagen. Controleer uitzonderingen bij het museum.'],
         [from('visitDiest'), 'Voor de gewone bezoekuren van het Diestse infokantoor en Stadsmuseum De Hofstadt.'],
+        [from('gentArt') + ' · Dienst Economie en Toerisme Gent', 'Voor een selectie van kunst in de publieke ruimte op de Gentse stadsfiche.'],
         [from('monsArt', 'Ville de Mons') + ' en ' + from('namurArt', 'Ville de Namur'), 'Voor kunst in de openbare ruimte.'],
         [from('verviersParks', 'Ville de Verviers') + ' (' + link('CC BY 4.0', cc) + ')', 'Voor openbare parken en groenplekken op de stadsfiche, zonder bevestigde openingsuren.'],
         [link('Paradigm / Brussel Mobiliteit', 'https://opendata.brussels.be/explore/dataset/limites-administratives-des-communes-en-region-de-bruxelles-capitale/') + ' en ' + link('Open Data Wallonie-Bruxelles', 'https://www.odwb.be/explore/dataset/communesgemeente-belgium/information/'), 'Gemeentegrenzen voor het controleren van locaties.'],

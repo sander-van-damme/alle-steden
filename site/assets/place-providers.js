@@ -48,7 +48,9 @@ export function placeProviders(city, { expanded = true, origin = globalThis.loca
   } }, ...(expanded && city.slug === 'marche-en-famenne' ? ['marcheHeritage','marcheArt'].map((key) => ({
     key, added: true, run: async () => (await loadMarche()).find((entry) => entry.key === key).run(),
   })) : []), ...museumSource, ...outdoorArt, ...publicParks, ...cultureCentre];
-  return [...(expanded && city.slug==='diest' && origin ? [
+  return [...(expanded && city.slug === 'gent' ? [{
+    key: 'gentArt', added: true, run: async () => (await import('./gent-public-art.js')).getGentPublicArt(city, options),
+  }] : []), ...(expanded && city.slug==='diest' && origin ? [
     {key:'visitDiest',added:true,run:()=>getVisitDiest({origin,...options})},
   ] : []), wikidata, { key: 'flanders', run: async () => {
     if (!origin) throw new Error('Herkomst ontbreekt');
