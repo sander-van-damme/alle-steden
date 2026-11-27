@@ -305,3 +305,7 @@ Vanaf 27 november 2026 staan drie extra kunstwerken op de stadsfiche: [De Golf](
 ### 27 november 2026 · Twee evenementen van Talbot House
 
 - Handmatig gecontroleerde eerstehandse agenda-items voor Poperinge: [Living History Weekend](https://www.talbothouse.be/nl/events/talbot-house-living-history-weekend) (19–20 december), [The Wipers Times](https://www.talbothouse.be/nl/events/wipers-times-tentoonstelling) (11 december 2026–11 december 2027). Uren en vier sluitingsdagen volgen de [bezoekersinformatie](https://www.talbothouse.be/nl/contact); Pottestraat 5 is de ingang. De gemeentelijke RSS is niet geïntegreerd: geen bevestigde hergebruikvoorwaarden, gestructureerde tijden of browser-CORS.
+
+### 27 november 2026 · Triënnales 2027
+
+- Twee handmatig gecontroleerde festivalperiodes uit de officiële aankondigingen: [Triënnale Brugge](https://triennalebrugge.be/en/news/triennale-brugge-2027-maakt-kunstenaars-en-architecten-bekend) (24 april–5 september) en [Triënnale Kortrijk](https://triennalekortrijk.be/nl/ontdek/editie-2027) (26 juni–3 oktober). Eén evenement per stad; geen aangenomen uren, afzonderlijke werken of routepins. Een administratieve GIPOD-inname wijzigt de bezoekdata niet.

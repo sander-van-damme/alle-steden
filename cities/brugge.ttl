@@ -80,3 +80,13 @@ wd:Q1108949 a schema:Museum ;
         [ a schema:Event ; schema:startDate "2026-12-20T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-20T18:00:00+01:00"^^xsd:dateTime ] ;
     schema:url <https://www.visitbruges.be/nl/wintergloed/handmade-in-brugge-makersmarkt> ;
     dcterms:source <https://www.visitbruges.be/nl/wintergloed/handmade-in-brugge-makersmarkt> .
+
+<https://triennalebrugge.be/en/news/triennale-brugge-2027-maakt-kunstenaars-en-architecten-bekend> a schema:Festival ;
+    schema:name "Triënnale Brugge 2027: After Birth"@nl ;
+    schema:description "Hedendaagse kunst en architectuur in de openbare ruimte van Brugge en Zeebrugge. Kijk bij de organisator voor locaties en bezoekuren per werk."@nl ;
+    schema:containedInPlace wd:Q12994 ;
+    schema:location wd:Q12994 ;
+    schema:startDate "2027-04-24"^^xsd:date ;
+    schema:endDate "2027-09-05"^^xsd:date ;
+    schema:url <https://triennalebrugge.be/en/news/triennale-brugge-2027-maakt-kunstenaars-en-architecten-bekend> ;
+    dcterms:source <https://triennalebrugge.be/en/news/triennale-brugge-2027-maakt-kunstenaars-en-architecten-bekend> .

@@ -2,6 +2,7 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <> a schema:Dataset ;
     schema:about wd:Q12995 ;
@@ -52,3 +53,13 @@ wd:Q12995 a schema:City ;
     schema:address "Doorgang historisch stadhuis, Grote Markt, Kortrijk"@nl ;
     schema:url <https://www.kortrijk.be/musea/verdrag-van-kortrijk> ;
     dcterms:source <https://www.kortrijk.be/peters-en-meters-beeldenpatrimonium> .
+
+<https://triennalekortrijk.be/nl/ontdek/editie-2027> a schema:Festival ;
+    schema:name "Triënnale Kortrijk 2027: Gelati per tutti"@nl ;
+    schema:description "Hedendaags kunstparcours in de publieke ruimte en op erfgoedlocaties. Kijk bij de organisator voor locaties en bezoekuren per werk."@nl ;
+    schema:containedInPlace wd:Q12995 ;
+    schema:location wd:Q12995 ;
+    schema:startDate "2027-06-26"^^xsd:date ;
+    schema:endDate "2027-10-03"^^xsd:date ;
+    schema:url <https://triennalekortrijk.be/nl/ontdek/editie-2027> ;
+    dcterms:source <https://triennalekortrijk.be/nl/ontdek/editie-2027> .
