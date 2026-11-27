@@ -327,3 +327,8 @@ Beide periodes zijn overgenomen van de organisatoren. Per stad één datumvermel
 
 - [Visit Roeselare](https://www.visitroeselare.be/nl/zien-en-doen/fietsroutes/roeselaarse-koersverhalen) bevestigt 35 km totaal met de bewegwijzerde Jempi Monseréroute (13 km) en Wielerheldenroute (22 km), beide vanaf KOERS aan het Polenplein 15. De stadsfiche verwijst naar de aanbieder voor de routekaarten; geen GPX, museumuren, live toegangsclaim of koppeling aan de planner overgenomen.
 - De Groene Ronde is niet toegevoegd: de titel van de bezoekersfiche en de detailtekst geven verschillende afstanden.
+
+### 27 november 2026 · Twee parken in Bergen
+
+- [Ville de Mons · Parcs, jardins et squares](https://www.odwb.be/explore/dataset/parc-jardin-square-atal/information/), CC BY 4.0. Van de 58 rijen vraagt de stadsfiche alleen ID 17 en 30 op. [Parc du Chanoine Puissant](https://www.visitmons.be/en/sites-and-museums/park-of-the-chanoine-puissant-543130) is niet hetzelfde als het museum Chanoine Puissant. Het [park van Jemappes](https://www.visitmons.be/nl/sites-en-musea/park-van-jemappes-665257) is niet het Coq de Jemappes-monument. De bezoekersfiches bevestigen de identiteiten; de inventaris levert de plekken, niet geverifieerde ingangen.
+- In de desktopsteekproef vóór de uitbreiding stonden beide parken niet tussen 71 getoonde plekken. Geen openingstijden, actuele toegang, kalender- of plannergegevens. De inventaris bevestigt op zichzelf niet dat een park open is en wordt niet integraal geïmporteerd.

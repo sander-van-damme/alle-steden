@@ -28,6 +28,9 @@ export function placeProviders(city, { expanded = true, origin = globalThis.loca
   const publicParks = expanded && city.slug === 'verviers' ? [{
     key: 'verviersParks', added: true, run: async () => (await import('./verviers-parks.js')).getVerviersParks(city, options),
   }] : [];
+  if (expanded && city.slug === 'bergen') publicParks.push({
+    key: 'monsParks', added: true, run: async () => (await import('./mons-parks.js')).getMonsParks(city, options),
+  });
   const wikidata = { key: 'wikidata', run: () => getWikidata(city, options).then(ready) };
   if (region === 'brussels') return [
     ...(expanded && city.slug==='brussel' && origin ? [
