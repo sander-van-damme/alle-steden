@@ -273,3 +273,7 @@ Er worden alleen handmatig gecontroleerde datum-, tijd- en plaatsfeiten weergege
 - De [organisatie in Binche](https://www.carnavaldebinche.be/actualites/carnaval-2027) bevestigt 7–9 februari 2027 voor het carnaval. Eén kaart voor de editie, zichtbaar op elk van de drie dagen; geen uren uit eerdere programma’s overgenomen.
 - [Visit Geraardsbergen](https://www.visitgeraardsbergen.be/krakelingen-and-tonnekensbrand) bevestigt 21 februari 2027 voor Krakelingen & Tonnekensbrand. [Visit Geraardsbergen](https://www.visitgeraardsbergen.be/eerste-toog) en het [stadsformulier voor die editie](https://www.geraardsbergen.be/eloket/formulier/42/standplaats-jaarmarkt-eerste-toog-maandag-1-maart-2027-aanvraagformulier) bevestigen 1 maart voor Eerste Toog. Geen uren: de bronnen vermengen gangbare uren en oudere edities. Geen Winterfoor zonder stabiele organisatorvermelding.
 - Alleen de drie feitelijke edities met datum en oorspronkelijke bezoeklink. Geen bronarchief, doorlopende herhaling, gekopieerde tekst of plannerstop. Geen nieuwe live bron; de kaarten verdwijnen na afloop uit het huidige aanbod.
+
+### 27 november 2026 · Openbare toiletten van Stad Brussel
+
+- Actuele gemeentelijke open data voor de fietsplanner, geen nieuwe kalender- of stadsfichekaarten. Zie [bron, filter, licentie en verwerking](route-services-sources.md#stad-brussel--gemeentelijke-toiletten).

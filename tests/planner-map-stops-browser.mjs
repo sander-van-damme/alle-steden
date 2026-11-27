@@ -147,3 +147,50 @@ await withPlanner(process.env.PLANNER_MAP_STOPS_PORT ?? 4489, async (browser, or
     await page.close();
   }
 });
+
+// An independent public vendor catalog is queried only when the chosen
+// geometry actually crosses the municipality of Brussels.
+await withPlanner(process.env.PLANNER_BRUSSELS_MAP_PORT ?? 4496, async (browser, origin) => {
+  for (const layout of [desktop, phone]) {
+    const page = await browser.newPage(layout);
+    const crossing = [[4.34615,50.84464],[4.34944,50.84652],[4.35235,50.84704],[4.35505,50.84649],[4.35839,50.84756]];
+    const url = 'https://opendata.brussels.be/api/explore/v2.1/catalog/datasets/toilettes-urinoirs-publics-openbare-toiletten-urinoirs-vbx/records?**';
+    let calls = 0;
+    await wirePage(page, {travel:({via})=>({length:24_000,
+      ...((via[0][0]>4.3&&via[0][0]<4.4) && {points:[via[0],...crossing,via.at(-1)]})}),
+      services:()=>({empty:true}),pois:()=>({empty:true})});
+    await page.route(url, route=>{
+      calls++;
+      const query=new URL(route.request().url()).searchParams;
+      assert.deepEqual([...query.keys()],['where','select','limit']);
+      return route.fulfill({headers:{'access-control-allow-origin':'*'},json:{total_count:2,results:
+        ['Toilette publique','Réseau Toilettes accueillantes'].map((category_fr,i)=>({
+          ref_id:'Toi'+(i+1),municipality_nl:'Brussel',category_fr,type_fr:'Toilette',floor:'0',
+          address_modified_nl:i?'Gastplaats':'49, Magdalenasteenweg',geo_point_2d:{lon:4.35537,lat:50.84511},
+        }))}});
+    });
+    await cityEntry(page,origin,'brussel');
+    await openAdvanced(page);
+    await page.locator(loc.date).fill(chosenDate);
+    await page.locator(loc.end).selectOption('vilvoorde');
+    await setRange(page,15,35);
+    await build(page);
+    const services=selected(page).locator(loc.service);
+    await services.getByText('1 toilet langs de route',{exact:true}).waitFor({timeout:25_000});
+    assert.equal(calls,1);
+    await selected(page).locator('.route-pin-service-toilet').first().waitFor();
+    await activate(page,services.locator('summary'));
+    assert.ok(await services.getByRole('link',{name:/Magdalenasteenweg/}).isVisible());
+    assert.equal(await services.getByText('Gastplaats').count(),0);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),layout.viewport.width);
+    await cityEntry(page,origin);
+    await openAdvanced(page);
+    await page.locator(loc.date).fill(chosenDate);
+    await page.locator(loc.end).selectOption('lessen');
+    await setRange(page,15,35);
+    await build(page);
+    await selected(page).locator(loc.cities).waitFor({timeout:20_000});
+    assert.equal(calls,1);
+    assert.equal(await selected(page).getByText('49, Magdalenasteenweg').count(),0);
+  }
+});

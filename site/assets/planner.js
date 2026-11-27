@@ -6,6 +6,7 @@ import { generateDistanceRoutes } from './planner-itinerary.js';
 import { bindItineraryEditor } from './planner-itinerary-ui.js';
 import { renderRouteNotices, renderRouteView } from './planner-route-view.js';
 import { localRouteServices } from './route-local-services.js';
+import { findBrusselsToilets, mergeRouteFacilities } from './brussels-toilets.js';
 import { makeStopCandidates, pointAtKm, routeLegs, stopMinuteOptions } from './planner-chosen.js';
 
 const form = document.querySelector('#planner-itinerary-form');
@@ -78,8 +79,9 @@ function renderPassed(view) {
 }
 function renderServices(view) {
   const points=view.services?.items??[];
-  if(!points.length)return;
-  const details=el('details',null,'itinerary-band itinerary-details'); details.dataset.itineraryServices='';
+  if(!points.length){view.serviceSlot.replaceChildren();return;}
+  const details=el('details',null,'itinerary-band itinerary-details');
+  details.open=Boolean(view.serviceSlot.firstElementChild?.open); details.dataset.itineraryServices='';
   const toilets=points.filter(p=>p.category==='toilet').length, repairs=points.filter(p=>p.category==='repair').length;
   const words=[toilets?toilets+' '+(toilets===1?'toilet':'toiletten'):'',repairs?repairs+' '+(repairs===1?'fietsvoorziening':'fietsvoorzieningen'):''];
   details.append(el('summary',words.filter(Boolean).join(' · ')+' langs de route'));
@@ -213,7 +215,8 @@ async function loadPassages(view) {
   if(selected===view){
     renderPassed(view); choices(view);
     view.localServices=localRouteServices(view.trip,view.passage);
-    if(view.localServices.length){view.services={items:view.localServices}; renderServices(view); syncMarkers(view);}
+    if(view.localServices.length)updateServices(view);
+    if(view.passage.cities.some(city=>city.slug==='brussel'))void loadBrusselsToilets(view);
     const regions=view.passage?.regions??[];
     const endpoints=[view.trip.startCity?.region,view.trip.destinationCity?.region];
     if(regions.includes('Vlaanderen')||(view.passage?.state!=='ok'&&endpoints.includes('Vlaanderen')))void loadServices(view);
@@ -236,13 +239,29 @@ async function loadServices(view) {
     view.controller.signal.throwIfAborted();
     const data=await findRouteServices({legs:routeLegs(view.trip)},{signal:view.controller.signal});
     if(selected!==view)return;
-    view.services={...data,items:[...(view.localServices??[]),...data.items].sort((a,b)=>a.kmAlongRoute-b.kmAlongRoute)};
+    view.flemishServices=data.items;
     if(data.coverage.some(x=>x.state==='failed'))view.extras.services='unavailable';
   }catch(error){
     if(abort(error)||view.controller.signal.aborted)return;
     if(!(error instanceof RangeError))view.extras.services='unavailable';
   }
-  if(selected===view){renderServices(view);syncMarkers(view);renderAvailability(view);}
+  if(selected===view)updateServices(view);
+}
+async function loadBrusselsToilets(view) {
+  try {
+    const points=await findBrusselsToilets(view.trip,view.passage,{signal:view.controller.signal});
+    if(selected!==view)return;
+    view.brusselsToilets=points;
+  } catch(error) {
+    if(abort(error)||view.controller.signal.aborted)return;
+    // An unavailable optional source does not remove other providers or add a warning block.
+    return;
+  }
+  updateServices(view);
+}
+function updateServices(view) {
+  view.services={items:mergeRouteFacilities(view.brusselsToilets??[],[...(view.localServices??[]),...(view.flemishServices??[])])};
+  renderServices(view);syncMarkers(view);renderAvailability(view);
 }
 function renderSelected(model,index) {
   if(search!==model||!model.trips[index])return;
