@@ -309,3 +309,10 @@ Vanaf 27 november 2026 staan drie extra kunstwerken op de stadsfiche: [De Golf](
 ### 27 november 2026 · Triënnales 2027
 
 - Twee handmatig gecontroleerde festivalperiodes uit de officiële aankondigingen: [Triënnale Brugge](https://triennalebrugge.be/en/news/triennale-brugge-2027-maakt-kunstenaars-en-architecten-bekend) (24 april–5 september) en [Triënnale Kortrijk](https://triennalekortrijk.be/nl/ontdek/editie-2027) (26 juni–3 oktober). Eén evenement per stad; geen aangenomen uren, afzonderlijke werken of routepins. Een administratieve GIPOD-inname wijzigt de bezoekdata niet.
+
+## Twee festivaledities · 27 november 2026
+
+- [Namur en Mai](https://namurenmai.org/), Namen: 6–8 mei 2027.
+- [Tournai Ramdam Festival](https://www.ramdamfestival.be/), Doornik: 15–25 januari 2027.
+
+Beide periodes zijn overgenomen van de organisatoren. Per stad één datumvermelding, zonder afgeleide dagelijkse uren, vertoningen, toegankelijkheid of jaarlijkse herhaling.

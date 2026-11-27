@@ -60,3 +60,14 @@ wd:Q19697920 a schema:Museum ;
     schema:startDate "2027-08-01"^^xsd:date ;
     schema:url <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> ;
     dcterms:source <https://artsetpublics.be/programmes/les-dimanches-plus-que-gratuits/> .
+
+# Alleen de bevestigde festivaldagen; afzonderlijke voorstellingen volgen bij de organisator.
+<#namur-en-mai-2027> a schema:Festival ;
+    schema:name "Namur en Mai 2027"@nl ;
+    schema:genre "Podiumkunsten"@nl ;
+    schema:description "Theater, circus en andere voorstellingen in het centrum van Namen."@nl ;
+    schema:location wd:Q134121 ;
+    schema:startDate "2027-05-06"^^xsd:date ;
+    schema:endDate "2027-05-08"^^xsd:date ;
+    schema:url <https://namurenmai.org/> ;
+    dcterms:source <https://namurenmai.org/> .

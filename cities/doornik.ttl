@@ -75,3 +75,14 @@ wd:Q2742228 a schema:LandmarksOrHistoricalBuildings ;
     schema:url <https://www.visittournai.be/agenda/concert-de-carillon-special-noel-tournai-24decembre2026/> ;
     dcterms:source <https://www.visittournai.be/agenda/concert-de-carillon-special-noel-tournai-24decembre2026/>,
         <https://www.tournai.be/actualites/tournai-dhiver-2026-decouvrez-le-programme-des-festivites> .
+
+# De festivalperiode is bevestigd; geen afgeleide vertoningsuren.
+<#ramdam-2027> a schema:Festival ;
+    schema:name "Tournai Ramdam Festival 2027"@nl ;
+    schema:genre "Film"@nl ;
+    schema:description "De zeventiende editie van het filmfestival in Doornik. Kijk bij de organisator voor vertoningen en locaties."@nl ;
+    schema:location wd:Q173219 ;
+    schema:startDate "2027-01-15"^^xsd:date ;
+    schema:endDate "2027-01-25"^^xsd:date ;
+    schema:url <https://www.ramdamfestival.be/> ;
+    dcterms:source <https://www.ramdamfestival.be/> .
