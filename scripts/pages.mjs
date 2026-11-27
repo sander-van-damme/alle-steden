@@ -239,17 +239,38 @@ function entryList(title, intro, kind, items, linkIds) {
   </section>`;
 }
 
+const cityRideLinks = {
+  poperinge: {
+    intro: 'De twee hoofdroutes vertrekken op de Grote Markt. Kaart en GPX vind je bij Toerisme Poperinge.',
+    rides: [
+      { name: 'Hoppelandfietsroute', href: 'https://www.toerismepoperinge.be/Aanbod/fietsen/fietslussen/hoppelandfietsroute',
+        details: '53,4 km · kortere lussen: 30,8 en 23,8 km' },
+      { name: 'POP 14-18 fietsroute', href: 'https://www.toerismepoperinge.be/actief-genieten/fietsen/fietslussen/pop-14-18-fietsroute',
+        details: '41 km · langs sporen van de Eerste Wereldoorlog' },
+    ],
+  },
+  gent: {
+    intro: 'Kaart en GPX vind je bij de aanbieders.',
+    rides: [
+      { name: 'Stadssafari', href: 'https://stad.gent/nl/cultuur-vrije-tijd/wandelen-en-fietsen-gent/fietsroute-stadssafari',
+        details: '11 km · start en einde aan de Stadshal' },
+      { name: 'Groene Gentse Gordel', href: 'https://fietsambassade.gent.be/nl/fiets-groene-gentse-gordel-zonder-veerboot',
+        details: 'Ca. 51 km · via het veer van Langerbrugge',
+        service: { name: 'Veeruren en status', href: 'https://www.agentschapmdk.be/nl/veerdiensten/veerdienst-langerbrugge' } },
+    ],
+  },
+};
+
 function localRoutes(slug) {
-  if (slug === 'poperinge') {
+  if (Object.hasOwn(cityRideLinks, slug)) {
+    const { intro, rides } = cityRideLinks[slug];
+    const items = rides.map(({ name, href, details, service }) => `<li>
+      <h3><a href="${escapeHtml(href)}">${escapeHtml(name)} ${arrow}</a></h3>
+      <p class="entry-meta">${escapeHtml(details)}${service ? ` · <a href="${escapeHtml(service.href)}">${escapeHtml(service.name)}</a>` : ''}</p>
+    </li>`).join('');
     return `<section id="routes" class="entries calendar-city-link" aria-labelledby="routes-title">
-      <div class="entries-heading"><h2 id="routes-title">Fietsroutes</h2>
-        <p>De twee hoofdroutes vertrekken op de Grote Markt. Kaart en GPX vind je bij Toerisme Poperinge.</p></div>
-      <ul class="entry-list">
-        <li><h3><a href="https://www.toerismepoperinge.be/Aanbod/fietsen/fietslussen/hoppelandfietsroute">Hoppelandfietsroute ${arrow}</a></h3>
-          <p class="entry-meta">53,4 km · kortere lussen: 30,8 en 23,8 km</p></li>
-        <li><h3><a href="https://www.toerismepoperinge.be/actief-genieten/fietsen/fietslussen/pop-14-18-fietsroute">POP 14-18 fietsroute ${arrow}</a></h3>
-          <p class="entry-meta">41 km · langs sporen van de Eerste Wereldoorlog</p></li>
-      </ul>
+      <div class="entries-heading"><h2 id="routes-title">Fietsroutes</h2><p>${escapeHtml(intro)}</p></div>
+      <ul class="entry-list">${items}</ul>
     </section>`;
   }
   if (slug !== 'andenne') return '';
