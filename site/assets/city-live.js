@@ -1,7 +1,7 @@
 import {
   sources, safeUrl, visitorUrl, compact, dateValue, displayDate, walloonAgendaUrl,
   cityEventSources, getOsmHours,
-  upcomingEvents, dedupeEvents,
+  upcomingEvents, dedupeEvents, placeDisambiguation,
 } from './sources.js';
 import { displayedPlaces, placeProviders } from './place-providers.js';
 import { isHistoriaVenue } from './historia-visit.js';
@@ -154,7 +154,7 @@ function buildCard(item) {
     if (item.end && item.end !== item.start) date.append(' tot ', time(item.end));
     card.append(date);
   }
-  const where = [item.category, item.artist, item.address || item.venue].filter(Boolean).join(' · ');
+  const where = [item.category, item.artist, item.address || item.venue || item.disambiguation].filter(Boolean).join(' · ');
   if (where) card.append(el('p', where, 'entry-meta'));
   if (item.description) card.append(el('p', item.description, 'entry-description'));
   appendHours(card, item);
@@ -238,7 +238,10 @@ function enhanceSection(section, city, type, updateCredits) {
       if (type === 'places') {
         const merged = displayedPlaces(city, stored.map(({ item, card }) => ({ ...item, card })), groups);
         mappedPlaces = merged;
-        const added = merged.filter((item) => !item.card);
+        const disambiguation = placeDisambiguation(merged);
+        const added = merged.filter((item) => !item.card).map(item => ({ ...item, disambiguation: disambiguation(item) }));
+        const displayedCards = new Set(merged.map(item => item.card));
+        stored.forEach(({ card }) => { card.hidden = !displayedCards.has(card); });
         if (settled && requestedFragment.startsWith('bron-')) {
           const targetIndex = added.findIndex((item) => placeFragments(item).includes(requestedFragment));
           if (targetIndex >= 0) amount = Math.max(amount, Math.ceil((targetIndex + 1) / batch) * batch);
@@ -248,6 +251,14 @@ function enhanceSection(section, city, type, updateCredits) {
         // Enrich the curated card instead of rendering the same place a second time.
         merged.filter(({ card }) => card).forEach((item) => {
           ensurePlaceAnchors(item.card, item);
+          const detail = disambiguation(item);
+          const previous = item.card.querySelector('[data-place-disambiguation]');
+          if (detail) {
+            const row = previous ?? el('p', '', 'entry-meta');
+            row.dataset.placeDisambiguation = '';
+            row.textContent = detail;
+            if (!previous) item.card.querySelector('h3')?.after(row);
+          } else previous?.remove();
           appendHours(item.card, { ...item, ...extraHours.get(item.wikidata) });
         });
       } else {

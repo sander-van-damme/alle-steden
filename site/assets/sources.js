@@ -211,7 +211,7 @@ export function wikidataQuery(city) {
   // Some merged cities have unpopulated new municipality entities. Follow only
   // declared predecessor municipalities with a recent official end date, not
   // an arbitrary radius or a general geographical name match.
-  return `SELECT ?item ?name ?site ?sitelinks ?osmNode ?osmWay ?osmRelation ?point WHERE {
+  return `SELECT ?item ?name ?site ?sitelinks ?osmNode ?osmWay ?osmRelation ?point ?articleTitle ?street WHERE {
     { SELECT DISTINCT ?item ?sitelinks WHERE {
       VALUES ?type { wd:Q33506 wd:Q570116 wd:Q23413 wd:Q2977 wd:Q16970 wd:Q4989906 wd:Q9259 wd:Q2319498 wd:Q839954 wd:Q15243209 wd:Q22698 wd:Q167346 wd:Q207694 wd:Q217646 wd:Q1640824 wd:Q1802963 wd:Q12518 wd:Q2065736 wd:Q245117 wd:Q38720 wd:Q108325 wd:Q44613 wd:Q174782 }
       { ?item wdt:P131 wd:${city.qid} }
@@ -227,6 +227,10 @@ export function wikidataQuery(city) {
     OPTIONAL { ?item wdt:P10689 ?osmWay }
     OPTIONAL { ?item wdt:P402 ?osmRelation }
     OPTIONAL { ?item wdt:P625 ?point }
+    OPTIONAL { ?item wdt:P6375 ?street }
+    OPTIONAL {
+      ?article schema:about ?item; schema:isPartOf <https://${local[0]}.wikipedia.org/>; schema:name ?articleTitle.
+    }
   } ORDER BY DESC(?sitelinks) ?item`;
 }
 
@@ -267,7 +271,9 @@ const fromBindings = (doc, source) => bindings(doc).flatMap((row) => {
     id, name, source,
     website: verifiedPlaceWebsite(source, id.split('/').at(-1), val(row, 'site')) ??
       id.replace(/^http:\/\/(www.wikidata.org|linked.toerismevlaanderen.be)\//, 'https://$1/'),
-    address: [compact(val(row, 'street')), compact(val(row, 'postcode'))].filter(Boolean).join(' · '),
+    address: source === 'wikidata' ? '' : [compact(val(row, 'street')), compact(val(row, 'postcode'))].filter(Boolean).join(' · '),
+    street: compact(val(row, 'street')), postalCode: compact(val(row, 'postcode')),
+    placeQualifier: source === 'wikidata' ? articleQualifier(name, val(row, 'articleTitle')) : undefined,
     hours: compact(val(row, 'hours')), category: compact(val(row, 'kind')),
     coordinates: point ? coordinatesInBelgium(Number(point[2]), Number(point[1])) : undefined,
     osm: ['node', 'way', 'relation'].flatMap((type) => {
@@ -428,22 +434,83 @@ const urlKey = (value) => {
   return url.hostname.replace(/^www\./, '') + url.pathname.replace(/\/$/, '');
 };
 
+// A suffix from an article directly linked to the same entity is a useful
+// disambiguator, not an independent claim about administrative boundaries.
+function articleQualifier(name, title) {
+  const match = /^(.+?)\s*\(([^()]+)\)$/.exec(String(title ?? ''));
+  if (!match || normalized(match[1]) !== normalized(name)) return undefined;
+  const suffix = compact(match[2], 80);
+  return suffix || undefined;
+}
+
+const placeNames = (item) => {
+  const labels = Object.values(item.labels ?? {});
+  // A provider's translations describe this name only when at least one
+  // equals its display label; unbound or inherited labels are not evidence.
+  const names = labels.some(label => normalized(label) === normalized(item.name)) ? labels : [item.name];
+  return [...new Set(names.flatMap(value => {
+    const plain = normalized(value);
+    // Recognise church-name forms without stripping qualifiers such as organ,
+    // churchyard, tower, museum or chapel from individual records.
+    const church = /^(?:parochiekerk|kerk) (sint [\p{L}]+)$|^(sint [\p{L}]+)kerk$/u.exec(plain);
+    const saint = church?.[1] ?? church?.[2];
+    return [plain, ...(saint ? ['church:' + saint] : [])].filter(Boolean);
+  }))];
+};
+const osmKeys = (item) => (item.osm ?? []).flatMap(({type, id}) =>
+  /^(node|way|relation)$/.test(type) && /^[1-9]\d{0,12}$/.test(id) ? [type + ':' + id] : []);
+const explicitWikidata = (item) => /^(?:https?:\/\/www\.wikidata\.org\/entity\/)?(Q[1-9]\d*)$/.exec(item.wikidata || item.id || '')?.[1];
+
+function compatiblePlace(a, b) {
+  const ca = a.coordinates, cb = b.coordinates;
+  const haveCoordinates = ca && cb;
+  const nearby = haveCoordinates && Math.abs(ca.latitude - cb.latitude) <= 0.00045 &&
+    Math.abs(ca.longitude - cb.longitude) <= 0.0007;
+  if (haveCoordinates && !nearby) return false;
+  const disagree = (x, y) => Boolean(x && y && normalized(x) !== normalized(y));
+  if (disagree(a.postalCode, b.postalCode) || disagree(a.placeQualifier, b.placeQualifier)) return false;
+
+  const awd = explicitWikidata(a), bwd = explicitWikidata(b);
+  // Never overwrite an independent Wikidata place identity via similarity.
+  if (awd && bwd && awd !== bwd) return false;
+  if (awd && awd === bwd) return true;
+
+  const sharedOsm = osmKeys(a).some(key => osmKeys(b).includes(key));
+  if (sharedOsm) return true;
+  if (nearby) return true;
+
+  const wa = safeUrl(a.website), wb = safeUrl(b.website);
+  if (wa && wb) {
+    const x = new URL(wa), y = new URL(wb);
+    // A municipal/organisation homepage is not an identifier for a place.
+    if (x.pathname !== '/' && urlKey(wa) === urlKey(wb) && x.search === y.search && x.hash === y.hash) return true;
+  }
+
+  // A street alone or a city name alone cannot resolve homonyms.
+  const sa = normalized(a.street), sb = normalized(b.street);
+  const localMatch = [ [a.postalCode, b.postalCode], [a.locality, b.locality] ]
+    .some(([x,y]) => x && y && normalized(x) === normalized(y));
+  if (sa && sa === sb && /\d/.test(sa) && localMatch) return true;
+  // Retain the legacy anonymous result match only without conflicting evidence.
+  return (!a.id || !b.id) && !disagree(a.street, b.street) && !disagree(a.locality, b.locality);
+}
+
 export function mergePlaces(items, limit = 24) {
   const result = [];
   const byId = new Map(), byName = new Map();
-  function compatiblePlace(a, b) {
-    const wa = safeUrl(a.website), wb = safeUrl(b.website);
-    if (wa && wb && urlKey(wa) === urlKey(wb) && new URL(wa).search === new URL(wb).search) return true;
-    const ca = a.coordinates, cb = b.coordinates;
-    if (ca && cb) return Math.abs(ca.latitude - cb.latitude) <= 0.00045 && Math.abs(ca.longitude - cb.longitude) <= 0.0007;
-    // Distinct provider IDs are meaningful even when names are identical.
-    return !a.id || !b.id;
+  function index(names, entry) {
+    for (const name of names) {
+      if (!byName.has(name)) byName.set(name, new Set());
+      byName.get(name).add(entry);
+    }
   }
   function keep(item) {
     if (!item.name || !normalized(item.name)) return;
-    const name = normalized(item.name);
+    const names = placeNames(item);
     const id = item.id?.replace(/^https:/, 'http:');
-    const existing = (id ? byId.get(id) : undefined) ?? byName.get(name)?.find((entry) => compatiblePlace(entry, item));
+    const candidates = [...new Set(names.flatMap(name => [...(byName.get(name) ?? [])]))]
+      .filter(entry => compatiblePlace(entry, item));
+    const existing = (id ? byId.get(id) : undefined) ?? (candidates.length === 1 ? candidates[0] : undefined);
     if (existing) {
       const { id: oldId, alternateSources = [] } = existing;
       // Keep the preferred display record but fill omissions for the same named place.
@@ -454,19 +521,30 @@ export function mergePlaces(items, limit = 24) {
         ...(item.sourceId ? [{ source: item.source, sourceId: item.sourceId }] : [])];
       const informative = (url) => url && !/(wikidata\.org\/entity|linked\.toerismevlaanderen\.be\/id\/)/.test(url);
       if (!existing.website || (!informative(existing.website) && informative(item.website))) existing.website = item.website;
-      for (const key of ['category', 'address', 'hours', 'description', 'coordinates']) existing[key] ||= item[key];
+      for (const key of ['category', 'address', 'hours', 'description', 'coordinates', 'street', 'postalCode', 'locality', 'placeQualifier']) existing[key] ||= item[key];
       if (item.source !== existing.source && !alternateSources.includes(item.source)) existing.alternateSources = [...alternateSources, item.source];
       if (id) byId.set(id, existing);
+      index(names, existing);
       return;
     }
     const next = { ...item };
     if (item.id?.includes('wikidata.org/entity/')) next.wikidata = item.id.split('/').at(-1);
     result.push(next);
     if (id) byId.set(id, next);
-    byName.set(name, [...(byName.get(name) ?? []), next]);
+    index(names, next);
   }
   items.forEach(keep);
   return result.slice(0, limit);
+}
+
+export function placeDisambiguation(items) {
+  const counts = new Map();
+  for (const item of items) {
+    const key = normalized(item.name);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return item => counts.get(normalized(item.name)) > 1
+    ? item.placeQualifier || item.locality || item.street : undefined;
 }
 
 // An official provider still gets visible slots when Wikidata alone could
