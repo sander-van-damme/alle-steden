@@ -1,3 +1,4 @@
+import { featuredCities } from './featured-cities.mjs';
 import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -323,7 +324,7 @@ const routeCityBoundaries = {
 
 await Promise.all([
   cp(source, resolve(output, 'data'), { recursive: true, filter: (path) => path === source || path.endsWith('.ttl') }),
-  writePage('.', plannerPage(plannerCities, { home: true })),
+  writePage('.', plannerPage(plannerCities, { home: true, featuredCities: featuredCities(plannerCities, routeCityBoundaries) })),
   writePage('steden', indexPage(cities)),
   writePage('mijn-bezoeken', visitsPage(layout,cities)),
   writePage('planner', plannerPage(plannerCities)),

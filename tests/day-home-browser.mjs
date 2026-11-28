@@ -27,7 +27,20 @@ await withPlanner(4219,async(browser,origin)=>{
     });
     assert.deepEqual(headingTypeface,{selected:true,loaded:true,bodyUnchanged:true});
     assert.equal(await page.getByRole('link',{name:'Bekijk alle steden'}).getAttribute('href'),'/steden/');
-    assert.equal(await page.locator('.planner-featured-list li').count(),4);
+    const featured=page.getByRole('region',{name:'Een paar steden om te beginnen'});
+    const portraits=await featured.locator('.planner-featured-list li a').evaluateAll(links=>links.map(a=>{
+      const map=a.querySelector('svg.featured-city-map'), dot=map.querySelector('circle');
+      return {href:a.getAttribute('href'), name:a.querySelector('strong').textContent,
+        highlight:a.querySelector('small').textContent, outline:map.querySelector('.featured-city-outline').getAttribute('d'),
+        centre:[Number(dot.getAttribute('cx')),Number(dot.getAttribute('cy'))], hidden:map.getAttribute('aria-hidden'),
+        height:a.getBoundingClientRect().height};
+    }));
+    assert.deepEqual(portraits.map(x=>x.href),['/steden/aat/','/steden/gent/','/steden/namen/','/steden/oostende/']);
+    assert.deepEqual(portraits.map(x=>x.highlight),['Stadhuis aan de Grote Markt','Het Gravensteen','Het belfort','Sint-Petrus-en-Pauluskerk']);
+    assert.equal(new Set(portraits.map(x=>x.outline)).size,4);
+    assert.ok(portraits.every(x=>x.height>=44&&x.hidden==='true'&&/^M[0-9]/.test(x.outline)&&
+      x.centre[0]>0&&x.centre[0]<216&&x.centre[1]>0&&x.centre[1]<90));
+    assert.ok(await page.getByRole('region',{name:'Bronnen'}).getByRole('link',{name:/NGI/}).isVisible());
     assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),'rgb(250, 250, 250)');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),device.viewport.width);
     await page.locator(loc.start).fill('Ath');

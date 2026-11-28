@@ -1,5 +1,6 @@
 import { calendarMain, calendarHead } from './calendar-template.mjs';
 import { cityDirectoryMap } from './city-directory-map.mjs';
+import { routeCityBoundaryCredit } from '../site/assets/route-city-passages.js';
 
 import { itineraryDistanceSteps, maximumItineraryKm, minimumItineraryMaxKm, sliderIndexForKm } from '../site/assets/planner-distance-scale.js';
 import { visitorUrl } from '../site/assets/sources.js';
@@ -44,13 +45,21 @@ export function calendarPage(catalog) {
   return layout({ title: 'Kalender · Alle Steden', active: 'calendar', script: calendarHead, main: calendarMain(catalog) });
 }
 
-export function plannerPage(cities, {home = false} = {}) {
-  const highlights = ['aat','gent','namen','oostende'].map(slug=>cities.find(city=>city.slug===slug)).filter(Boolean);
+export function plannerPage(cities, {home = false, featuredCities = []} = {}) {
   const featured = home ? `<section class="planner-featured" aria-labelledby="planner-featured-title">
     <h2 id="planner-featured-title">Een paar steden om te beginnen</h2>
-    <ul class="planner-featured-list">${highlights.map(city=>`<li><a href="/steden/${encodeURIComponent(city.slug)}/"><strong>${escapeHtml(city.name)}</strong><small>${escapeHtml(city.region)}</small></a></li>`).join('')}</ul>
-    <a class="button secondary" href="/steden/">Bekijk alle steden ${arrow}</a>
+    <ul class="planner-featured-list">${featuredCities.map(city=>`<li><a href="/steden/${encodeURIComponent(city.slug)}/">
+      <svg class="featured-city-map" viewBox="0 0 216 90" aria-hidden="true" focusable="false">
+        <path class="featured-city-grid" d="M36 0V90M72 0V90M108 0V90M144 0V90M180 0V90M0 30H216M0 60H216"/>
+        <path class="featured-city-outline" d="${city.outline}" fill-rule="evenodd"/>
+        <circle class="featured-city-centre" cx="${city.x}" cy="${city.y}" r="3.8"/>
+      </svg>
+      <span class="featured-city-name"><strong>${escapeHtml(city.name)}</strong>${arrow}</span>
+      <small>${escapeHtml(city.highlight)}</small>
+    </a></li>`).join('')}</ul>
+    <a class="planner-featured-more" href="/steden/">Bekijk alle steden ${arrow}</a>
   </section>` : '';
+  const boundaryCredit = featuredCities.length ? ` <a href="${routeCityBoundaryCredit.href}">${routeCityBoundaryCredit.label}</a> (<a href="${routeCityBoundaryCredit.license}" rel="license">CC BY 4.0</a>),` : '';
   const cityOptions = [...cities].sort((a,b)=>a.name.localeCompare(b.name,'nl-BE'))
     .map(city => `<option value="${escapeHtml(city.name)}"></option>`).join('');
   return layout({
@@ -164,7 +173,7 @@ export function plannerPage(cities, {home = false} = {}) {
       ${featured}
       <section class="directory-credits planner-credits" aria-labelledby="planner-credits-title">
         <h2 id="planner-credits-title">Bronnen</h2>
-        <p><a href="https://www.openstreetmap.org/copyright">OpenStreetMap-bijdragers</a>, <a href="https://brouter.de/brouter-web/">BRouter</a>, <a href="https://www.wikidata.org/">Wikidata</a>, <a href="https://docs.irail.be/#stations">iRail</a>, <a href="https://opendata.bosa.be/index.nl.html">BeSt / FOD BOSA</a> (<a href="https://creativecommons.org/licenses/by/4.0/" rel="license">CC BY 4.0</a>), <a href="https://www.chasseonweb.be/">ChasseOnWeb</a>, <a href="https://ravel.wallonie.be/">RAVeL</a> (SPW · <a href="https://creativecommons.org/licenses/by/4.0/" rel="license">CC BY 4.0</a>), <a href="/over/">alle gebruikte databronnen</a>.</p>
+        <p><a href="https://www.openstreetmap.org/copyright">OpenStreetMap-bijdragers</a>, <a href="https://brouter.de/brouter-web/">BRouter</a>, <a href="https://www.wikidata.org/">Wikidata</a>, <a href="https://docs.irail.be/#stations">iRail</a>, <a href="https://opendata.bosa.be/index.nl.html">BeSt / FOD BOSA</a> (<a href="https://creativecommons.org/licenses/by/4.0/" rel="license">CC BY 4.0</a>), <a href="https://www.chasseonweb.be/">ChasseOnWeb</a>, <a href="https://ravel.wallonie.be/">RAVeL</a> (SPW · <a href="https://creativecommons.org/licenses/by/4.0/" rel="license">CC BY 4.0</a>),${boundaryCredit} <a href="/over/">alle gebruikte databronnen</a>.</p>
       </section>
     </main>`,
   });
