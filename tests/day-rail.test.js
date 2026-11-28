@@ -162,3 +162,48 @@ test('abort prevents a stale itinerary and no return request follows',async()=>{
   await assert.rejects(planRailDay({...defaults,signal:controller.signal,fetchImpl}),{name:'AbortError'});
   assert.equal(tries,1);
 });
+
+test('rejects a zero delay-adjusted transfer and uses the next feasible train',async()=>{
+  const tooTight=outbound();
+  tooTight.arrival=event(start,time('09:04'));
+  tooTight.vias={number:'1',via:[{arrival:event(transfer,time('08:39'),{delay:300}),
+    departure:event(transfer,time('08:44'),{vehicle:'IC12'}),timebetween:'300'}]};
+  const {fetchImpl}=harness({connection:[tooTight,outbound()]},{connection:[returning()]});
+  const result=await planRailDay({...defaults,fetchImpl});
+  assert.equal(result.outbound.connection.arrival.at,time('09:30'));
+  assert.deepEqual(result.outbound.connection.transfers,[]);
+});
+
+test('only a confirmed same train and station without conflicting platforms can be kept at zero',async()=>{
+  const makeVia=mutate=>{
+    const go=outbound();
+    const arrived=event(transfer,time('08:44')), leaves=event(transfer,time('08:44'));
+    mutate?.(arrived,leaves);
+    go.vias={number:'1',via:[{arrival:arrived,departure:leaves}]};
+    return go;
+  };
+  const {fetchImpl}=harness({connection:[makeVia()]},{connection:[returning()]});
+  assert.deepEqual((await planRailDay({...defaults,fetchImpl})).outbound.connection.transfers,[]);
+  for (const alter of [
+    (_a,d)=>delete d.vehicle,
+    (_a,d)=>{d.stationinfo.id='BE.NMBS.008811007';},
+    (_a,d)=>{d.platform='2';},
+    (_a,d)=>{d.walking='1';},
+    (_a,d)=>{d.time=String(time('08:43')/1000);},
+  ]) {
+    const {fetchImpl,calls}=harness({connection:[makeVia(alter)]});
+    assert.equal((await planRailDay({...defaults,fetchImpl})).outbound.status,'unconfirmed');
+    assert.equal(calls.length,1);
+  }
+});
+
+test('preserves positive sub-minute slack without relying on the display train name',async()=>{
+  const go=outbound();
+  const arrived=event(transfer,time('08:44'),{delay:30}), leaves=event(transfer,time('08:45'));
+  leaves.vehicle='BE.NMBS.IC12'; // Both display names still say IC510.
+  go.vias={number:'1',via:[{arrival:arrived,departure:leaves,timebetween:'60'}]};
+  const {fetchImpl}=harness({connection:[go]},{connection:[returning()]});
+  const {outbound:{connection}}=await planRailDay({...defaults,fetchImpl});
+  assert.equal(connection.transfers[0].seconds,30);
+  assert.equal(connection.transfers[0].minutes,0);
+});

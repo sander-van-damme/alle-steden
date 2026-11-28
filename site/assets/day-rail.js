@@ -50,6 +50,7 @@ function describeEvent(event, direction) {
     stationId:trim(event.stationinfo?.id).replace(/^BE\.NMBS\./,''),
     station:trim(event.stationinfo?.name) || trim(event.station),
     platform:trim(event.platform),
+    vehicleId:/^BE\.NMBS\.[A-Z][A-Z0-9-]*\d[A-Z0-9-]*$/i.test(vehicle) ? vehicle : '',
     vehicle:trim(event.vehicleinfo?.shortname) || vehicle.replace(/^BE\.NMBS\./,''),
     scheduledAt:scheduled, at:scheduled+delaySeconds*1000, delaySeconds, walking, bus,
     cancelled:flagged(event.canceled) || flagged(event.cancelled),
@@ -68,7 +69,14 @@ function inspectConnection(raw, from, to, earliestAt, latestAt, departureDay) {
   const transfers=vias.map(via=>{
     const arrival=describeEvent(via?.arrival,'arrival');
     const departure=describeEvent(via?.departure,'departure');
-    return arrival && departure ? {arrival,departure,minutes:Math.floor((departure.at-arrival.at)/minute),walking:arrival.walking||departure.walking} : null;
+    if (!arrival || !departure) return null;
+    const seconds=(departure.at-arrival.at)/1000;
+    const walking=arrival.walking||departure.walking;
+    // A missing train ID or conflicting platform is not evidence that you can stay aboard.
+    const stayAboard=Boolean(!walking && arrival.vehicleId && arrival.vehicleId===departure.vehicleId &&
+      arrival.stationId && arrival.stationId===departure.stationId &&
+      (!arrival.platform || !departure.platform || arrival.platform.toUpperCase()===departure.platform.toUpperCase()));
+    return {arrival,departure,seconds,minutes:Math.floor(seconds/60),walking,stayAboard};
   });
   if (transfers.some(x=>!x)) return leg('unavailable');
   const events=[departure, ...transfers.flatMap(x=>[x.arrival,x.departure]), arrival];
@@ -77,7 +85,8 @@ function inspectConnection(raw, from, to, earliestAt, latestAt, departureDay) {
   if (departure.stationId!==from || arrival.stationId!==to) return leg('unavailable');
   if (events.some(event=>noBikeBoarding.has(event.stationId))) return leg('unconfirmed');
   if (arrival.at<=departure.at || events.some((event,i)=>i && event.at<events[i-1].at)) return leg('unconfirmed');
-  return leg('ok',{from,to,departure,arrival,transfers});
+  if (transfers.some(x=>!x.stayAboard && x.seconds<=0)) return leg('unconfirmed');
+  return leg('ok',{from,to,departure,arrival,transfers:transfers.filter(x=>!x.stayAboard)});
 }
 
 function selectConnection(payload, from, to, earliestAt, latestAt, departureDay) {

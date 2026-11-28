@@ -14,7 +14,19 @@ await withPlanner(process.env.PLANNER_PREVIEW_PORT??4188,async(browser,origin)=>
       const queryTime=params.get('time');
       const epoch=Date.parse('2026-11-26T'+queryTime.slice(0,2)+':'+queryTime.slice(2)+':00+01:00')/1000+600;
       const event=(name,at)=>({time:String(at),stationinfo:{id:params.get(name),name},vehicle:'BE.NMBS.IC100',delay:'0',canceled:'0'});
-      await route.fulfill({headers:{'access-control-allow-origin':'*'},json:{connection:[{departure:event('from',epoch),arrival:event('to',epoch+3600)}]}});
+      const direct={departure:event('from',epoch),arrival:event('to',epoch+3600)};
+      const connection=[direct];
+      if (params.get('to')==='BE.NMBS.008886009') {
+        const at=(time,vehicle,delay=0)=>({stationinfo:{id:'BE.NMBS.008814001',name:'Brussel-Zuid'},
+          time:String(time),vehicle:'BE.NMBS.'+vehicle,platform:'10',delay:String(delay),canceled:'0'});
+        const candidate=(arrivalAt,via)=>({...direct,arrival:event('to',epoch+arrivalAt),vias:{number:'1',via:[via]}});
+        connection.unshift(
+          candidate(3000,{arrival:at(epoch+1500,'IC100',60),departure:at(epoch+1560,'IC200')}),
+          candidate(3600,{arrival:at(epoch+1500,'IC100'),departure:at(epoch+1530,'IC200')})
+        );
+        connection[2]={...direct,arrival:event('to',epoch+4200)};
+      }
+      await route.fulfill({headers:{'access-control-allow-origin':'*'},json:{connection}});
     });
     await cityEntry(page,origin,'aat');
     await openAdvanced(page);
@@ -48,7 +60,8 @@ await withPlanner(process.env.PLANNER_PREVIEW_PORT??4188,async(browser,origin)=>
     assert.equal(terug.searchParams.get('to'),'http://irail.be/stations/NMBS/008893120');
     assert.equal(terug.searchParams.has('date'),false);
     await panel.getByText(/Fietsplaats niet bevestigd/).waitFor();
-    assert.deepEqual(await panel.locator('.itinerary-rail-time').allTextContents(),['10:20 → 11:20 · rechtstreeks','Ca. 12:20 → 13:20','14:40 → 15:40 · rechtstreeks']);
+    assert.deepEqual(await panel.locator('.itinerary-rail-time').allTextContents(),['10:20 → 11:20 · Overstap: Brussel-Zuid (< 1 min)','Ca. 12:20 → 13:20','14:40 → 15:40 · rechtstreeks']);
+    assert.doesNotMatch(await panel.innerText(),/11:10|overstap.*0 min/i);
     assert.deepEqual(railCalls.map(value=>[...new URL(value).searchParams.keys()]),Array.from({length:2},()=>['from','to','date','time','timesel','format','lang','typeOfTransport','results']));
     assert.equal(await panel.locator('.itinerary-rail-timeline li').count(),7);
     assert.deepEqual(calls.errors,[]);

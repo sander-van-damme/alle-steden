@@ -121,8 +121,17 @@ export function renderRouteRail(trip, originCity, {departure,stops=[],signal,doc
       const clock=(at)=>railLocalClock(at)+(new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Brussels',year:'numeric',month:'2-digit',day:'2-digit'}).format(at)!==trip.date?' (+1 dag)':'');
       const connectionText=leg => {
         const c=leg.connection;
-        return c ? clock(c.departure.at)+' → '+clock(c.arrival.at)+(c.transfers.length?' · '+c.transfers.length+' '+(c.transfers.length===1?'overstap':'overstappen'):' · rechtstreeks') :
-          ({bus:'Vervangbus, fiets niet bevestigd',cancelled:'Verbinding geannuleerd',missing:'Geen trein gevonden',unconfirmed:'Aansluiting niet bevestigd'})[leg.status] ?? 'Uren niet opgehaald';
+        if (!c) return ({bus:'Vervangbus, fiets niet bevestigd',cancelled:'Verbinding geannuleerd',missing:'Geen trein gevonden',
+          unconfirmed:'Aansluiting niet bevestigd'})[leg.status] ?? 'Uren niet opgehaald';
+        const times=clock(c.departure.at)+' → '+clock(c.arrival.at);
+        if (!c.transfers.length) return times+' · rechtstreeks';
+        const changes=c.transfers.map(({arrival,departure,walking,minutes})=>{
+          const slack=(minutes<1?'< 1':minutes)+' min';
+          const place=arrival.station && departure.station && arrival.station!==departure.station ?
+            arrival.station+' → '+departure.station : (arrival.station||departure.station);
+          return (place ? place+' ('+slack+(walking?', te voet':'')+')' : slack+(walking?' te voet':''));
+        });
+        return times+' · '+(changes.length===1?'Overstap: ':'Overstappen: ')+changes.join(', ');
       };
       const connectorText=(route)=>route ? kilometres.format(route.km)+' km · ca. '+Math.ceil(route.minutes)+' min' : '';
       const connectorRow=(title, route)=>{
