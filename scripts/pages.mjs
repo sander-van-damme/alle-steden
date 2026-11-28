@@ -54,7 +54,7 @@ export function plannerPage(cities, {home = false, featuredCities = []} = {}) {
         <path class="featured-city-outline" d="${city.outline}" fill-rule="evenodd"/>
         <circle class="featured-city-centre" cx="${city.x}" cy="${city.y}" r="3.8"/>
       </svg>
-      <span class="featured-city-name"><strong>${escapeHtml(city.name)}</strong>${arrow}</span>
+      <strong class="featured-city-name">${escapeHtml(city.name)}</strong>
       <small>${escapeHtml(city.highlight)}</small>
     </a></li>`).join('')}</ul>
     <a class="planner-featured-more" href="/steden/">Bekijk alle steden ${arrow}</a>

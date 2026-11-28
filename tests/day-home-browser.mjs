@@ -38,6 +38,9 @@ await withPlanner(4219,async(browser,origin)=>{
     assert.deepEqual(portraits.map(x=>x.href),['/steden/aat/','/steden/gent/','/steden/namen/','/steden/oostende/']);
     assert.deepEqual(portraits.map(x=>x.highlight),['Stadhuis aan de Grote Markt','Het Gravensteen','Het belfort','Sint-Petrus-en-Pauluskerk']);
     assert.equal(new Set(portraits.map(x=>x.outline)).size,4);
+    assert.equal(await featured.locator('.arrow').count(),1);
+    assert.equal(await featured.getByRole('link',{name:'Bekijk alle steden'}).locator('.arrow').count(),1);
+    assert.ok((await featured.locator('.featured-city-name').evaluateAll(names=>names.map(n=>getComputedStyle(n).textDecorationLine))).every(line=>line==='underline'));
     assert.ok(portraits.every(x=>x.height>=44&&x.hidden==='true'&&/^M[0-9]/.test(x.outline)&&
       x.centre[0]>0&&x.centre[0]<216&&x.centre[1]>0&&x.centre[1]<90));
     assert.ok(await page.getByRole('region',{name:'Bronnen'}).getByRole('link',{name:/NGI/}).isVisible());
