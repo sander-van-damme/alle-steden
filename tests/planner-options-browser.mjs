@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import {withPlanner,desktop,loc,wirePage,cityEntry,openAdvanced,setRange,build,selected,parsedKm,points,chosenDate,near,
-  downloadGpx} from './planner-browser-support.mjs';
+  downloadGpx, chooseEnd } from './planner-browser-support.mjs';
 await withPlanner(process.env.PLANNER_OPTIONS_PORT??4487,async(browser,origin)=>{
   const page=await browser.newPage(desktop); let length=34_500;
   const calls=await wirePage(page,{travel:({via})=>({length,...(near(via[0],points.aat)&&near(via.at(-1),points.ninove)
     &&via.length===2&&{points:[via[0],points.geraardsbergen,via.at(-1)]})}),
     poiPoint:points.geraardsbergen,servicePoint:points.geraardsbergen});
   await cityEntry(page,origin); await openAdvanced(page);
-  await page.locator(loc.date).fill(chosenDate); await page.locator(loc.end).selectOption('ninove');
+  await page.locator(loc.date).fill(chosenDate); await chooseEnd(page,'ninove');
   await page.locator(loc.budget).selectOption('45');
   await page.getByRole('checkbox',{name:/Musea/i}).uncheck();
   await setRange(page,25,45); await build(page);
@@ -43,7 +43,7 @@ await withPlanner(process.env.PLANNER_OPTIONS_PORT??4487,async(browser,origin)=>
   const after=await downloadGpx(page); assert.deepEqual(before.points,after.points);
   assert.ok(after.waypoints.includes('Testpark langs de route'));
   // New destination avoids the cache; routed 7.8 km cannot satisfy a 40 km floor.
-  length=7800; await openAdvanced(page); await page.locator(loc.end).selectOption('aalst');
+  length=7800; await openAdvanced(page); await chooseEnd(page,'aalst');
   await setRange(page,40,55); await build(page);
   await page.locator(loc.status).filter({hasText:/Geen.*(?:binnen|afstand)|afstand.*(?:passen|gevonden)/i}).waitFor({timeout:45_000});
   assert.equal(await page.locator(loc.trip).count(),0); assert.equal(await page.getByRole('link',{name:'Download GPX'}).count(),0);
@@ -55,8 +55,8 @@ await withPlanner(process.env.PLANNER_OPTIONS_PORT??4487,async(browser,origin)=>
     if(index===0){seen();await hold;return {length:31_700};}return {status:500};
   }});
   await cityEntry(pending,origin); await openAdvanced(pending);
-  await pending.locator(loc.end).selectOption('ninove'); await build(pending); await entered;
-  await pending.locator(loc.end).selectOption('aalst');
+  await chooseEnd(pending,'ninove'); await build(pending); await entered;
+  await chooseEnd(pending,'aalst');
   const next=pending.waitForRequest(req=>req.url().startsWith('https://brouter.de/brouter?'));
   await build(pending); release(); await next;
   await pending.locator(loc.status).filter({hasText:/onbereikbaar|bereikbaar|niet.*berekenen|geen route|kon.*niet/i}).waitFor({timeout:45_000});

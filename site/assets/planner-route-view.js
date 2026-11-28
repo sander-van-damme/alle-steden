@@ -233,8 +233,7 @@ function renderSurface(doc, trip) {
     ? 'Voor deze route ontbreekt bruikbare informatie over het wegdek.'
     : ordered ? 'Arcering = onbekend wegdek.' : 'De kleuren tonen hoeveel, niet waar.';
   figure.append(header, graphic, legend, node(doc, 'p', 'route-view-hint',
-    explanation + (ordered && timeline.returnAtM != null ? ' Streep: terugrit vanaf ' + formatKm(timeline.returnAtM / 1000) + '.' : '')
-      + ' Bron: OpenStreetMap via BRouter.'));
+    explanation + (ordered && timeline.returnAtM != null ? ' Streep: terugrit vanaf ' + formatKm(timeline.returnAtM / 1000) + '.' : '')));
   return figure;
 }
 
@@ -268,7 +267,7 @@ function renderElevation(doc, profile) {
   }
   const range = `Geschatte hoogte: ${int.format(profile.min)}–${int.format(profile.max)} m`;
   const ascent = profile.ascent != null ? ` · circa ${int.format(profile.ascent)} m stijgen` : '';
-  figure.append(chart, node(doc, 'p', 'route-view-hint', range + ascent + ' (hoogtemodel van BRouter).'));
+  figure.append(chart, node(doc, 'p', 'route-view-hint', range + ascent + '.'));
   if (profile.known < profile.total) figure.append(node(doc, 'p', 'route-view-hint', 'De ontbrekende hoogtepunten zijn niet aangevuld.'));
   return figure;
 }
@@ -289,10 +288,10 @@ function routeMarkers(trip, outbound, editable = false) {
   let cities;
   if (trip.distanceDriven === true) {
     const start=outbound[0].coordinates[0], end=outbound.at(-1).coordinates.at(-1);
-    cities=[{ point:start,name:trip.startCity?.name?'Vertrek · '+trip.startCity.name:'Vertrek',icon:'S',type:'city' }];
+    cities=[{ point:start,name:trip.startCity?.name?'Vertrek · '+trip.startCity.name:'Vertrek',icon:'A',type:'city' }];
     if (Math.abs(start[0]-end[0])+Math.abs(start[1]-end[1])>.00005) {
       const role=trip.returnRoute?'Keerpunt':'Aankomst';
-      cities.push({point:end,name:trip.destinationCity?.name?role+' · '+trip.destinationCity.name:role,icon:'E',type:'city'});
+      cities.push({point:end,name:trip.destinationCity?.name?role+' · '+trip.destinationCity.name:role,icon:'B',type:'city'});
     }
   } else if (trip.edited === true || trip.exactStops === true) {
     const start = stopPoint(trip.startCity ?? trip.cities?.[0]) ?? outbound[0].coordinates[0];
@@ -385,7 +384,13 @@ function createMap(doc, outbound, inbound, markers, label, edited, compact = fal
     return [svg(doc, 'path', { class: 'route-map-line route-map-halo', d }),
       svg(doc, 'path', { class: `route-map-line route-map-line-${i < outbound.length ? 0 : 1}`, d })];
   });
-  drawing.append(...layers.map(([outline]) => outline), ...layers.map(([, color]) => color));
+  const outwardLines = layers.slice(0, outbound.length).map(([, color]) => color);
+  const returnLines = layers.slice(outbound.length).map(([, color]) => color);
+  // Separate the return dashes from the solid line even on shared roads.
+  const returnEdges = returnLines.map(line => svg(doc, 'path', {
+    class: 'route-map-line route-map-return-edge', d: line.getAttribute('d')
+  }));
+  drawing.append(...layers.map(([outline]) => outline), ...outwardLines, ...returnEdges, ...returnLines);
   overlay.append(drawing);
   let width = 0, height = 0, center = [...origin];
   let zoom = 10, fitted = true, enabled = false, renderId = 0, selected = null;
@@ -478,7 +483,18 @@ function createMap(doc, outbound, inbound, markers, label, edited, compact = fal
     for (const {node:pin} of markerNodes) pin.remove();
     markerList.replaceChildren();
     markerNodes=next.map(makeMarker);
-    caption.replaceChildren(node(doc,'p','',inbound.length?'Volle lijn: heen · gestreepte lijn: terug':'Volle lijn: fietsroute'));
+    const key = node(doc, 'p', 'route-map-key');
+    const addLineKey = (label, returning = false) => {
+      const item = node(doc, 'span');
+      const swatch = node(doc, 'span', 'route-map-key-line' + (returning ? ' route-map-key-line-return' : ''));
+      swatch.setAttribute('aria-hidden', 'true');
+      item.append(swatch, label);
+      if (key.childNodes.length) key.append(' ');
+      key.append(item);
+    };
+    addLineKey(inbound.length ? 'Heen' : 'Fietsroute');
+    if (inbound.length) addLineKey('Terug', true);
+    caption.replaceChildren(key);
     if (next.some(({type})=>type==='visit')) caption.append(node(doc,'p','',
       edited?'B = geplande bezoekstop':'B = bezoeklocatie; het fietstraject toont de rit tussen de stadsankers.'));
     if (next.some(({type})=>type==='landmark')) caption.append(node(doc,'p','','★ buitenaanzicht'));
@@ -708,13 +724,6 @@ function noticeLink(doc,href,text) {
   a.href=href;
   return a;
 }
-function noticeSourceLinks(doc,source,map) {
-  const p=node(doc,'p','route-notice-credit');
-  const credit=noticeLink(doc,source.metadata, map===forestMap?'SPW · DNF':'SPW');
-  credit.title=source.credit;
-  p.append(noticeLink(doc,map.href,map.label),' · ',credit,' · ',noticeLink(doc,source.license,'CC BY 4.0'));
-  return p;
-}
 function noticeRow(doc,map,label,summary,limited,body,source) {
   const row=node(doc,'li',map===forestMap?'route-forest-notices':'route-ravel-notices');
   const details=node(doc,'details','route-notice-disclosure');
@@ -731,7 +740,7 @@ function noticeRow(doc,map,label,summary,limited,body,source) {
   if (summary) expanded.append(node(doc,'p','',map===forestMap
     ? 'Bekijk de officiële kaart vóór vertrek en volg de borden ter plaatse.'
     : 'Bekijk de officiële meldingen en omleidingen vóór vertrek en volg de borden ter plaatse.'));
-  expanded.append(source ? noticeSourceLinks(doc,source,map) : noticeLink(doc,map.href,map.label));
+  expanded.append(noticeLink(doc,map.href,map.label));
   details.append(expanded);
   row.append(details);
   return row;

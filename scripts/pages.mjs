@@ -9,6 +9,9 @@ const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({
 })[char]);
 const arrow = '<svg class="arrow" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M3 9 9 3M4 3h5v5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
 
+const brandMark = '<svg class="brand-mark" viewBox="0 0 46 23" aria-hidden="true" focusable="false"><path d="M5 17c7 1 10-10 15-10s7 10 14 10c3 0 5-1 7-2" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="5" cy="17" r="2.4" fill="var(--paper)" stroke="currentColor" stroke-width="2"/><circle cx="41" cy="15" r="2.6" fill="currentColor"/></svg>';
+const visitsAssets = '<link rel="stylesheet" href="/assets/visits.css"><script type="module" src="/assets/visits.js"></script>';
+
 export function layout({ title, main, script = '', active = '' }) {
   return `<!doctype html>
 <html lang="nl-BE">
@@ -24,8 +27,8 @@ export function layout({ title, main, script = '', active = '' }) {
   <a class="skip" href="#inhoud">Naar de inhoud</a>
   <header class="top">
     <div class="wrap top-inner">
-      <a class="brand" href="/">Alle Steden</a>
-      <nav aria-label="Hoofdnavigatie"><a href="/#steden"${active === 'cities' ? ' aria-current="page"' : active === 'city-detail' ? ' aria-current="location"' : ''}>Steden</a><a href="/kalender/"${active === 'calendar' ? ' aria-current="page"' : ''}>Kalender</a><a href="/planner/"${active === 'planner' ? ' aria-current="page"' : ''}>Fietsplanner</a></nav>
+      <a class="brand" href="/">${brandMark}Alle Steden</a>
+      <nav aria-label="Hoofdnavigatie"><a href="/"${active === 'planner' ? ' aria-current="page"' : ''}>Planner</a><a href="/steden/"${active === 'cities' ? ' aria-current="page"' : active === 'city-detail' ? ' aria-current="location"' : ''}>Steden</a><a href="/kalender/"${active === 'calendar' ? ' aria-current="page"' : ''}>Kalender</a><a href="/mijn-bezoeken/"${active === 'visits' ? ' aria-current="page"' : ''}>Mijn bezoeken</a></nav>
     </div>
   </header>
   ${main}
@@ -41,33 +44,67 @@ export function calendarPage(catalog) {
   return layout({ title: 'Kalender · Alle Steden', active: 'calendar', script: calendarHead, main: calendarMain(catalog) });
 }
 
-export function plannerPage(cities) {
-  const regions = [...new Set(cities.map((city) => city.region))].sort((a, b) => a.localeCompare(b, 'nl-BE'));
-  const cityOptions = regions.map((region) => `<optgroup label="${escapeHtml(region)}">${cities
-    .filter((city) => city.region === region)
-    .map((city) => `<option value="${escapeHtml(city.slug)}">${escapeHtml(city.name)}</option>`).join('')}</optgroup>`).join('');
+export function plannerPage(cities, {home = false} = {}) {
+  const highlights = ['aat','gent','namen','oostende'].map(slug=>cities.find(city=>city.slug===slug)).filter(Boolean);
+  const featured = home ? `<section class="planner-featured" aria-labelledby="planner-featured-title">
+    <h2 id="planner-featured-title">Een paar steden om te beginnen</h2>
+    <ul class="planner-featured-list">${highlights.map(city=>`<li><a href="/steden/${encodeURIComponent(city.slug)}/"><strong>${escapeHtml(city.name)}</strong><small>${escapeHtml(city.region)}</small></a></li>`).join('')}</ul>
+    <a class="button secondary" href="/steden/">Bekijk alle steden ${arrow}</a>
+  </section>` : '';
+  const cityOptions = [...cities].sort((a,b)=>a.name.localeCompare(b.name,'nl-BE'))
+    .map(city => `<option value="${escapeHtml(city.name)}"></option>`).join('');
   return layout({
     title: 'Fietsplanner · Alle Steden',
     active: 'planner',
     script: '<link rel="stylesheet" href="/assets/planner.css"><link rel="stylesheet" href="/assets/planner-route-view.css"><script type="module" src="/assets/planner.js"></script>',
     main: `<main id="inhoud" class="wrap planner">
       <header class="planner-heading">
-        <h1>Fietsplanner</h1>
-        <p>Kies je vertrekstad en afstand. Waar mogelijk fiets je langs bezienswaardigheden.</p>
+        <h1>${home ? 'Plan je fietsdag' : 'Fietsplanner'}</h1>
       </header>
       <section id="planner-itinerary" aria-labelledby="planner-itinerary-title">
         <form id="planner-itinerary-form" class="planner-panel itinerary-form" aria-labelledby="planner-itinerary-title">
           <h2 id="planner-itinerary-title" class="visually-hidden">Je fietsroute maken</h2>
+              <div class="itinerary-day-fields">
+                <div class="itinerary-origin-wrap">
+                  <label for="itinerary-origin"><span>Vanwaar vertrek je? <small class="itinerary-optional">Optioneel</small></span>
+                    <input id="itinerary-origin" type="text" list="itinerary-city-list" placeholder="Stad of Straat 12, 9000" autocomplete="off" maxlength="150" aria-describedby="itinerary-location-note">
+                  </label>
+                  <button type="button" class="itinerary-location-button" id="itinerary-use-location">Gebruik mijn locatie</button>
+                  <span id="itinerary-location-status" role="status" class="planner-hint"></span>
+                </div>
+                <label for="itinerary-date">Wanneer?
+                  <input type="date" id="itinerary-date" name="itineraryDate">
+                </label>
+                <label for="itinerary-departure" id="itinerary-departure-field" hidden>Om hoe laat vertrek je?
+                  <input type="time" id="itinerary-departure" value="09:00" disabled>
+                </label>
+                <p class="planner-hint" id="itinerary-location-note" hidden><span id="itinerary-address-note">Bij Bereken route zoekt BeSt je ingevoerde adres op. </span>Voor de fietsverbinding naar of van je vertrekpunt krijgt BRouter de exacte coördinaten en bewaart die tijdelijk. <a href="/privacy/">Privacy</a></p>
+              </div>
           <div class="itinerary-essentials">
-            <div class="itinerary-grid itinerary-first">
-              <label for="itinerary-start">Vertrekstad
-                <select id="itinerary-start" required><option value="">Kies een stad</option>${cityOptions}</select>
-              </label>
-              <label for="itinerary-type">Type rit
-                <select id="itinerary-type">
-                  <option value="single">Enkele rit</option><option value="loop">Lusrondrit</option>
-                </select>
-              </label>
+            <div class="itinerary-journey-fields">
+              <div class="itinerary-point">
+                <span aria-hidden="true" class="itinerary-point-index">A</span>
+                <label for="itinerary-start">Waar wil je beginnen fietsen?
+                  <input id="itinerary-start" type="text" list="itinerary-city-list" placeholder="Kies een stad of begin nabij je vertrek" autocomplete="off" maxlength="100">
+                </label>
+              </div>
+              <fieldset class="itinerary-point itinerary-end-point">
+                <legend class="visually-hidden">Waar wil je eindigen?</legend>
+                <span aria-hidden="true" class="itinerary-point-index">B</span>
+                <div>
+                  <p aria-hidden="true" class="itinerary-end-label">Waar wil je eindigen?</p>
+                  <div class="itinerary-finish">
+                    <label><input name="itineraryFinish" type="radio" value="any" checked><span>Maakt niet uit</span></label>
+                    <label><input name="itineraryFinish" type="radio" value="loop"><span>Terug naar vertrek</span></label>
+                    <label><input name="itineraryFinish" type="radio" value="specific"><span>In een stad</span></label>
+                  </div>
+                  <label id="itinerary-end-field" for="itinerary-end" hidden>Eindstad
+                    <input id="itinerary-end" type="text" list="itinerary-city-list" placeholder="Typ een stad" autocomplete="off" maxlength="100" disabled>
+                  </label>
+                </div>
+              </fieldset>
+              <datalist id="itinerary-city-list">${cityOptions}</datalist>
+
             </div>
             <fieldset class="planner-distance itinerary-distance">
               <legend>Fietsafstand</legend>
@@ -90,25 +127,21 @@ export function plannerPage(cities) {
                 </div>
               </div>
             </fieldset>
+          </div>
+          <div class="itinerary-actions">
+            <button type="submit" id="itinerary-build" class="button primary" disabled>Bereken route <span aria-hidden="true">→</span></button>
+          </div>
+          <p id="itinerary-form-error" class="planner-hint itinerary-form-error" role="status"></p>
+          <details class="itinerary-advanced" id="itinerary-advanced">
+            <summary>Route verfijnen</summary>
+            <div class="itinerary-advanced-body">
             <label for="itinerary-stop-budget" class="itinerary-budget">Tijd voor stops
               <select id="itinerary-stop-budget">
                 <option value="">Geen voorkeur</option><option value="15">15 minuten</option>
                 <option value="45">45 minuten</option><option value="90">90 minuten</option>
               </select>
             </label>
-          </div>
-          <details class="itinerary-advanced" id="itinerary-advanced">
-            <summary>Route verfijnen</summary>
-            <div class="itinerary-advanced-body">
-              <div class="itinerary-grid">
-                <label for="itinerary-date"><span>Datum <span class="itinerary-optional">optioneel</span></span>
-                  <input type="date" id="itinerary-date" name="itineraryDate">
-                </label>
-                <label for="itinerary-end" id="itinerary-end-field"><span>Eindstad <span class="itinerary-optional">optioneel</span></span>
-                  <select id="itinerary-end"><option value="">Laat de planner kiezen</option>${cityOptions}</select>
-                </label>
-              </div>
-              <p class="planner-hint">De datum geldt voor stops en meldingen, niet voor het traject.</p>
+
               <fieldset class="planner-activities itinerary-activities">
                 <legend>Wat wil je bezoeken?</legend>
                 <div class="planner-activity-options">
@@ -123,14 +156,15 @@ export function plannerPage(cities) {
               </fieldset>
             </div>
           </details>
-          <div class="itinerary-actions">
-            <button type="submit" id="itinerary-build" class="button primary" disabled>Bereken route <span aria-hidden="true">→</span></button>
-          </div>
-          <p id="itinerary-form-error" class="planner-hint itinerary-form-error" role="status"></p>
-          <noscript><p>De planner werkt met JavaScript. Je kunt wel de <a href="/#steden">stedenlijst</a> bekijken.</p></noscript>
+          <noscript><p>De planner werkt met JavaScript. Je kunt wel de <a href="/steden/">stedenlijst</a> bekijken.</p></noscript>
         </form>
         <p id="planner-itinerary-status" class="planner-status" role="status"></p>
         <div id="planner-itinerary-result"></div>
+      </section>
+      ${featured}
+      <section class="directory-credits planner-credits" aria-labelledby="planner-credits-title">
+        <h2 id="planner-credits-title">Bronnen</h2>
+        <p><a href="https://www.openstreetmap.org/copyright">OpenStreetMap-bijdragers</a>, <a href="https://brouter.de/brouter-web/">BRouter</a>, <a href="https://www.wikidata.org/">Wikidata</a>, <a href="https://docs.irail.be/#stations">iRail</a>, <a href="https://opendata.bosa.be/index.nl.html">BeSt / FOD BOSA</a> (<a href="https://creativecommons.org/licenses/by/4.0/" rel="license">CC BY 4.0</a>), <a href="https://www.chasseonweb.be/">ChasseOnWeb</a>, <a href="https://ravel.wallonie.be/">RAVeL</a> (SPW · <a href="https://creativecommons.org/licenses/by/4.0/" rel="license">CC BY 4.0</a>), <a href="/over/">alle gebruikte databronnen</a>.</p>
       </section>
     </main>`,
   });
@@ -149,7 +183,7 @@ export function indexPage(cities) {
     </li>`).join('');
 
   return layout({
-    title: 'Alle Steden · Stedengids van België',
+    title: 'Steden · Alle Steden',
     active: 'cities',
     script: '<link rel="stylesheet" href="/assets/city-directory.css"><script src="/assets/filter.js" defer></script>',
     main: `<main id="inhoud" class="wrap home">
@@ -326,11 +360,11 @@ export function cityPage(city, linkIds) {
   return layout({
     title: `${name} · Alle Steden`,
     active: 'city-detail',
-    script: '<script type="module" src="/assets/city-live.js"></script>',
+    script: '<script type="module" src="/assets/city-live.js"></script>' + visitsAssets,
     main: `<main id="inhoud" class="wrap detail" data-city="${escapeHtml(slug)}"
       data-name="${escapeHtml(name)}" data-region="${escapeHtml(region)}" data-qid="${escapeHtml(qid)}"
       data-code="${escapeHtml(code)}" data-aliases="${escapeHtml(JSON.stringify(aliases))}">
-      <a class="back" href="/#steden"><span aria-hidden="true">←</span> Alle steden</a>
+      <a class="back" href="/steden/"><span aria-hidden="true">←</span> Alle steden</a>
       <header class="city-heading">
         <div class="city-intro">
           <p class="location">${escapeHtml([region, province].filter(Boolean).join(' · '))}</p>
@@ -341,6 +375,7 @@ export function cityPage(city, linkIds) {
         ${mapUrl ? `<div class="city-links">
           <a class="button primary" href="/planner/?route=1&amp;city=${encodeURIComponent(slug)}">Route maken <span aria-hidden="true">→</span></a>
           <a class="city-map-link" href="${escapeHtml(mapUrl)}">Bekijk op de kaart ${arrow}</a>
+          <span data-visit-city="${escapeHtml(slug)}" data-visit-city-name="${escapeHtml(name)}"></span>
         </div>` : ''}
       </header>
       ${slug === 'andenne' ? '<nav class="city-nav" aria-label="Op deze pagina"><a href="#routes">Wandel- en fietsroutes</a></nav>' : ''}

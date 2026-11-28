@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { activate, build, chosenDate, cityEntry, desktop, downloadGpx, loc, near, openAdvanced, phone,
-  points, selected, setRange, wirePage, withPlanner } from './planner-browser-support.mjs';
+  points, selected, setRange, wirePage, withPlanner, chooseEnd } from './planner-browser-support.mjs';
 
 const name = 'Testpark langs de route';
 // Deliberately off the simulated track, but within the route corridor. The
@@ -36,7 +36,7 @@ await withPlanner(process.env.PLANNER_MAP_STOPS_PORT ?? 4489, async (browser, or
     await cityEntry(page, origin);
     await openAdvanced(page);
     await page.locator(loc.date).fill(chosenDate);
-    await page.locator(loc.end).selectOption('ninove');
+    await chooseEnd(page,'ninove');
     await page.getByRole('checkbox', { name: /Musea/i }).uncheck();
     await setRange(page, 25, 45);
     await build(page);
@@ -189,7 +189,7 @@ await withPlanner(process.env.PLANNER_BRUSSELS_MAP_PORT ?? 4496, async (browser,
     await cityEntry(page,origin,'brussel');
     await openAdvanced(page);
     await page.locator(loc.date).fill(chosenDate);
-    await page.locator(loc.end).selectOption('vilvoorde');
+    await chooseEnd(page,'vilvoorde');
     await setRange(page,15,35);
     await build(page);
     const services=selected(page).locator(loc.service);
@@ -215,7 +215,7 @@ await withPlanner(process.env.PLANNER_BRUSSELS_MAP_PORT ?? 4496, async (browser,
     await cityEntry(page,origin);
     await openAdvanced(page);
     await page.locator(loc.date).fill('2027-04-10');
-    await page.locator(loc.end).selectOption('lessen');
+    await chooseEnd(page,'lessen');
     await setRange(page,15,35);
     await build(page);
     await selected(page).locator(loc.cities).waitFor({timeout:20_000});

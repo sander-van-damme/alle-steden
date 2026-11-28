@@ -36,3 +36,5 @@ jobs:
       - run: node tests/planner-browser.mjs
       - run: node tests/exterior-browser.mjs
       - run: node tests/route-rail-browser.mjs
+      - run: node tests/visits-browser.mjs
+      - run: node tests/day-home-browser.mjs

@@ -11,7 +11,7 @@ export const chosenDate = '2026-11-28';
 export const desktop = { viewport:{width:1440,height:900}, locale:'nl-BE' };
 export const phone = { viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2,locale:'nl-BE' };
 export const loc = {form:'#planner-itinerary-form',start:'#itinerary-start',min:'#itinerary-min-km',max:'#itinerary-max-km',
-  type:'#itinerary-type',build:'#itinerary-build',advanced:'#itinerary-advanced',date:'#itinerary-date',
+  type:'.itinerary-finish',build:'#itinerary-build',advanced:'#itinerary-advanced',date:'#itinerary-date',
   end:'#itinerary-end',budget:'#itinerary-stop-budget',status:'#planner-itinerary-status',
   trip:'[data-itinerary-trip]',km:'[data-itinerary-km]',cities:'[data-itinerary-cities]',stops:'[data-itinerary-stops]',
   choice:'[data-distance-route-choice]',poi:'[data-itinerary-pois]',service:'[data-itinerary-services]'};
@@ -47,7 +47,7 @@ export async function cityEntry(page,origin,slug='aat') {
   assert.equal(target.searchParams.get('city'),slug);
   assert.equal(target.searchParams.get('route'),'1');
   await activate(page,link); await page.locator(loc.build+':enabled').waitFor();
-  assert.equal(await page.locator(loc.start).inputValue(),slug);
+  assert.equal((await page.locator(loc.start).inputValue()).toLowerCase(),slug);
 }
 export async function setRange(page,min,max) {
   for (const [name,n] of [[loc.max,max],[loc.min,min]]) {
@@ -63,6 +63,15 @@ export async function openAdvanced(page) {
   const controls=page.locator(loc.advanced);
   if(!await controls.evaluate(el=>el.open)) await controls.locator('summary').click();
   return controls;
+}
+export const chooseStart = (page,name)=>page.locator(loc.start).fill(name);
+export async function chooseFinish(page,kind) {
+  const label = page.locator(loc.type+' label').filter({has:page.locator('input[value="'+kind+'"]')});
+  if (!(await label.locator('input').isChecked())) await label.click();
+}
+export async function chooseEnd(page,name) {
+  await chooseFinish(page,'specific');
+  await page.locator(loc.end).fill(name);
 }
 export const build = (page)=>activate(page,page.locator(loc.build));
 export const selected = (page)=>page.locator(loc.trip).first();
@@ -121,7 +130,7 @@ export async function wirePage(page,{live=false,...options}={}) {
     }]}}).catch(()=>{});
   });
   await page.route('https://query.wikidata.org/sparql?**',async route=>{
-    if(!recent||!page.url().includes('/planner/'))return route.fulfill({headers:cors,json:{results:{bindings:[]}}});
+    if(!recent||!/\/(?:planner\/)?(?:[?#]|$)/u.test(page.url()))return route.fulfill({headers:cors,json:{results:{bindings:[]}}});
     const call={url:new URL(route.request().url()),point:options.poiPoint??recent}; calls.pois.push(call);
     const extra=await options.pois?.(call);
     if(extra?.status)return route.fulfill({status:extra.status,headers:cors}).catch(()=>{});

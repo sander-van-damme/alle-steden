@@ -88,12 +88,12 @@ function memoSet(cache, key, value) {
   cache.set(key, { time: Date.now(), value });
 }
 
-async function readJson(url, { signal, timeout, fetcher, queue, accept = 'application/json' }) {
+async function readJson(url, { signal, timeout, fetcher, queue, privatePoints = false, accept = 'application/json' }) {
   const deadline = AbortSignal.timeout(timeout);
   const combined = signal ? AbortSignal.any([signal, deadline]) : deadline;
   let result;
   try {
-    result = await fetcher(url, { signal: combined, headers: { Accept: accept }, credentials: 'omit', redirect: 'error' });
+    result = await fetcher(url, { signal: combined, headers: { Accept: accept }, credentials: 'omit', redirect: 'error', ...(privatePoints && {cache:'no-store',referrerPolicy:'no-referrer'}) });
     if (!result.ok) {
       if (queue && (result.status === 429 || result.status === 503)) {
         const retry = result.headers.get('Retry-After');
@@ -268,7 +268,7 @@ export function normalizeBRouter(data, via = []) {
   };
 }
 
-export async function fetchRoute(waypoints, { signal, fetcher = defaultFetch, alternativeIndex = 0, longSection = false } = {}) {
+export async function fetchRoute(waypoints, { signal, fetcher = defaultFetch, alternativeIndex = 0, longSection = false, privatePoints = false } = {}) {
   if (!Number.isInteger(alternativeIndex) || alternativeIndex < 0 || alternativeIndex > 1) {
     throw new RangeError('Vraag de hoofdroute of de eerste alternatieve route op.');
   }
@@ -279,14 +279,14 @@ export async function fetchRoute(waypoints, { signal, fetcher = defaultFetch, al
   const key = lonlats + '|' + alternativeIndex;
   url.search = new URLSearchParams({ lonlats, profile: 'trekking', alternativeidx: String(alternativeIndex), format: 'geojson' });
   const run = async (queue) => {
-    const cached = fetcher === defaultFetch && memoGet(routeCache, key);
+    const cached = !privatePoints && fetcher === defaultFetch && memoGet(routeCache, key);
     if (cached) return cached;
-    const data = await readJson(url, { signal, timeout: longSection === true ? 18_000 : 11_000, fetcher, queue });
+    const data = await readJson(url, { signal, timeout: longSection === true ? 18_000 : 11_000, fetcher, queue, privatePoints });
     const route = normalizeBRouter(data, points);
-    if (fetcher === defaultFetch) memoSet(routeCache, key, route);
+    if (!privatePoints && fetcher === defaultFetch) memoSet(routeCache, key, route);
     return route;
   };
-  return fetcher === defaultFetch ? memoGet(routeCache, key) ?? limited('route', run, signal) : run();
+  return fetcher === defaultFetch ? (!privatePoints ? memoGet(routeCache, key) : null) ?? limited('route', run, signal) : run();
 }
 
 export function summarizeRoute(route) {

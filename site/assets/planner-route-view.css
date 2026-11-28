@@ -2,8 +2,10 @@
   --route-ink: #202c26;
   --route-pine: #244739;
   --route-brick: #9b3c2c;
+  --route-map-outbound: #a02925;
+  --route-map-return: #25292c;
   --route-rule: #c9cec1;
-  --route-paper: #f7f5ed;
+  --route-paper: #fff;
   --route-muted: #4b5a50;
   display: grid; gap: .72rem; min-width: 0;
 }
@@ -13,15 +15,17 @@
 .route-view-gpx:hover { text-decoration: underline; text-underline-offset: .18em; }
 .route-map, .route-insight { margin: 0; min-width: 0; }
 .route-map-frame { position: relative; }
-.route-map-viewport { position: relative; overflow: hidden; isolation: isolate; width: 100%; height: clamp(250px, 45vw, 415px); cursor: grab; touch-action: none; border: 1px solid #9ca99e; background: #edede4; }
+.route-map-viewport { position: relative; overflow: hidden; isolation: isolate; width: 100%; height: clamp(250px, 45vw, 415px); cursor: grab; touch-action: none; border: 1px solid #9ca99e; background: #eeeef0; }
 .route-map-viewport:focus-visible { outline: 3px solid var(--route-brick); outline-offset: 2px; }
 .route-map-dragging { cursor: grabbing; }
 .route-map-overlay, .route-map-tiles { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .route-map-tile { position: absolute; max-width: none; border: 0; user-select: none; }
 .route-map-line { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-.route-map-halo { stroke: #fff; stroke-width: 8; opacity: .9; }
-.route-map-line-0 { stroke: var(--route-pine); stroke-width: 5; }
-.route-map-line-1 { stroke: var(--route-brick); stroke-width: 4; stroke-dasharray: 8 6; }
+.route-map-halo { stroke: #fff; stroke-width: 10; }
+.route-map-line-0 { stroke: var(--route-map-outbound); stroke-width: 5; }
+.route-map-return-edge, .route-map-line-1 { stroke-dasharray: 8 11; }
+.route-map-return-edge { stroke: #fff; stroke-width: 6.5; }
+.route-map-line-1 { stroke: var(--route-map-return); stroke-width: 4; }
 .route-pin circle { fill: var(--route-pine); stroke: #fff; stroke-width: 2.5; }
 .route-pin-poi circle { fill: #714820; }
 .route-pin-landmark circle { fill: #754026; }
@@ -39,6 +43,10 @@
 .route-map-status:empty { display: none; }
 .route-map-caption { display: flex; gap: .24rem .7rem; flex-wrap: wrap; align-items: baseline; margin-top: .55rem; font-size: .875rem; line-height: 1.45; color: var(--route-ink); }
 .route-map-caption p { margin: 0; }
+.route-map-key { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .2rem .7rem; font-weight: 700; }
+.route-map-key > span { display: inline-flex; align-items: center; gap: .3rem; }
+.route-map-key-line { inline-size: 1.45rem; border-block-start: 3px solid var(--route-map-outbound); }
+.route-map-key-line-return { border-block-start: 3px dashed var(--route-map-return); }
 .route-map-caption p + p::before { content: '· '; }
 .route-map-marker-list { flex: 1 0 100%; display: flex; flex-wrap: wrap; gap: .27rem; padding: 0; margin: 0; list-style: none; }
 .route-map-marker-list button {

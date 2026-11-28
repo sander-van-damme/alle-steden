@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {withPlanner,desktop,phone,loc,cityEntry,openAdvanced,build,selected,parsedKm,downloadGpx,
-  wirePage,points,near,chosenDate,gotoPlanner,setRange,activate} from './planner-browser-support.mjs';
+  wirePage,points,near,chosenDate,gotoPlanner,setRange,activate, chooseEnd, chooseFinish } from './planner-browser-support.mjs';
 const corridor=[points.lessen,points.geraardsbergen,points.ninove];
 const names=['Aat','Lessen','Geraardsbergen','Ninove','Aalst'];
 const live=process.env.LIVE_PLANNER==='1';
@@ -24,7 +24,7 @@ await withPlanner(process.env.PLANNER_PREVIEW_PORT??4173,async(browser,origin)=>
     for(const values of [calls.routes,calls.services,calls.pois,calls.notices])assert.equal(values.length,0);
     await openAdvanced(page);
     if(!live)await page.locator(loc.date).fill(chosenDate);
-    await page.locator(loc.end).selectOption('aalst');
+    await chooseEnd(page,'aalst');
     await build(page);
     const trip=selected(page); await trip.waitFor({timeout:65_000});
     const km=await parsedKm(page); assert.ok(km>=15&&km<=45);
@@ -66,7 +66,7 @@ await withPlanner(process.env.PLANNER_PREVIEW_PORT??4173,async(browser,origin)=>
       pois:()=>({empty:true}),services:()=>({empty:true})});
     await gotoPlanner(page,origin,'/planner/?city=aat');
     await openAdvanced(page);
-    await page.locator(loc.end).selectOption('lessen');
+    await chooseEnd(page,'lessen');
     await setRange(page,10,25);
     await build(page);
     const trip=selected(page); await trip.waitFor({timeout:35000});
@@ -88,7 +88,7 @@ await withPlanner(process.env.PLANNER_PREVIEW_PORT??4173,async(browser,origin)=>
     const page=await browser.newPage(phone);
     const calls=await wirePage(page,{travel:()=>({length:32_400}),pois:()=>({empty:true}),services:()=>({empty:true})});
     await gotoPlanner(page,origin,'/planner/?city=aat');
-    await page.locator(loc.type).selectOption('loop');
+    await chooseFinish(page,'loop');
     await setRange(page,25,40);
     await build(page);
     await selected(page).waitFor({timeout:35_000});

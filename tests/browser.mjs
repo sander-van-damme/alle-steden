@@ -9,8 +9,9 @@ const launch = { headless: true,
   ...(proxy && { proxy: { server: proxy, bypass: 'localhost,127.0.0.1' } }),
 };
 
-const base = 'http://127.0.0.1:4173';
-const server = spawn(process.execPath, ['scripts/preview.mjs'], { stdio: ['ignore', 'pipe', 'inherit'] });
+const port = process.env.GENERAL_BROWSER_PORT ?? '4173';
+const base = 'http://127.0.0.1:' + port;
+const server = spawn(process.execPath, ['scripts/preview.mjs'], { stdio: ['ignore', 'pipe', 'inherit'], env:{...process.env,PORT:port} });
 let browser;
 const pages = [];
 const city = '/steden/gent/';
@@ -70,8 +71,8 @@ try {
   const errors = [];
   desktop.on('pageerror', (error) => errors.push(error.message));
   await fixture(desktop);
-  await desktop.goto(base);
-  assert.deepEqual(await desktop.locator('.top nav a').allTextContents(), ['Steden', 'Kalender', 'Fietsplanner']);
+  await desktop.goto(base+'/steden/');
+  assert.deepEqual(await desktop.locator('.top nav a').allTextContents(), ['Planner', 'Steden', 'Kalender', 'Mijn bezoeken']);
   assert.equal(await desktop.locator('footer a[href*="github.com"]').count(), 0);
   await desktop.keyboard.press('Tab');
   assert.equal(await desktop.locator(':focus').innerText(), 'Naar de inhoud');
@@ -119,14 +120,14 @@ try {
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, deviceScaleFactor: 2, hasTouch: true });
   pages.push(mobile);
   await fixture(mobile, { upstreamFailure: true });
-  await mobile.goto(base);
+  await mobile.goto(base+'/steden/');
   for (const width of [320, 390]) {
     await mobile.setViewportSize({ width, height: 844 });
     await mobile.locator('#query:visible').waitFor();
     assert.ok((await mobile.locator('#query').boundingBox()).y < 275);
     assert.ok((await mobile.locator('.directory-map-svg').boundingBox()).y < 370);
     assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth), width);
-    assert.ok(await mobile.getByRole('link', { name: 'Fietsplanner' }).isVisible());
+    assert.ok(await mobile.getByRole('link', { name: 'Planner', exact:true }).isVisible());
   }
   await mobile.goto(base + city);
   assert.equal(await mobile.getByRole('heading', { level: 1 }).innerText(), 'Gent');

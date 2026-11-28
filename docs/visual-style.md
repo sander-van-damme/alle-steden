@@ -1,6 +1,6 @@
-# Bezoekersinterface: een Belgische veldgids
+# Bocht: bezoekersinterface voor Alle Steden
 
-De website helpt iemand een stad opzoeken, een datum kiezen of een fietsrit samenstellen. Laat die handeling de pagina vormgeven. De vormgeving is herkenbaar door de Belgische kaart, echte plaatsnamen in hun lokale talen, Belgische datum- en tijdnotatie en de routekaart. Niet door een herkenbaar trucje op elke pagina.
+De website helpt iemand een stad opzoeken, een datum kiezen of een fietsrit samenstellen. Laat die handeling de pagina vormgeven. De vormgeving is herkenbaar door de Belgische kaart, echte plaatsnamen in hun lokale talen, Belgische datum- en tijdnotatie en de routekaart. De asymmetrische Bocht-lijn verbindt A en B in het woordmerk, langs de route en in het dagverloop. De bediening blijft rustig: geen decoratieve achtergrondvlakken of herhaling van die knik op losse knoppen.
 
 - **Steden**: zoekveld, gewestkeuze, kaart en alfabetische index staan vooraan. Provincie onder de naam; dezelfde marker reageert op aanwijzen, toetsenbord en aantikken. Een herkenbare foto heeft een echte plaats en een onderschrift, maar staat de zoektaak niet in de weg.
 - **Stadsfiche**: naam en streek eerst; vervolgens gebruikslinks, bezoekplekken en gedateerde evenementen. Geen generieke illustratie in het titelblok. Houd openingsuren, buitenaanzicht en onbevestigde toegang bij het item waarop ze slaan. Verwijs bij het item naar bezoek- of reservatie-informatie. Bundel gewone bronvermeldingen onderaan bij de getoonde resultaten; laat verplichte credits voor individuele foto’s of teksten bij het item.
@@ -9,7 +9,7 @@ De website helpt iemand een stad opzoeken, een datum kiezen of een fietsrit same
 
 ## Bouwstenen
 
-- Papier, donkere inkt en dennengroen komen uit `site.css`. Baksteenrood is een signaal voor selectie of aandacht, niet voor decoratie; houd bestaande betekenisvolle kaart- en grafiekkleuren. Georgia draagt plaats- en paginatitels; de systeemletter is voor de rest. Geen externe fonts of beeld voor de vorm alleen.
+- Neutraal wit en lichtgrijs vervangen de crèmekleur. Donkere inkt draagt de tekst en primaire acties; rood hoort bij de Bocht-lijn en selectie. Gebruik de systeemletter, weinig randen en geen externe fonts. De heen- en teruglijn hebben een eigen patroon, niet alleen een andere kleur.
 - Begin bij gewone tekst, rijen en dunne lijnen. Gebruik een vlak waar het iets groepeert (bijvoorbeeld de kaart, een invoerveld of een waarschuwing) en een kaart of badge alleen wanneer de inhoud daar baat bij heeft. Een pillenrij als navigatie, een losse tellerbadge of een icoon naast elke titel is geen standaard. Dit is geen verbod op ronding, illustratie of een krachtige kop als die een doel hebben.
 - Schrijf “Kaart”, “Op naam” en “Fietsplanner” in plaats van te vertellen dat je iets kunt “ontdekken”. Eén korte uitleg alleen als die een vraag beantwoordt. Geen ontwikkelaarslinks of bronstatistieken in de bezoekersinterface. Bronnen en verplichte credits blijven wel zichtbaar.
 - Bekijk bij een wijziging de bovenkant zonder scrollen én minstens één ingevulde of geselecteerde toestand, op circa 390 en 1440 px. Probeer ook 320 px en toetsenbord zonder horizontale scroll of verloren focus. Kijk naar echte schermafbeeldingen naast de automatische tests, niet alleen naar de HTML. Gebruik bij dataproblemen een deterministisch testantwoord en vermeld apart wat live is gecontroleerd.

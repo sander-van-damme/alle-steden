@@ -6,8 +6,25 @@ const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? 'playwright')
 const shell = process.env.PLANNER_HEADLESS_MODULE ? (await import(process.env.PLANNER_HEADLESS_MODULE)).default : null;
 const port = process.env.CITY_MAP_TEST_PORT ?? '4179';
 const origin = 'http://127.0.0.1:' + port;
+const directory = origin + (process.env.CITY_MAP_TEST_PATH ?? '/steden/');
 const server = spawn(process.execPath, ['scripts/preview.mjs'], { stdio: ['ignore', 'pipe', 'inherit'], env: {...process.env, PORT: port} });
 let browser;
+async function dotPosition(page, slug) {
+  return page.locator(`[data-city-pin="${slug}"] .directory-pin-dot`).evaluate((dot) => {
+    const { x, y } = new DOMPoint(dot.cx.baseVal.value, dot.cy.baseVal.value).matrixTransform(dot.getScreenCTM());
+    return { x, y };
+  });
+}
+async function checkTapTargets(page) {
+  const map = page.locator('.directory-map-svg');
+  await map.evaluate(svg => svg.scrollIntoView({block: 'center'}));
+  assert.deepEqual(await map.evaluate(svg => [...svg.querySelectorAll('.directory-pin-dot')].flatMap(dot => {
+    const { x, y } = new DOMPoint(dot.cx.baseVal.value, dot.cy.baseVal.value).matrixTransform(dot.getScreenCTM());
+    const intended = dot.closest('[data-city-pin]').dataset.cityPin;
+    const actual = document.elementFromPoint(x, y)?.closest('[data-city-pin]')?.dataset.cityPin;
+    return intended === actual ? [] : [{ intended, actual }];
+  })), []);
+}
 async function checkFooterMapCredit(page) {
   const sourceUrl = 'https://simplemaps.com/gis/country/be';
   assert.equal(await page.locator('.directory-map a[href="' + sourceUrl + '"]').count(), 0);
@@ -31,11 +48,13 @@ try {
   const desktop = await browser.newPage({viewport: {width: 1440, height: 900}});
   const errors = [];
   desktop.on('pageerror', e => errors.push(e.message));
-  await desktop.goto(origin + '/#steden');
+  await desktop.goto(directory);
   await checkFooterMapCredit(desktop);
   const mapName = desktop.locator('[data-pin-name]');
   assert.equal(await mapName.isVisible(), false);
   assert.equal(await desktop.locator('[data-city-pin]').count(), 138);
+  assert.equal(await desktop.locator('#directory-map-link').count(), 0);
+  await checkTapTargets(desktop);
   const card = desktop.locator('[data-city-slug="gent"]');
   const pin = desktop.locator('[data-city-pin="gent"]');
   await card.locator('a').hover();
@@ -55,7 +74,8 @@ try {
   assert.equal(await desktop.locator('[data-city-pin]:not([hidden])').count(), 1);
   await card.locator('a').hover();
   assert.ok(await pin.evaluate(e=>e.classList.contains('is-active')));
-  await pin.locator('.directory-pin-hit').hover();
+  const point = await dotPosition(desktop, 'gent');
+  await desktop.mouse.move(point.x, point.y);
   assert.ok(await card.evaluate(e=>e.classList.contains('is-active')));
   await desktop.locator('#region').selectOption({label:'Wallonië'});
   assert.equal(await desktop.locator('[data-city-pin]:not([hidden])').count(), 0);
@@ -72,28 +92,35 @@ try {
   assert.equal(await desktop.locator('[data-pin-highlight]').getAttribute('data-pin-highlight'), active);
   assert.ok(await desktop.locator(`[data-city-slug="${active}"]`).evaluate(e=>e.classList.contains('is-active')));
   await desktop.keyboard.press('Enter');
-  assert.equal(await desktop.locator(':focus').getAttribute('id'), 'directory-map-link');
-  assert.ok((await desktop.locator(':focus').getAttribute('href')).includes('/steden/' + active + '/'));
+  await desktop.waitForURL('**/steden/' + active + '/');
+
+  await desktop.goto(directory);
+  const desktopMap = desktop.getByRole('group', { name: /^Stedenkaart/u });
+  assert.equal(await desktopMap.getByRole('link', { name: 'Gent', exact: true }).getAttribute('href'), '/steden/gent/');
+  await checkTapTargets(desktop);
+  const clickPosition = await dotPosition(desktop, 'gent');
+  await desktop.mouse.click(clickPosition.x, clickPosition.y);
+  await desktop.waitForURL('**/steden/gent/');
+  await desktop.getByRole('heading', { level: 1, name: 'Gent' }).waitFor();
   assert.deepEqual(errors, []);
 
   const phone = await browser.newPage({viewport:{width:390,height:780}, isMobile:true, hasTouch:true});
   for (const width of [320, 390]) {
     await phone.setViewportSize({ width, height: 780 });
-    await phone.goto(origin + '/#steden');
+    await phone.goto(directory);
     await checkFooterMapCredit(phone);
-    await phone.locator('#query').fill('ninove');
-    await phone.locator('[data-city-pin="ninove"] .directory-pin-hit').tap();
-    assert.equal(await phone.locator('#directory-map-label').textContent(), 'Ninove');
-    const phoneName = phone.locator('[data-pin-name]');
-    assert.equal(await phoneName.textContent(), 'Ninove');
-    assert.ok(await phoneName.isVisible());
-    assert.equal(await phone.locator('[data-pin-highlight]').getAttribute('data-pin-highlight'), 'ninove');
-    assert.equal(await phone.locator('.directory-pin-center').evaluate(e=>getComputedStyle(e).strokeWidth), '15px');
-    assert.ok(await phone.locator('[data-city-slug="ninove"]').evaluate(e=>e.classList.contains('is-active')));
     assert.equal(await phone.evaluate(()=>document.documentElement.scrollWidth),width);
-    await phone.locator('#directory-map-link').tap();
+    await checkTapTargets(phone);
+    const { x, y } = await dotPosition(phone, 'ninove');
+    await phone.touchscreen.tap(x, y);
     await phone.waitForURL('**/steden/ninove/');
+    await phone.getByRole('heading', { level: 1, name: 'Ninove' }).waitFor();
   }
+  const noScript = await browser.newPage({javaScriptEnabled: false});
+  await noScript.goto(directory);
+  const cityList = noScript.locator('#city-list');
+  await cityList.getByRole('link', { name: /^Gent/u }).click();
+  await noScript.waitForURL('**/steden/gent/');
   console.log('Stedenkaart: desktop hover en toetsenbord, mobiel tikken, gefilterde markers en correcte stadslink.');
 } finally {
   await browser?.close();

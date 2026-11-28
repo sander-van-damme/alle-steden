@@ -147,7 +147,7 @@ async function verifyAutomaticNotices(context,label) {
       await link.waitFor();
       assert.equal(await ravel.getByRole('link',{name:expired.title}).count(),0);
       assert.equal(await link.getAttribute('href'),'https://ravel.wallonie.be/home/a-la-une/warnings.html#warning-'+ravelHit.id);
-      assert.equal(await host.getByRole('link',{name:'CC BY 4.0'}).count(),2);
+      assert.equal(await host.getByRole('link',{name:'CC BY 4.0'}).count(),0);
       if (output) await host.screenshot({path:output+'/route-notice-expanded-'+label+'.png'});
       await activate(forestRow);
       assert.equal(await forest.locator('details[open]').count(),0);
@@ -230,8 +230,8 @@ async function verifyDistanceMarkers(context,label) {
     assert.ok(await page.locator('.route-map').evaluate(node=>node.nextElementSibling?.classList.contains('route-insights')));
     if(label==='mobile') await points.tap();
     else await points.press('Enter');
-    await page.getByRole('button',{name:'S Vertrek · Gent'}).waitFor();
-    await page.getByRole('button',{name:'E Aankomst · Eeklo'}).waitFor();
+    await page.getByRole('button',{name:'A Vertrek · Gent'}).waitFor();
+    await page.getByRole('button',{name:'B Aankomst · Eeklo'}).waitFor();
     await page.getByRole('button',{name:'R1 Koffiepauze'}).waitFor();
     assert.equal(await page.getByText(/Geen centrumspeld|Louter doorkruist/u).count(),0);
     const download=page.waitForEvent('download');
@@ -333,6 +333,36 @@ for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{
     assert.match(await page.locator('.route-map-credit').getAttribute('href'), /openstreetmap.org\/copyright/);
     assert.equal(await map.locator('path.route-map-line-0').count(), 1);
     assert.equal(await map.locator('path.route-map-line-1').count(), 1);
+    const key = page.locator('.route-map-key');
+    assert.deepEqual(await key.locator(':scope > span').allTextContents(), ['Heen','Terug']);
+    const styles = await map.evaluate(el => {
+      const halo = el.querySelector('.route-map-halo');
+      const outbound = el.querySelector('.route-map-line-0');
+      const inbound = el.querySelector('.route-map-line-1');
+      const returnEdge = el.querySelector('.route-map-return-edge');
+      const edgeStyle = getComputedStyle(returnEdge);
+      const key = el.closest('figure').querySelector('.route-map-key');
+      const [solid,dashed] = [...key.querySelectorAll('.route-map-key-line')].map(el=>getComputedStyle(el));
+      return {edge:getComputedStyle(halo).strokeWidth, dash:getComputedStyle(inbound).strokeDasharray,
+        edgeBelowBoth:halo.compareDocumentPosition(outbound) === Node.DOCUMENT_POSITION_FOLLOWING
+          && halo.compareDocumentPosition(inbound) === Node.DOCUMENT_POSITION_FOLLOWING,
+        returnClear:outbound.compareDocumentPosition(returnEdge) === Node.DOCUMENT_POSITION_FOLLOWING
+          && returnEdge.compareDocumentPosition(inbound) === Node.DOCUMENT_POSITION_FOLLOWING
+          && edgeStyle.strokeDasharray === getComputedStyle(inbound).strokeDasharray
+          && edgeStyle.stroke === 'rgb(255, 255, 255)' && edgeStyle.strokeWidth === '6.5px',
+        keysMatch:solid.borderTopColor === getComputedStyle(outbound).stroke
+          && dashed.borderTopColor === getComputedStyle(inbound).stroke,
+        patterns:[solid.borderTopStyle,dashed.borderTopStyle]};
+    });
+    assert.deepEqual(styles,{edge:'10px',dash:'8px, 11px',edgeBelowBoth:true,returnClear:true,
+      keysMatch:true,patterns:['solid','dashed']});
+    if (!live) {
+      const reversePath = await map.locator('path.route-map-line-1').getAttribute('d');
+      const outwardPath = await map.locator('path.route-map-line-0').getAttribute('d');
+      assert.deepEqual(reversePath.slice(1).split('L').reverse(), outwardPath.slice(1).split('L'),
+        'The two line patterns are tested on precisely overlapping geometry');
+    }
+
     assert.equal(await page.getByRole('button',{name:'B1 Echte stop',exact:true}).count(), 1);
     await page.waitForFunction(() => document.querySelectorAll('.route-map-tile').length > 0);
     if (live) await page.waitForFunction(() => Array.from(document.querySelectorAll('.route-map-tile')).some((img) => img.naturalWidth > 0));
@@ -401,6 +431,7 @@ for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{
     if (output) await page.screenshot({path:output + '/route-view-' + label + '.png',fullPage:true});
     await page.evaluate(() => window.updateRoute());
     assert.equal(await page.locator('.route-map-line-1').count(),0);
+    assert.deepEqual(await page.locator('.route-map-key > span').allTextContents(), ['Fietsroute']);
     assert.equal(await page.getByText('B1 Nieuwe stop').count(),1);
     assert.equal(await page.getByText('P1 Eventuele stop').count(),0);
     assert.deepEqual(errors, []);

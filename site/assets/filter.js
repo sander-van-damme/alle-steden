@@ -8,8 +8,6 @@ const highlight = map?.querySelector('[data-highlight-layer]');
 const pinName = map?.querySelector('[data-pin-name]');
 const mapBox = pinName?.ownerSVGElement?.viewBox.baseVal;
 const pins = new Map([...document.querySelectorAll('[data-city-pin]')].map(pin => [pin.dataset.cityPin, pin]));
-const label = document.querySelector('#directory-map-label');
-const detail = document.querySelector('#directory-map-link');
 const normalize = (value) => value.toLocaleLowerCase('nl-BE')
   .replaceAll('œ', 'oe').replaceAll('æ', 'ae')
   .normalize('NFD').replace(/\p{M}/gu, '').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -19,11 +17,10 @@ const entries = [...document.querySelectorAll('.city-card')].map((card) => ({
   pin: pins.get(card.dataset.citySlug),
 }));
 const byId = new Map(entries.map(entry => [entry.id, entry]));
-let selected, focused, hovered, emphasized, roving;
-const hint = label?.textContent;
+let focused, hovered, emphasized, roving;
 
 function paint() {
-  const next = [hovered, focused, selected].find(id => id && !byId.get(id)?.card.hidden);
+  const next = [hovered, focused].find(id => id && !byId.get(id)?.card.hidden);
   if (emphasized !== next) {
     const old = byId.get(emphasized), entry = byId.get(next);
     old?.card.classList.remove('is-active');
@@ -55,14 +52,6 @@ function paint() {
     }
     emphasized = next;
   }
-  if (!label || !detail) return;
-  const entry = byId.get(next);
-  label.textContent = entry?.name ?? hint;
-  detail.hidden = !entry;
-  if (entry) {
-    detail.href = entry.link.href;
-    detail.setAttribute('aria-label', 'Bekijk ' + entry.name);
-  }
 }
 
 function updateResults() {
@@ -79,7 +68,6 @@ function updateResults() {
   }
   count.textContent = results === 1 ? '1 stad' : `${results} steden`;
   empty.hidden = results > 0;
-  if (byId.get(selected)?.card.hidden) selected = undefined;
   if (!roving || byId.get(roving)?.card.hidden) roving = entries.find(entry => entry.pin && !entry.card.hidden)?.id;
   for (const { id, pin } of entries) pin?.setAttribute('tabindex', id === roving ? '0' : '-1');
   paint();
@@ -108,33 +96,18 @@ for (const entry of entries) {
       }
       paint();
     });
-    target.addEventListener('blur', ({ relatedTarget }) => {
-      if (relatedTarget === detail) selected = entry.id;
+    target.addEventListener('blur', () => {
       if (focused === entry.id) focused = undefined;
       paint();
     });
   }
-  entry.pin?.addEventListener('click', (event) => {
-    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-    event.preventDefault();
-    selected = entry.id;
-    paint();
-  });
   entry.pin?.addEventListener('keydown', (event) => {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
       event.preventDefault();
       hovered = undefined;
       movePin(entry, event.key);
     }
-    if (event.key === ' ' || event.key === 'Enter') {
-      event.preventDefault();
-      selected = entry.id;
-      hovered = undefined;
-      paint();
-      detail?.focus();
-    }
     if (event.key === 'Escape') {
-      selected = undefined;
       hovered = undefined;
       query.focus();
     }

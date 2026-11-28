@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { Parser, Store } from 'n3';
 import { eligiblePublicLink } from '../functions/lib/link-check-policy.js';
 import { calendarPage, cityPage, indexPage, layout, plannerPage } from './pages.mjs';
+import { visitsPage } from './visits-page.mjs';
 import { aboutPage, privacyPage, termsPage } from './info-pages.mjs';
 import { classifyRdfActivity } from '../site/assets/planner-activities.js';
 import { weeklyEventSessions } from './weekly-event-schedule.mjs';
@@ -322,7 +323,9 @@ const routeCityBoundaries = {
 
 await Promise.all([
   cp(source, resolve(output, 'data'), { recursive: true, filter: (path) => path === source || path.endsWith('.ttl') }),
-  writePage('.', indexPage(cities)),
+  writePage('.', plannerPage(plannerCities, { home: true })),
+  writePage('steden', indexPage(cities)),
+  writePage('mijn-bezoeken', visitsPage(layout,cities)),
   writePage('planner', plannerPage(plannerCities)),
   writePage('kalender', calendarPage(calendarCatalog)),
   writePage('over', aboutPage(layout)),
@@ -337,7 +340,7 @@ await Promise.all([
     [slug, { name, names, region, qid: cityUrl.split('/').at(-1) }])))),
   writeFile(resolve(output, '404.html'), pageHtml(layout({
     title: 'Pagina niet gevonden · Alle Steden',
-    main: '<main id="inhoud" class="wrap detail"><h1>Pagina niet gevonden</h1><p><a href="/">Terug naar de stedenlijst</a></p></main>',
+    main: '<main id="inhoud" class="wrap detail"><h1>Pagina niet gevonden</h1><p><a href="/steden/">Terug naar de stedenlijst</a></p></main>',
   }))),
   ...cities.map((city) => writePage(`steden/${city.slug}`, cityPage(city, linkIds))),
 ]);

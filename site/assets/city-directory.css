@@ -15,9 +15,6 @@
 .directory-pin-dot { fill: #34594b; stroke: #f9faf4; stroke-width: 1.15px; pointer-events: none; }
 .directory-pin:focus-visible { outline: 0; }
 .city-card.is-active a { color: #6f3328; background: #f0e1d7; box-shadow: inset 2px 0 var(--signal); }
-.directory-map-focus { display: flex; flex-wrap: wrap; gap: .1rem .65rem; justify-content: space-between; align-items: baseline; min-height: 2.2rem; padding: .36rem 0; color: #41584b; font-size: .84rem; }
-.directory-map-focus p { margin: 0; font-weight: 650; }
-.directory-map-focus a { font-weight: 650; }
 .directory-credits { margin-top: 1.75rem; padding-top: .8rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .83rem; }
 .directory-credits h2 { margin: 0 0 .2rem; color: var(--ink); font: 650 .9rem/1.3 system-ui, sans-serif; }
 .directory-credits p { margin: 0; }
@@ -27,7 +24,7 @@
 @media (max-width: 46rem) {
   .directory-workspace { grid-template-columns: minmax(0,1fr); gap: .6rem; }
 }
-/* The active mapped point must remain visible above adjacent pins on touch and keyboard. */
+/* The active mapped point must remain visible above adjacent pins on hover and keyboard. */
 .directory-pin-highlight { pointer-events: none; }
 .directory-pin-highlight circle { fill: none; vector-effect: non-scaling-stroke; }
 .directory-pin-halo { stroke: #b53b28; stroke-opacity: .22; stroke-width: 30px; }

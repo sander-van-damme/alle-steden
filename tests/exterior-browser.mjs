@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {withPlanner,desktop,phone,wirePage,cityEntry,openAdvanced,build,selected,parsedKm,loc} from './planner-browser-support.mjs';
+import {withPlanner,desktop,phone,wirePage,cityEntry,openAdvanced,build,selected,parsedKm,loc, chooseEnd } from './planner-browser-support.mjs';
 await withPlanner(process.env.PLANNER_PREVIEW_PORT??4175,async(browser,origin)=>{
   for(const [i,[slug,name,landmark]] of [
     ['ninove','Ninove',/Oud stadhuis/i],['stavelot','Stavelot'],['brussel','Brussel',/Stadhuis van Brussel/i],
@@ -18,7 +18,7 @@ await withPlanner(process.env.PLANNER_PREVIEW_PORT??4175,async(browser,origin)=>
     const calls=await wirePage(page,{catalog:cities=>cities.map(city=>({...city,events:[],places:[]})),
       services:()=>({empty:true}),pois:()=>({empty:true}),travel:()=>({length:20_000})});
     await cityEntry(page,origin,'ninove'); await openAdvanced(page);
-    await page.locator(loc.end).selectOption('aalst'); await build(page);
+    await chooseEnd(page,'aalst'); await build(page);
     const trip=selected(page); await trip.waitFor({timeout:45_000});
     assert.equal(await parsedKm(page),20); assert.match(await trip.innerText(),/Ninove/);
     await trip.getByRole('link',{name:'Download GPX'}).waitFor();

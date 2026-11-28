@@ -13,7 +13,7 @@ test('the complete public notice is bullet-first and keeps recipients, rights an
   const sections = [...main.matchAll(/<section><h2>([^<]+)<\/h2>\s*<ul class="info-sources">([\s\S]*?)<\/ul>\s*<\/section>/gu)];
   assert.equal(sections.length, 6);
   assert.ok(sections.every(([, , bullets]) => bullets.trimStart().startsWith('<li>')));
-  for (const content of ['Cloudflare Pages', 'Web Analytics', 'gps-locatie', 'BRouter', 'OpenStreetMap',
+  for (const content of ['Cloudflare Pages', 'Web Analytics', 'Gebruik mijn locatie', 'Mijn bezoeken', 'BeSt (FOD BOSA)', 'twee weken', 'tien dagen', 'BRouter', 'OpenStreetMap',
     'Pin je punt', 'ChasseOnWeb', 'Wikidata', 'RAVeL', 'GPX', '12 uur', 'privacycontact',
     'rechtsgronden', 'bewaartermijnen', 'zes maanden', 'beveiligingslogs', 'Gegevensbeschermingsautoriteit']) assert.ok(main.includes(content), content);
   for (const href of ['mailto:allesteden@bysander.net', '/over/', 'https://brouter.de/privacypolicy.html', 'https://www.cloudflare.com/privacypolicy/',

@@ -1,12 +1,13 @@
 import { sitePath } from './site-paths.js';
 import { getJson } from './sources.js';
-import { calendarDay } from './planner-core.js';
+import { geocodeDeparture } from './departure-origin.js';
+import { calendarDay, approxKm } from './planner-core.js';
 import { findRoutePois } from './planner-routing.js';
 import { generateDistanceRoutes } from './planner-itinerary.js';
 import { bindItineraryEditor } from './planner-itinerary-ui.js';
 import { renderRouteNotices, renderRouteView } from './planner-route-view.js';
 import { localRouteServices } from './route-local-services.js';
-import { findAntwerpToilets, antwerpToiletsSource } from './antwerp-toilets.js';
+import { findAntwerpToilets } from './antwerp-toilets.js';
 import { findBrusselsToilets, mergeRouteFacilities } from './brussels-toilets.js';
 import { findBrusselsPumps, mergeBrusselsPumps } from './brussels-pumps.js';
 import { findBrusselsWater } from './brussels-water.js';
@@ -46,6 +47,8 @@ function duration(value) {
 }
 function clearSelection() {
   selected?.controller.abort();
+  selected?.rail?.controller.abort();
+  clearTimeout(selected?.rail?.timer);
   selected?.notices?.dismissRouteNotices?.();
   selected?.map?.dismissRouteView?.();
   selected=null;
@@ -97,8 +100,6 @@ function renderServices(view) {
     list.append(row);
   }
   details.append(list,el('p',water?'Toegang en werking kunnen verschillen.':'Opening en toegang kunnen verschillen.','planner-hint'));
-  details.append(link('© OpenStreetMap-bijdragers','https://www.openstreetmap.org/copyright'));
-  if(points.some(p=>p.source===antwerpToiletsSource))details.append(' · ',link(antwerpToiletsSource.label,antwerpToiletsSource.url));
   view.serviceSlot.replaceChildren(details);
 }
 function renderAvailability(view) {
@@ -140,7 +141,7 @@ function renderStopRows(view) {
     const remove=action('Verwijder','itineraryRemoveStop',row.key); remove.setAttribute('aria-label','Verwijder '+row.name);
     controls.append(mins,remove); item.append(body,controls); list.append(item);
   }
-  view.stopList.replaceChildren(list); renderStopBudget(view); syncMarkers(view);
+  view.stopList.replaceChildren(list); renderStopBudget(view); syncMarkers(view); syncJourney(view);
 }
 function choices(view) {
   if(view.controller.signal.aborted || selected!==view)return;
@@ -190,7 +191,7 @@ function makeStopEditor(view) {
   box.addEventListener('change',event=>{
     const input=event.target, key=input.dataset.itineraryStopMinutes;
     if(key&&view.stops.has(key)){
-      view.stops.get(key).minutes=Number(input.value); renderStopBudget(view); syncMarkers(view);
+      view.stops.get(key).minutes=Number(input.value); renderStopBudget(view); syncMarkers(view); syncJourney(view);
     }
   });
   return box;
@@ -304,6 +305,33 @@ function updateServices(view) {
     .sort((a,b)=>a.kmAlongRoute-b.kmAlongRoute)};
   renderServices(view);syncMarkers(view);renderAvailability(view);
 }
+function syncJourney(view) {
+  if (!view.railSlot || selected!==view) return;
+  const stops=[...view.stops.values()].sort((a,b)=>a.kmAlongRoute-b.kmAlongRoute);
+  const signature=JSON.stringify(stops.map(({key,minutes})=>[key,minutes]));
+  if(view.rail?.signature===signature)return;
+  view.rail?.controller.abort();
+  clearTimeout(view.rail?.timer);
+  const controller=new AbortController();
+  const show=async()=>{
+    try {
+      const {renderRouteRail}=await import('./route-rail.js');
+      if(selected!==view||controller.signal.aborted)return;
+      const {originCity,departure}=view.model.request;
+      const panel=renderRouteRail(view.trip,originCity,{departure,stops,signal:controller.signal});
+      if(panel)view.railSlot.replaceChildren(panel);
+    } catch {} // The bike route remains available without optional rail data.
+  };
+  const first=!view.rail;
+  view.rail={signature,controller};
+  if(first)void show();
+  else {
+    // Do not leave an obsolete train time visible after changing stop duration.
+    view.railSlot.querySelectorAll('.itinerary-rail-time').forEach(el=>el.remove());
+    view.rail.timer=setTimeout(show,450);
+  }
+}
+
 function renderSelected(model,index) {
   if(search!==model||!model.trips[index])return;
   clearSelection(); model.index=index;
@@ -331,18 +359,16 @@ function renderSelected(model,index) {
   view.extrasStatus.hidden=true;view.extrasStatus.setAttribute('role','status');
   view.notices=long?null:renderRouteNotices(trip);
   view.map=renderRouteView(trip,{routeNotices:false,onStopToggle:key=>toggleMapStop(view,key)});
+  const railSlot=el('div');
+  view.railSlot=railSlot;
+  const routeLayout=el('div',null,'itinerary-route-layout');
   article.append(header);
   if(view.notices)article.append(view.notices);
-  article.append(view.map??el('p','De routekaart is niet beschikbaar.','planner-hint'));
-  const railSlot=el('div');
-  article.append(view.passedSlot,view.serviceSlot,railSlot,makeStopEditor(view),view.extrasStatus);
+  routeLayout.append(railSlot,view.map??el('p','De routekaart is niet beschikbaar.','planner-hint'));
+  article.append(routeLayout);
+  article.append(view.passedSlot,view.serviceSlot,makeStopEditor(view),view.extrasStatus);
   model.routeSlot.replaceChildren(article);
   view.notices?.startRouteNotices?.(); choices(view);
-  void import('./route-rail.js').then(({renderRouteRail})=>{
-    if(selected!==view)return;
-    const panel=renderRouteRail(trip);
-    if(panel)railSlot.append(panel);
-  }).catch(()=>{}); // Optional station information never blocks the bike route.
   // Only the chosen result runs these checks; alternatives stay passive.
   void loadPassages(view); void loadPoi(view);
 }
@@ -355,6 +381,20 @@ async function calculate(request) {
   model.boundaryLoad=import('./route-city-passages.js').then(({loadRouteCityBoundaries})=>
     loadRouteCityBoundaries({origin:location.origin,signal:model.controller.signal})).catch(()=>({state:'unavailable'}));
   try{
+    if (request.originAddress) {
+      const found=await geocodeDeparture(request.originAddress,{signal:model.controller.signal});
+      if(found.state!=='ok'){
+        setStatus(found.state==='unavailable'?'Adres zoeken lukt nu niet. Probeer een stad of je locatie.':
+          'Geen uniek adres gevonden. Controleer straat, huisnummer en postcode, of kies een stad.','error');
+        return;
+      }
+      request.originCity={name:'Je vertrekpunt',lon:found.lon,lat:found.lat,privatePoint:true};
+      delete request.originAddress; // Never retain the typed address in the trip model.
+    }
+    if (!request.startSlug && request.originCity) {
+      request.startSlug=cities.filter(city=>city.slug!==request.endSlug).reduce((best,city)=>
+        !best || approxKm(request.originCity,city)<approxKm(request.originCity,best)?city:best,null)?.slug;
+    }
     const shape=request.loop===true?'loop':(request.loop||'oneway');
     const data=await generateDistanceRoutes(cities,{city:request.startSlug,finish:request.endSlug||undefined,
       date:request.date,minKm:request.minKm,maxKm:request.maxKm,loop:shape},{signal:model.controller.signal});

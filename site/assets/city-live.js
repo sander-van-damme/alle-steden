@@ -126,6 +126,7 @@ function ensurePlaceAnchors(card, item) {
 
 function buildCard(item) {
   const card = el('li');
+  if (item.id) card.dataset.itemId = item.id;
   placeFragments(item).forEach((id) => {
     const alias = el('span');
     alias.id = id;

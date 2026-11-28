@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {approxKm} from '../site/assets/planner-core.js';
-import {withPlanner,desktop,phone,loc,wirePage,gotoPlanner,openAdvanced,setRange,build,selected,parsedKm,downloadGpx,near} from './planner-browser-support.mjs';
+import {withPlanner,desktop,phone,loc,wirePage,gotoPlanner,openAdvanced,setRange,build,selected,parsedKm,downloadGpx,near, chooseStart, chooseEnd, chooseFinish } from './planner-browser-support.mjs';
 await withPlanner(process.env.PLANNER_UI_PORT??4486,async(browser,origin)=>{
   for(const device of [desktop,phone]){
     const page=await browser.newPage(device); const calls=await wirePage(page,{travel:({via})=>{
@@ -9,14 +9,14 @@ await withPlanner(process.env.PLANNER_UI_PORT??4486,async(browser,origin)=>{
       return {length:Math.round(1240*chord)};
     }});
     await gotoPlanner(page,origin,'/planner/?city=gent'); const form=page.locator(loc.form);
-    assert.equal(await page.locator(loc.start).inputValue(),'gent');
-    for(const name of [loc.min,loc.max,loc.type,loc.budget])assert.ok(await page.locator(name).isVisible());
+    assert.equal(await page.locator(loc.start).inputValue(),'Gent');
+    for(const name of [loc.min,loc.max,loc.type,loc.date])assert.ok(await page.locator(name).isVisible());
     assert.equal(await page.locator(loc.advanced).evaluate(node=>node.open),false);
-    assert.equal(await page.locator(loc.date).isVisible(),false);
+    assert.equal(await page.locator(loc.budget).isVisible(),false);
     assert.equal(await page.locator(loc.end).isVisible(),false);
     assert.equal(await form.locator('[name=cityCount]').count(),0);
     const essentials=await page.locator('.itinerary-essentials').boundingBox();
-    const first=await page.locator('.itinerary-first').boundingBox();
+    const first=await page.locator('.itinerary-journey-fields').boundingBox();
     const distance=await page.locator('.itinerary-distance').boundingBox();
     if(device===desktop){
       assert.ok(essentials.width>950 && distance.x>first.x+first.width);
@@ -45,12 +45,12 @@ await withPlanner(process.env.PLANNER_UI_PORT??4486,async(browser,origin)=>{
     await setRange(page,25,50);
     assert.ok((await page.locator(loc.build).boundingBox()).height>=44);
     const adv=await openAdvanced(page); assert.equal(await adv.evaluate(node=>node.open),true);
-    await page.locator(loc.start).selectOption('aat'); await page.locator(loc.date).fill('2026-11-28');
+    await chooseStart(page,'aat'); await page.locator(loc.date).fill('2026-11-28');
     assert.equal(await page.locator(loc.date).inputValue(),'2026-11-28');
-    await page.locator(loc.type).selectOption('loop');
+    await chooseFinish(page,'loop');
     assert.ok(!(await page.locator(loc.end).isVisible()),'a loop does not require a separate finish');
-    await page.locator(loc.type).selectOption('single'); assert.ok(await page.locator(loc.end).isVisible());
-    await page.locator(loc.end).selectOption('aalst'); assert.equal(await page.locator(loc.end).inputValue(),'aalst');
+    await chooseFinish(page,'specific'); assert.ok(await page.locator(loc.end).isVisible());
+    await chooseEnd(page,'aalst'); assert.equal(await page.locator(loc.end).inputValue(),'aalst');
     for(const checkbox of await form.locator('[name=itineraryActivity]').all())await checkbox.uncheck();
     assert.ok(await form.evaluate(node=>node.checkValidity()),'no type of visit is required for cycling');
     assert.equal(calls.routes.length,0,'editing options is not a search');
@@ -68,8 +68,8 @@ await withPlanner(process.env.PLANNER_UI_PORT??4486,async(browser,origin)=>{
     assert.equal(await page.locator(loc.start).evaluate(el=>getComputedStyle(el).appearance),'auto');
     assert.equal(await slider.evaluate(el=>getComputedStyle(el).appearance),'auto');
     await page.emulateMedia({forcedColors:'none'});
-    await page.locator(loc.start).selectOption('gent');
-    await page.locator(loc.type).selectOption('loop');
+    await chooseStart(page,'gent');
+    await chooseFinish(page,'loop');
     await setRange(page,435,500);
     await build(page);
     await selected(page).waitFor({timeout:35_000});

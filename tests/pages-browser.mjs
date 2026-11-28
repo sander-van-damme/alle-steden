@@ -5,7 +5,7 @@ import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import { activate, build, desktop, downloadGpx, loc, openAdvanced, phone, selected, wirePage, withPlanner } from './planner-browser-support.mjs';
+import { activate, build, desktop, downloadGpx, loc, openAdvanced, phone, selected, wirePage, withPlanner, chooseEnd } from './planner-browser-support.mjs';
 
 const prefix = '/alle-steden';
 const port = Number(process.env.GITHUB_PAGES_TEST_PORT ?? 4181);
@@ -41,6 +41,9 @@ try {
       assert.match(await page.locator('.pages-preview').innerText(), /Niet alle live gegevens en controles zijn beschikbaar/u);
       assert.equal(await page.locator('link[rel=canonical]').getAttribute('href'), 'https://allesteden.bysander.net/');
       assert.equal(await page.locator('meta[name=robots]').getAttribute('content'), 'noindex');
+      await page.getByRole('heading',{name:'Plan je fietsdag'}).waitFor();
+      await activate(page,page.getByRole('link',{name:'Bekijk alle steden'}));
+      await page.waitForURL(local + prefix + '/steden/');
       await page.locator('#query').fill('aat');
       const card = page.locator('[data-city-slug="aat"] > a');
       const mapPin = page.locator('[data-city-pin="aat"]');
@@ -62,9 +65,9 @@ try {
       await page.waitForURL((url) => url.pathname === prefix + '/planner/');
       assert.equal(new URL(page.url()).pathname, prefix + '/planner/');
       await page.locator(loc.build + ':enabled').waitFor();
-      assert.equal(await page.locator(loc.start).inputValue(), 'aat');
+      assert.equal(await page.locator(loc.start).inputValue(), 'Aat');
       await openAdvanced(page);
-      await page.locator(loc.end).selectOption('lessen');
+      await chooseEnd(page,'lessen');
       await build(page);
       const trip = selected(page);
       await trip.waitFor();

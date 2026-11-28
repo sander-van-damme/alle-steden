@@ -89,7 +89,7 @@ export function privacyPage(layout) {
   return page(layout, 'privacy', 'Privacy', '', `
     <section><h2>Wat wordt er over jou verzameld?</h2>
       <ul class="info-sources">
-        <li><strong>Geen account of gps-locatie.</strong> Je hoeft je niet aan te melden. De site vraagt niet waar je toestel is.</li>
+        <li><strong>Geen account. Locatie is optioneel.</strong> Alleen als je ‘Gebruik mijn locatie’ kiest, vraagt je browser toestemming voor de positie van je toestel. Je kunt ook een stad of adres kiezen.</li>
         <li><strong>Je webverzoek.</strong> Cloudflare Pages ontvangt je IP-adres en de opgevraagde pagina om de site te tonen en te beveiligen. Zie het ${link('privacybeleid van Cloudflare', cloudflare)}.</li>
         <li><strong>Laadtijden en paginagegevens.</strong> Waar Web Analytics actief meet, ontvangt Cloudflare metingen zoals laadtijd, het webadres, de eventuele verwijzende pagina en een code per paginabezoek. Volgens ${link('Cloudflare', rum)} gebruikt het meetscript geen cookies of browseropslag. Cloudflare ontvangt ook je IP-adres bij het versturen van die meting, maar zegt het daarvoor niet te bewaren. Dat staat los van gewone webverzoeken.</li>
       </ul>
@@ -103,16 +103,18 @@ export function privacyPage(layout) {
     </section>
     <section><h2>Wat deelt de fietsplanner?</h2>
       <ul class="info-sources">
-        <li>${link('BRouter', brouter)} krijgt coördinaten van routepunten om de rit te berekenen. De routekaart vraagt kaartbeelden rechtstreeks op bij ${link('OpenStreetMap', osm)}.</li>
+        <li><strong>Vertrekadres of locatie.</strong> We bewaren die niet in browseropslag en zetten ze niet in de URL of je GPX. Als je een ingevoerd adres gebruikt, krijgt <a href="https://opendata.bosa.be/index.nl.html">BeSt (FOD BOSA)</a> straat, huisnummer, postcode en je IP-adres om de coördinaten op te zoeken. Voor een fietsverbinding naar of van het station krijgt BRouter coördinaten, geen adres.</li>
+        <li>${link('BRouter', brouter)} krijgt coördinaten om fietsritten te berekenen en registreert die volgens zijn <a href="https://brouter.de/privacypolicy.html">privacybeleid</a> samen met je IP-adres gedurende twee weken, plus tien dagen in back-ups. Als je dat niet wilt voor je exacte vertrekpunt, gebruik dan een stad. De routekaart vraagt kaartbeelden rechtstreeks op bij ${link('OpenStreetMap', osm)}.</li>
         <li>Voor je gekozen rit kan je browser automatisch het gebied opvragen bij Pin je punt en ChasseOnWeb; bij ChasseOnWeb ook voor de gekozen datum. Voor stopideeën kan Wikidata enkele punten op de route krijgen.</li>
         <li>Bij een rit door de gemeente Stad Brussel vraagt je browser de openbare toilettenlijst rechtstreeks bij Stad Brussel op, en buiten de winterstop ook de lijst met drinkwaterpunten. De aanbieder ziet je IP-adres, maar krijgt geen routepunten, datum of cookies van de site. Je browser zoekt lokaal welke voorzieningen dicht bij de route liggen.</li>
         <li>Bij een rit door het Brussels Hoofdstedelijk Gewest haalt je browser de openbare pompenlijst op bij Brussel Mobiliteit. De aanbieder ziet je IP-adres, maar krijgt geen routepunten, datum of cookies van de site.</li>
-        <li>De planner bepaalt nabije stations in je browser. Alleen als je op een treinlink klikt, krijgt iRail je IP-adres en de stations uit de link, en eventueel de fietsdatum voor de heenreis. Je routecoördinaten worden niet meegestuurd.</li>
+        <li>De planner kiest nabije stations in je browser. Als je een vertrekplaats invult en een rit met trein berekent, vraagt je browser treinuren bij iRail op. iRail krijgt je IP-adres, de stations, de datum en het vroegste vertrekuur. Je adres en routecoördinaten worden niet meegestuurd naar iRail. Voor fietsritten naar stations krijgt BRouter wel de coördinaten van die routepunten.</li>
         <li>Cloudflare vraagt voor RAVeL alleen de algemene meldingenlijst op. Je browser vergelijkt die lokaal met je route en datum, bepaalt de doorkruiste stadsgemeenten en maakt het GPX-bestand.</li>
       </ul>
     </section>
     <section><h2>Wat blijft in je browser?</h2>
       <ul class="info-sources">
+        <li><strong>Mijn bezoeken.</strong> Je aangevinkte steden en plekken blijven in deze browser. Alle Steden verstuurt of synchroniseert die keuzes niet. Wis de sitegegevens of verwijder de bezoeken om ze weg te halen.</li>
         <li>Je browser kan openbare agenda-items van Idées de sorties tijdelijk bewaren, zonder accountgegevens of zoekgeschiedenis. Na ongeveer 20 minuten vraagt de kalender bij gebruik een nieuwe versie. Hij kan de oude kopie tot 12 uur na het ophalen tonen, met een melding als ze verouderd is. Dat is geen automatische wistermijn; wissen kan via je browserinstellingen.</li>
         <li>Je browser kan webbestanden en kaartbeelden tijdelijk bewaren. Een stad of kalendermaand in het webadres kan in je browsergeschiedenis staan en meegaan als je de link deelt.</li>
       </ul>
