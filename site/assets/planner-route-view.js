@@ -562,8 +562,11 @@ function createMap(doc, outbound, inbound, markers, label, edited, compact = fal
   }
   function updateStatus() {
     const result = [...entries.values()].map(({state}) => state);
-    tileStatus.textContent = result.length > 0 && result.every((state) => state !== 'pending') && result.includes('error')
-      ? result.includes('ok') ? 'Achtergrondkaart deels beschikbaar' : 'Achtergrondkaart niet beschikbaar' : '';
+    const hasTiles = result.includes('ok'), pending = result.includes('pending');
+    const message = pending && !hasTiles ? 'Achtergrondkaart laden…'
+      : !pending && result.includes('error')
+        ? hasTiles ? 'Achtergrondkaart deels beschikbaar' : 'Achtergrondkaart niet beschikbaar' : '';
+    if (tileStatus.textContent !== message) tileStatus.textContent = message;
   }
   function render() {
     renderId = 0;

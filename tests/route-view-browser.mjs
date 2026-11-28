@@ -305,15 +305,17 @@ for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{
     const page = await context.newPage();
     const errors = [];
     let tileCount = 0, loadedTiles = 0;
+    const tileGate = Promise.withResolvers();
     await page.clock.setFixedTime(new Date('2026-11-25T11:00:00+01:00'));
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('response', (res) => { if (res.url().startsWith('https://tile.openstreetmap.org/') && res.ok()) loadedTiles++; });
     await serveRouteFixture(page);
     if (replay && live) await page.route('https://brouter.de/brouter?**', (route) =>
       route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:replay}));
-    await page.route('https://tile.openstreetmap.org/**', (route) => {
+    await page.route('https://tile.openstreetmap.org/**', async (route) => {
       tileCount++;
       if (live) return route.continue();
+      await tileGate.promise;
       if (label==='mobile') return route.abort(); // Prove the actual track remains usable during basemap failure.
       return route.fulfill({contentType:'image/png',body:tilePng});
     });
@@ -334,6 +336,19 @@ for (const [label, viewport] of [['desktop',{width:1180,height:900}],['mobile',{
     assert.equal(await page.getByRole('button',{name:'B1 Echte stop',exact:true}).count(), 1);
     await page.waitForFunction(() => document.querySelectorAll('.route-map-tile').length > 0);
     if (live) await page.waitForFunction(() => Array.from(document.querySelectorAll('.route-map-tile')).some((img) => img.naturalWidth > 0));
+    else {
+      const status = page.locator('.route-map-status');
+      try { await page.getByText('Achtergrondkaart laden…', {exact:true}).waitFor({timeout:5000}); }
+      finally { tileGate.resolve(); }
+      if (label==='desktop') {
+        await page.locator('.route-map-tile-ready').first().waitFor();
+        assert.equal(await status.textContent(), '', 'Loading hint disappears once the map is visible');
+      }
+    }
+    const gpxLink = page.getByRole('link',{name:'Download GPX'});
+    const action = await gpxLink.evaluate(el=>({height:el.getBoundingClientRect().height, fill:getComputedStyle(el).backgroundColor}));
+    assert.ok(action.height >= 44);
+    assert.notEqual(action.fill, 'rgba(0, 0, 0, 0)');
     if (label==='mobile') await page.getByText('Achtergrondkaart niet beschikbaar').waitFor();
     const before = await layer.getAttribute('transform');
     await map.press('+');
