@@ -346,6 +346,7 @@ function renderSelected(model,index) {
   metrics.append(km,(minutes?' · ca. '+minutes+(long?' totale fietstijd':' fietsen'):'')+
     (long?'':' · '+dayName.format(new Date(trip.date+'T12:00:00Z'))));
   header.append(heading,metrics);
+  if (model.originWarning) header.append(el('p',model.originWarning,'planner-hint'));
   if (long) header.append(el('p','Eén doorlopend traject. Dagetappes, overnachtingen, openingsuren en tijdelijke afsluitingen zijn niet ingepland of gecontroleerd.','planner-hint'));
   if(trip.landmarks?.length){
     const landmarks=el('p',null,'itinerary-route-landmarks');
@@ -383,13 +384,15 @@ async function calculate(request) {
   try{
     if (request.originAddress) {
       const found=await geocodeDeparture(request.originAddress,{signal:model.controller.signal});
-      if(found.state!=='ok'){
-        setStatus(found.state==='unavailable'?'Adres zoeken lukt nu niet. Probeer een stad of je locatie.':
-          'Geen uniek adres gevonden. Controleer straat, huisnummer en postcode, of kies een stad.','error');
-        return;
-      }
-      request.originCity={name:'Je vertrekpunt',lon:found.lon,lat:found.lat,privatePoint:true};
       delete request.originAddress; // Never retain the typed address in the trip model.
+      if(found.state==='ok') {
+        request.originCity={name:'Je vertrekpunt',lon:found.lon,lat:found.lat,privatePoint:true};
+      } else {
+        const message=found.state==='unavailable'?'Adres zoeken lukt nu niet. Probeer een stad of je locatie.':
+          'Geen uniek adres gevonden. Controleer straat, huisnummer en postcode, of kies een stad.';
+        if(!request.startSlug){setStatus(message,'error');return;}
+        model.originWarning=message+' Hieronder staat alleen je fietsrit.';
+      }
     }
     if (!request.startSlug && request.originCity) {
       request.startSlug=cities.filter(city=>city.slug!==request.endSlug).reduce((best,city)=>

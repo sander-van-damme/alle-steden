@@ -7,9 +7,11 @@ await withPlanner(4219,async(browser,origin)=>{
     await context.grantPermissions(['geolocation'],{origin});
     const page=await context.newPage();
     const addresses=[];
+    let addressAvailable=true;
     const calls=await wirePage(page,{travel:()=>({length:20_000}),pois:()=>({empty:true}),services:()=>({empty:true})});
     await page.route('https://best.pr.fedservices.be/**',route=>{
       addresses.push(route.request().url());
+      if(!addressAvailable)return route.fulfill({status:503,headers:{'access-control-allow-origin':'*'}});
       return route.fulfill({headers:{'access-control-allow-origin':'*'},json:{items:[{
         status:'current',isOfficiallyAssigned:true,addressPosition:{wgs84:{long:3.72529,lat:51.05449}}
       }]}});
@@ -33,6 +35,9 @@ await withPlanner(4219,async(browser,origin)=>{
     const track=await downloadGpx(page);
     assert.doesNotMatch(track.xml,/Botermarkt|3\.72529|51\.05449/);
     assert.equal(await page.evaluate(()=>localStorage.length),0);
+    addressAvailable=false;
+    await build(page);
+    await selected(page).getByText(/Hieronder staat alleen je fietsrit/).waitFor();
     await page.getByRole('button',{name:'Gebruik mijn locatie'}).click();
     await page.getByText('Locatie klaar voor deze rit.').waitFor();
     assert.equal(await page.locator('#itinerary-address-note').isVisible(),false);

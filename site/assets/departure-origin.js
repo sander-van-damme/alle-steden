@@ -10,7 +10,7 @@ export function parseDepartureAddress(value) {
 export async function geocodeDeparture(address,{signal,fetcher=globalThis.fetch}={}) {
   const cleaned=parseDepartureAddress(address);
   if(!cleaned)return {state:'invalid'};
-  const own=AbortSignal.timeout(7000);
+  const own=AbortSignal.timeout(15_000);
   try {
     const response=await fetcher(endpoint+'?'+new URLSearchParams(cleaned),{
       signal:signal?AbortSignal.any([signal,own]):own,credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer',redirect:'error',
