@@ -69,7 +69,7 @@ export function aboutPage(layout) {
           link('het WK veldrijden', 'https://www.ostend2027.com/nl/programma') + '. Elke vermelding linkt naar de eigen bron.'],
       ])}
       ${sourceGroup('Kaarten, fietsroutes en meldingen onderweg', [
-        [link('iRail-stations', 'https://github.com/iRail/stations') + ' (' + link('CC0', 'https://creativecommons.org/publicdomain/zero/1.0/') + ') en ' + link('iRail', 'https://irail.be/'), 'Nabije stations bij het begin en einde van de fietsroute. De treinverbinding zoek je op bij iRail; controleer de fietsvoorwaarden bij NMBS.'],
+        [link('iRail-stations', 'https://docs.irail.be/#stations') + ' (' + link('CC0', 'https://creativecommons.org/publicdomain/zero/1.0/') + ') en ' + link('iRail', 'https://irail.be/'), 'Nabije stations bij het begin en einde van de fietsroute. De treinverbinding zoek je op bij iRail; controleer de fietsvoorwaarden bij NMBS.'],
         [link('SimpleMaps', 'https://simplemaps.com/gis/country/be') + ' (' + link('CC BY 4.0', cc) + ')', 'Voor de vereenvoudigde gewestgrenzen op de overzichtskaart en op de kaart om een vertrekstreek te kiezen.'],
         [from('osm', 'OpenStreetMap-bijdragers') + ' en ' + link('BRouter', 'https://brouter.de/brouter-web/'), 'OpenStreetMap levert de routekaart en soms openingsuren van bezienswaardigheden. BRouter berekent het traject en levert gegevens over hoogte en wegdek, waar beschikbaar. Wikidata helpt bij suggesties onderweg.'],
         [link('Nationaal Geografisch Instituut · AdminVector', 'https://www.geo.be/catalog/details/fb1e2993-2020-428c-9188-eb5f75e284b9') + ' (' + link('CC BY 4.0', cc) + ')', 'Voor de bewerkte gemeentegrenzen die bepalen door welke stadsgemeenten de fietsroute loopt.'],
