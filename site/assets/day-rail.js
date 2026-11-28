@@ -103,7 +103,7 @@ async function lookup(from,to,earliestAt,latestAt,departureDay,fetchImpl,signal)
     format:'json', lang:'nl', typeOfTransport:'automatic', results:'6',
   });
   try {
-    const timeout=AbortSignal.timeout(8000);
+    const timeout=AbortSignal.timeout(18_000);
     const response=await fetchImpl('https://api.irail.be/v1/connections?'+params,{
       signal:signal ? AbortSignal.any([signal,timeout]) : timeout,
       credentials:'omit', cache:'no-store', referrerPolicy:'no-referrer', redirect:'error',
