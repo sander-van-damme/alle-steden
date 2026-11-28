@@ -368,16 +368,28 @@ export async function getFlemishHeritage(city, options = {}) {
   return { items };
 }
 
+// This PIVOT publisher exports numbered walk entries as NUMMER_TITEL
+// or NUMMER_TITEL_LOCATIE. Only interpret this known producer and format.
+function pivotPlaceName(row) {
+  const raw = compact(row?.NOM);
+  if (compact(row?.ORGANISME) !== 'Wallonie Picarde (Antenne Tournai)' ||
+      !['Découverte et Divertissement', 'Point d’intérêt'].includes(row.TYPE_OFFRE)) return raw;
+  const match = /^([1-9]\d{0,2})_([\p{L}][^_]*?)(?:_([\p{L}][^_]*))?$/u.exec(raw);
+  if (!match) return raw;
+  const [, number, title, location] = match;
+  return number + '. ' + title.trim() + (location ? ' · ' + location.trim() : '');
+}
+
 export async function getWallonia(city, options) {
   const values = cityNames(city).map((name) => "'" + name.toUpperCase().replaceAll("'", "''") + "'").join(', ');
   const layers = await Promise.allSettled([10, 11].map(async (layer) => {
     const result = await getJson(parameters(walloon + '/' + layer + '/query', {
       where: 'UPPER(COMMUNE) IN (' + values + ')',
-      outFields: 'CODE,NOM,TYPE_OFFRE,RUE,NUMERO,CODE_POSTAL,COMMUNE,SITE_WEB',
+      outFields: 'CODE,NOM,TYPE_OFFRE,RUE,NUMERO,CODE_POSTAL,COMMUNE,SITE_WEB,ORGANISME',
       returnGeometry: 'true', outSR: 4326, resultRecordCount: 32, orderByFields: 'NOM,CODE', f: 'json',
     }), options);
     const items = rows(result, 'features').flatMap(({ attributes: row, geometry }) => {
-      const name = compact(row?.NOM);
+      const name = pivotPlaceName(row);
       if (!name) return [];
       const code = compact(row.CODE, 50);
       const sourceId = /^[A-Za-z0-9-]+$/.test(code) ? code : undefined;

@@ -111,3 +111,27 @@ test('Turtle is parseable, stable, municipality-linked and attributed without as
   assert.ok(quads.some((q) => q.predicate.value === schema + 'name' && q.object.language === 'fr'));
   assert.doesNotMatch(exportFile.turtle, /javascript|sameAs|openingHours|publicAccess|ignored/);
 });
+
+test('PIVOT cleans numbered export separators only for the demonstrated producer and record types', async () => {
+  const author = 'Wallonie Picarde (Antenne Tournai) ';
+  const rows = [
+    ['2_Eglise Saint-Julien', author, 'Découverte et Divertissement', '2. Eglise Saint-Julien'],
+    ['1_Le Dragon_Le Beffroi', author, 'Point d’intérêt', '1. Le Dragon · Le Beffroi'],
+    ['3_Route_du_Nord_extra', author, 'Point d’intérêt', '3_Route_du_Nord_extra'],
+    ['Le_Beffroi', author, 'Point d’intérêt', 'Le_Beffroi'],
+    ['_Nom officiel', author, 'Point d’intérêt', '_Nom officiel'],
+    ['2_Titre_Officiel', 'Autre organisme', 'Point d’intérêt', '2_Titre_Officiel'],
+    ['4_Titre_Officiel', author, 'Autre type', '4_Titre_Officiel'],
+    ['Poi_1294377', 'Pays de Liège', 'Découverte et Divertissement', 'Poi_1294377'],
+  ];
+  const { items } = await getWallonia({ name: 'Ath' }, { fetcher: url => {
+    assert.ok(url.searchParams.get('outFields').split(',').includes('ORGANISME'));
+    return Response.json({ features: rows.map(([NOM, ORGANISME, TYPE_OFFRE], index) => ({
+      attributes: { NOM, ORGANISME, TYPE_OFFRE, CODE: 'LOD-' + index, SITE_WEB: 'https://example.org/official_title' },
+    })) });
+  } });
+  assert.deepEqual(items.slice(0, rows.length).map(item => item.name), rows.map(row => row[3]));
+  assert.equal(items[0].id, 'pivot:LOD-0');
+  assert.equal(items[0].website, 'https://example.org/official_title');
+  assert.equal(new URL(items[0].sourceRecord).searchParams.get('where'), "CODE = 'LOD-0'");
+});
