@@ -41,7 +41,7 @@ await withPlanner(4219,async(browser,origin)=>{
     assert.ok(portraits.every(x=>x.height>=44&&x.hidden==='true'&&/^M[0-9]/.test(x.outline)&&
       x.centre[0]>0&&x.centre[0]<216&&x.centre[1]>0&&x.centre[1]<90));
     assert.ok(await page.getByRole('region',{name:'Bronnen'}).getByRole('link',{name:/NGI/}).isVisible());
-    assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),'rgb(250, 250, 250)');
+    assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),'rgb(240, 243, 233)');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),device.viewport.width);
     await page.locator(loc.start).fill('Ath');
     await chooseEnd(page,'Lessines');
