@@ -1,3 +1,4 @@
+import { antwerpToiletsSource } from '../site/assets/antwerp-toilets.js';
 import { sources } from '../site/assets/sources.js';
 import { andenneOutdoor } from '../site/assets/local-outdoor-routes.js';
 import { forestNoticeSource } from '../site/assets/route-forest-notices.js';
@@ -73,6 +74,7 @@ export function aboutPage(layout) {
         [link('Nationaal Geografisch Instituut · AdminVector', 'https://www.geo.be/catalog/details/fb1e2993-2020-428c-9188-eb5f75e284b9') + ' (' + link('CC BY 4.0', cc) + ')', 'Voor de bewerkte gemeentegrenzen die bepalen door welke stadsgemeenten de fietsroute loopt.'],
         [link('Pin je punt', routeServicesSource.url) + ' en ' + link('ChasseOnWeb', forestNoticeSource.map), 'Bij een gekozen fietsroute zoeken we waar relevant naar Vlaamse fietsvoorzieningen van Toerisme Vlaanderen / OpenStreetMap of Waalse bosmeldingen van de Service public de Wallonie. Een melding is geen bevestiging dat een pad open of dicht is.'],
         [link(brusselsToiletsSource.label, brusselsToiletsSource.url) + ' (' + link('CC BY 4.0', brusselsToiletsSource.license) + ')', 'Bewerkte selectie van openbare toiletten op straatniveau in de gemeente Stad Brussel. Alleen punten dicht bij de route; geen actuele openingsuren of toegangsgarantie.'],
+        ['Openbare toiletten Antwerpen (' + link(antwerpToiletsSource.label, antwerpToiletsSource.url) + '; ' + link('Gratis Open Data Licentie', antwerpToiletsSource.license) + ')', 'Vrijstaande, niet-seizoensgebonden toiletten van de stad, dicht bij de fietsroute. Geen bevestigde openingsuren of toegang.'],
         [link(brusselsPumpsSource.label, brusselsPumpsSource.url) + ' (' + link('CC0', brusselsPumpsSource.license) + ')', 'Locaties van fietspompen bij een rit door het Brussels Hoofdstedelijk Gewest. De bron geeft geen actuele staat van de pompen.'],
         [link(brusselsWaterSource.label, brusselsWaterSource.url) + ' (' + link('CC0', brusselsWaterSource.license) + ')', 'Openbare drinkwaterpunten in de gemeente Stad Brussel. De planner houdt rekening met de ' + link('winterstop', brusselsWaterSource.season) + '.'],
         [link('Stadsplan van Aat', 'https://visitath.be/wp-content/uploads/2025/12/OTATH_plan-Ath_570x320mm_2025_WEB.pdf') + ' en ' + from('osm', 'OpenStreetMap-bijdragers'), 'Voor twee openbare toiletten in Aat. De kaart geeft geen actuele openingsuren of toegangsvoorwaarden.'],

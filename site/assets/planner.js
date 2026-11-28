@@ -6,6 +6,7 @@ import { generateDistanceRoutes } from './planner-itinerary.js';
 import { bindItineraryEditor } from './planner-itinerary-ui.js';
 import { renderRouteNotices, renderRouteView } from './planner-route-view.js';
 import { localRouteServices } from './route-local-services.js';
+import { findAntwerpToilets, antwerpToiletsSource } from './antwerp-toilets.js';
 import { findBrusselsToilets, mergeRouteFacilities } from './brussels-toilets.js';
 import { findBrusselsPumps, mergeBrusselsPumps } from './brussels-pumps.js';
 import { findBrusselsWater } from './brussels-water.js';
@@ -97,6 +98,7 @@ function renderServices(view) {
   }
   details.append(list,el('p',water?'Toegang en werking kunnen verschillen.':'Opening en toegang kunnen verschillen.','planner-hint'));
   details.append(link('© OpenStreetMap-bijdragers','https://www.openstreetmap.org/copyright'));
+  if(points.some(p=>p.source===antwerpToiletsSource))details.append(' · ',link(antwerpToiletsSource.label,antwerpToiletsSource.url));
   view.serviceSlot.replaceChildren(details);
 }
 function renderAvailability(view) {
@@ -224,6 +226,7 @@ async function loadPassages(view) {
       void loadBrusselsToilets(view);
       void loadBrusselsWater(view);
     }
+    if(view.passage.cities.some(city=>city.slug==='antwerpen'))void loadAntwerpToilets(view);
     const regions=view.passage?.regions??[];
     if(regions.includes('Brussels Hoofdstedelijk Gewest'))void loadBrusselsPumps(view);
     const endpoints=[view.trip.startCity?.region,view.trip.destinationCity?.region];
@@ -267,6 +270,14 @@ async function loadBrusselsToilets(view) {
   }
   updateServices(view);
 }
+async function loadAntwerpToilets(view) {
+  try {
+    const points=await findAntwerpToilets(view.trip,view.passage,{signal:view.controller.signal});
+    if(selected!==view||!points.length)return;
+    view.antwerpToilets=points;
+  } catch { return; } // Optional municipal data; do not add an error or empty block.
+  updateServices(view);
+}
 async function loadBrusselsPumps(view) {
   try {
     const points=await findBrusselsPumps(view.trip,view.passage,{signal:view.controller.signal});
@@ -287,7 +298,7 @@ async function loadBrusselsWater(view) {
   updateServices(view);
 }
 function updateServices(view) {
-  const points=mergeRouteFacilities(view.brusselsToilets??[],[...(view.localServices??[]),...(view.flemishServices??[])]);
+  const points=mergeRouteFacilities([...(view.brusselsToilets??[]),...(view.antwerpToilets??[])],[...(view.localServices??[]),...(view.flemishServices??[])]);
   view.services={items:[...mergeBrusselsPumps(view.brusselsPumps??[],points),...(view.brusselsWater??[])]
     .sort((a,b)=>a.kmAlongRoute-b.kmAlongRoute)};
   renderServices(view);syncMarkers(view);renderAvailability(view);
