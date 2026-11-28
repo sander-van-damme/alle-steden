@@ -344,6 +344,40 @@
   }
   .itinerary-essentials .itinerary-distance { margin-top: 0; }
 }
+.itinerary-slider-scale {
+  --slider-thumb: 1.375rem;
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.itinerary-slider-scale input { display: block; margin: 0; }
+.itinerary-slider-axis {
+  display: block;
+  position: relative;
+  height: 1.3rem;
+  margin: -.25rem calc(var(--slider-thumb) / 2) 0;
+  pointer-events: none;
+}
+.itinerary-slider-breakpoint {
+  position: absolute;
+  left: var(--breakpoint);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: .75rem;
+  line-height: 1rem;
+}
+.itinerary-slider-breakpoint::before {
+  content: '';
+  display: block;
+  width: 1px;
+  height: .3rem;
+  margin: 0 auto;
+  background: currentColor;
+}
+@media (forced-colors: active) {
+  /* The native thumb can have a different width in forced colours. */
+  .itinerary-slider-axis { display: none; }
+}
 @media (forced-colors: none) {
   .itinerary-form select {
     appearance: none;
@@ -359,14 +393,14 @@
   }
   .itinerary-distance input[type="range"]::-webkit-slider-thumb {
     appearance: none; margin-top: -.5rem;
-    width: 1.375rem; height: 1.375rem; border: 2px solid #fff;
+    width: var(--slider-thumb); height: var(--slider-thumb); border: 2px solid #fff;
     border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1px var(--accent);
   }
   .itinerary-distance input[type="range"]::-moz-range-track {
     height: .375rem; background: #768477; border-radius: .25rem;
   }
   .itinerary-distance input[type="range"]::-moz-range-thumb {
-    width: 1.125rem; height: 1.125rem; border: 2px solid #fff;
+    box-sizing: border-box; width: var(--slider-thumb); height: var(--slider-thumb); border: 2px solid #fff;
     border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1px var(--accent);
   }
 }

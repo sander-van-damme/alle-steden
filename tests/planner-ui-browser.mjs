@@ -1,6 +1,25 @@
 import assert from 'node:assert/strict';
 import {approxKm} from '../site/assets/planner-core.js';
 import {withPlanner,desktop,phone,loc,wirePage,gotoPlanner,openAdvanced,setRange,build,selected,parsedKm,downloadGpx,near, chooseStart, chooseEnd, chooseFinish } from './planner-browser-support.mjs';
+async function checkBreakpoints(page, device) {
+  const min=page.getByRole('slider',{name:'Minimale fietsafstand',exact:true});
+  const max=page.getByRole('slider',{name:'Maximale fietsafstand',exact:true});
+  await setRange(page,15,500);
+  for (const slider of [min,max]) {
+    const control=slider.locator('..');
+    const marker=control.getByText('200 km',{exact:true});
+    const a=await slider.boundingBox(), b=await marker.boundingBox();
+    assert.ok(a && b && b.x>=a.x && b.x+b.width<=a.x+a.width && b.y>=a.y + 35);
+    assert.equal(await marker.evaluate(el=>el.closest('[aria-hidden]')?.getAttribute('aria-hidden')),'true');
+    const x=b.x+b.width/2;
+    if(device===phone) await page.touchscreen.tap(x,a.y+a.height/2);
+    else await page.mouse.click(x,a.y+a.height/2);
+    assert.equal(await slider.getAttribute('aria-valuetext'),'200 km');
+    await slider.press('ArrowRight');
+    assert.equal(await slider.getAttribute('aria-valuetext'),'225 km');
+  }
+}
+
 await withPlanner(process.env.PLANNER_UI_PORT??4486,async(browser,origin)=>{
   for(const device of [desktop,phone]){
     const page=await browser.newPage(device); const calls=await wirePage(page,{travel:({via})=>{
@@ -27,6 +46,8 @@ await withPlanner(process.env.PLANNER_UI_PORT??4486,async(browser,origin)=>{
     assert.ok((await page.locator(loc.start).boundingBox()).height>=44);
     assert.ok((await page.locator(loc.max).boundingBox()).height>=44);
 
+    await checkBreakpoints(page,device);
+    await page.locator(loc.min).fill("15");
     await setRange(page,25,50);
     const maximum=page.locator(loc.max), slider=page.getByRole('slider',{name:'Maximale fietsafstand',exact:true});
     assert.ok((await slider.boundingBox()).height>=44);
@@ -61,12 +82,15 @@ await withPlanner(process.env.PLANNER_UI_PORT??4486,async(browser,origin)=>{
       const field=await maximum.boundingBox();
       assert.ok(label.x+label.width<=field.x,'minimum-width layout separates label from exact input');
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),320);
+      await checkBreakpoints(page,device);
+      await page.locator(loc.min).fill("15");
       await page.setViewportSize(device.viewport);
     }
     if(process.env.PLANNER_UI_SCREENSHOT)await page.screenshot({path:process.env.PLANNER_UI_SCREENSHOT+'-'+device.viewport.width+'.png'});
     await page.emulateMedia({forcedColors:'active'});
     assert.equal(await page.locator(loc.start).evaluate(el=>getComputedStyle(el).appearance),'auto');
     assert.equal(await slider.evaluate(el=>getComputedStyle(el).appearance),'auto');
+    assert.equal(await page.locator('.itinerary-slider-breakpoint:visible').count(),0);
     await page.emulateMedia({forcedColors:'none'});
     await chooseStart(page,'gent');
     await chooseFinish(page,'loop');

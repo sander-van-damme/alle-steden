@@ -2,7 +2,7 @@ import { calendarMain, calendarHead } from './calendar-template.mjs';
 import { cityDirectoryMap } from './city-directory-map.mjs';
 import { routeCityBoundaryCredit } from '../site/assets/route-city-passages.js';
 
-import { itineraryDistanceSteps, maximumItineraryKm, minimumItineraryMaxKm, sliderIndexForKm } from '../site/assets/planner-distance-scale.js';
+import { coarseItineraryKm, itineraryDistanceSteps, maximumItineraryKm, minimumItineraryMaxKm, sliderIndexForKm } from '../site/assets/planner-distance-scale.js';
 import { visitorUrl } from '../site/assets/sources.js';
 import { creditLinks, staticCityCredit } from '../site/assets/city-credits.js';
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({
@@ -43,6 +43,18 @@ export function layout({ title, main, script = '', active = '' }) {
 
 export function calendarPage(catalog) {
   return layout({ title: 'Kalender · Alle Steden', active: 'calendar', script: calendarHead, main: calendarMain(catalog) });
+}
+
+function itinerarySlider(id, label, floor, km) {
+  const last = itineraryDistanceSteps.length - 1;
+  const first = sliderIndexForKm(floor);
+  const marker = 100 * (sliderIndexForKm(coarseItineraryKm) - first) / (last - first);
+  return `<div class="itinerary-slider-scale">
+    <input id="itinerary-${id}-slider" aria-label="${label}" aria-valuetext="${km} km" type="range" min="${first}" max="${last}" value="${sliderIndexForKm(km)}">
+    <span class="itinerary-slider-axis" aria-hidden="true" style="--breakpoint:${marker}%">
+      <span class="itinerary-slider-breakpoint">${coarseItineraryKm} km</span>
+    </span>
+  </div>`;
 }
 
 export function plannerPage(cities, {home = false, featuredCities = []} = {}) {
@@ -124,7 +136,7 @@ export function plannerPage(cities, {home = false, featuredCities = []} = {}) {
                     <input id="itinerary-min-km" aria-label="Minimale fietsafstand in kilometer" type="number" inputmode="numeric" min="0" max="${maximumItineraryKm}" step="1" value="15" required>
                     <span aria-hidden="true">km</span>
                   </div>
-                  <input id="itinerary-min-slider" aria-label="Minimale fietsafstand" aria-valuetext="15 km" type="range" min="0" max="${itineraryDistanceSteps.length-1}" value="${sliderIndexForKm(15)}">
+                  ${itinerarySlider('min', 'Minimale fietsafstand', 0, 15)}
                 </div>
                 <div class="planner-slider-label">
                   <label for="itinerary-max-km">Maximaal</label>
@@ -132,7 +144,7 @@ export function plannerPage(cities, {home = false, featuredCities = []} = {}) {
                     <input id="itinerary-max-km" aria-label="Maximale fietsafstand in kilometer" type="number" inputmode="numeric" min="${minimumItineraryMaxKm}" max="${maximumItineraryKm}" step="1" value="45" required>
                     <span aria-hidden="true">km</span>
                   </div>
-                  <input id="itinerary-max-slider" aria-label="Maximale fietsafstand" aria-valuetext="45 km" type="range" min="${sliderIndexForKm(minimumItineraryMaxKm)}" max="${itineraryDistanceSteps.length-1}" value="${sliderIndexForKm(45)}">
+                  ${itinerarySlider('max', 'Maximale fietsafstand', minimumItineraryMaxKm, 45)}
                 </div>
               </div>
             </fieldset>
