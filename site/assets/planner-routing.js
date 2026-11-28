@@ -268,7 +268,7 @@ export function normalizeBRouter(data, via = []) {
   };
 }
 
-export async function fetchRoute(waypoints, { signal, fetcher = defaultFetch, alternativeIndex = 0 } = {}) {
+export async function fetchRoute(waypoints, { signal, fetcher = defaultFetch, alternativeIndex = 0, longSection = false } = {}) {
   if (!Number.isInteger(alternativeIndex) || alternativeIndex < 0 || alternativeIndex > 1) {
     throw new RangeError('Vraag de hoofdroute of de eerste alternatieve route op.');
   }
@@ -281,7 +281,7 @@ export async function fetchRoute(waypoints, { signal, fetcher = defaultFetch, al
   const run = async (queue) => {
     const cached = fetcher === defaultFetch && memoGet(routeCache, key);
     if (cached) return cached;
-    const data = await readJson(url, { signal, timeout: 11_000, fetcher, queue });
+    const data = await readJson(url, { signal, timeout: longSection === true ? 18_000 : 11_000, fetcher, queue });
     const route = normalizeBRouter(data, points);
     if (fetcher === defaultFetch) memoSet(routeCache, key, route);
     return route;

@@ -35,3 +35,4 @@ jobs:
       - run: node tests/link-check-browser.mjs
       - run: node tests/planner-browser.mjs
       - run: node tests/exterior-browser.mjs
+      - run: node tests/route-rail-browser.mjs

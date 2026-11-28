@@ -17,3 +17,7 @@ De website helpt iemand een stad opzoeken, een datum kiezen of een fietsrit same
 ## Waarom deze keuzes?
 
 [NN/g’s evaluatie van AI-prototypingtools](https://www.nngroup.com/articles/ai-prototyping/) beschrijft hoe standaardcomponenten de verkeerde dingen kunnen benadrukken. [Microsoft Research over creatieve diversiteit bij generatieve AI](https://arxiv.org/abs/2603.13036) benoemt de uniformiteit van gemakkelijk hergebruikte defaults; [onderzoek naar concrete ontwerpvoorwaarden](https://doi.org/10.1371/journal.pone.0362573) ondersteunt het expliciet maken van component- en hiërarchiekeuzes. Hier gebruiken we die bevindingen om het echte werk vooraan te zetten, niet om uit stijlkenmerken af te leiden hoe een site gemaakt is.
+
+## Afstandsbediening
+
+De fietsplanner houdt de schuifregelaars voor snel kiezen en geeft er twee invulvelden naast voor exacte kilometers. Op de schuif blijft er meer ruimte voor korte ritten: 1 km per stap tot 30 km, daarna 5 km tot 100, 10 km tot 200 en 25 km tot 500. Die indeling is een ontwerpkeuze, geen logaritmische schaal. De toegankelijke waarde vermeldt altijd de afstand in kilometers, niet de interne positie. Zie [Carbon: Slider](https://www.carbondesignsystem.com/building-blocks/core/components/slider/guidelines) en [W3C: Slider Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/slider/).

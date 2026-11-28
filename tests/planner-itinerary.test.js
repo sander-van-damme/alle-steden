@@ -164,3 +164,32 @@ test('landmark enrichment keeps a good original when the detour exceeds the dist
     assert.deepEqual(outcome.trips[0].route.waypoints,[[start.lon,start.lat],[neighbor.lon,neighbor.lat]],variant);
   }
 });
+
+test('long loop routes join bounded actual sections, preserve order and stay within 500 km', async()=>{
+  const start={slug:'gent',name:'Gent',lon:3.72528,lat:51.05361};
+  const calls=[];
+  const result=await generateDistanceRoutes([start],{date,city:start,minKm:435,maxKm:500,loop:'loop'},{
+    fetchRoute:async points=>{calls.push(points);return track(points);}
+  });
+  assert.equal(result.trips.length,1);
+  const {route}=result.trips[0];
+  assert.ok(route.km>=435&&route.km<=500);
+  assert.equal(route.legs.length,calls.length);
+  assert.ok(calls.every(points=>points.length===2&&approxKm(...points)<81));
+  assert.deepEqual(route.coordinates[0],route.coordinates.at(-1));
+  assert.equal(route.km,route.legs.reduce((km,leg)=>km+leg.km,0));
+});
+
+test('a disconnected section never becomes a long route and limits above 500 fail early', async()=>{
+  const start={slug:'gent',name:'Gent',lon:3.72528,lat:51.05361};
+  let call=0;
+  const options={date,city:start,minKm:435,maxKm:500,loop:'loop',attempts:1};
+  const broken=await generateDistanceRoutes([start],options,{fetchRoute:async points=>{
+    const route=track(points);
+    if(call++===1)route.coordinates[0][0]+=.0001;
+    return route;
+  }});
+  assert.equal(broken.trips.length,0);
+  assert.equal(broken.failedRoutes,1);
+  await assert.rejects(generateDistanceRoutes([start],{...options,maxKm:501},goodRouter),/500 km/);
+});

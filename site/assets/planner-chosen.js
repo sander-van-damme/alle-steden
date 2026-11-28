@@ -88,7 +88,7 @@ function distributeCandidates(items, rank, count, totalKm) {
 export function makeStopCandidates(trip, catalog, passage, nearby, { date, filters = {}, budget = null } = {}) {
   if (Array.isArray(filters.include) && !filters.include.length) return [];
   const allowedCities = new Set([trip.startCity?.slug, trip.destinationCity?.slug, ...(passage?.cities ?? []).map(city => city.slug)]);
-  const fromLocal = catalog.filter(city => allowedCities.has(city.slug)).flatMap(city =>
+  const fromLocal = trip.multiDay ? [] : catalog.filter(city => allowedCities.has(city.slug)).flatMap(city =>
     visitWindows(city,date,filters).flatMap(item => {
       const position = positionOnTrip(trip,item);
       if (!position || position.distanceToRouteKm > maxAlongKm || !item.id) return [];

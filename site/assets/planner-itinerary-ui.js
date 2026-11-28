@@ -1,3 +1,4 @@
+import { itineraryDistanceSteps, sliderIndexForKm } from './planner-distance-scale.js';
 import { plannerActivityIds } from './planner-activities.js';
 
 export function bindItineraryEditor(form, {
@@ -10,7 +11,7 @@ export function bindItineraryEditor(form, {
   const type = find('itinerary-type');
   const date = find('itinerary-date');
   const min = find('itinerary-min-km'), max = find('itinerary-max-km');
-  const minOutput = find('itinerary-min-output'), maxOutput = find('itinerary-max-output');
+  const minSlider = find('itinerary-min-slider'), maxSlider = find('itinerary-max-slider');
   const budget = find('itinerary-stop-budget');
   const submit = find('itinerary-build');
   const error = find('itinerary-form-error');
@@ -33,15 +34,19 @@ export function bindItineraryEditor(form, {
     };
   }
 
-  function updateDistance(edited) {
-    if (+min.value > +max.value) {
+  function reflectDistance(input, slider) {
+    if (!input.validity.valid) return;
+    slider.value = sliderIndexForKm(input.valueAsNumber);
+    slider.setAttribute('aria-valuetext', input.value + ' km');
+  }
+
+  function reconcileDistance(edited) {
+    if (min.validity.valid && max.validity.valid && min.valueAsNumber > max.valueAsNumber) {
       if (edited === min) max.value = min.value;
       else min.value = max.value;
     }
-    minOutput.value = min.value + ' km';
-    maxOutput.value = max.value + ' km';
-    min.setAttribute('aria-valuetext', minOutput.value);
-    max.setAttribute('aria-valuetext', maxOutput.value);
+    reflectDistance(min, minSlider);
+    reflectDistance(max, maxSlider);
   }
 
   function syncCities() {
@@ -73,15 +78,21 @@ export function bindItineraryEditor(form, {
     syncCities();
     edited();
   });
-  for (const control of [min, max]) control.addEventListener('input', () => {
-    updateDistance(control);
-    edited();
-  });
+  for (const [input,slider] of [[min,minSlider],[max,maxSlider]]) {
+    input.addEventListener('input', () => { reflectDistance(input,slider); edited(); });
+    input.addEventListener('change', () => reconcileDistance(input));
+    slider.addEventListener('input', () => {
+      input.value = itineraryDistanceSteps[slider.valueAsNumber];
+      reconcileDistance(input);
+      edited();
+    });
+  }
   for (const control of [date, budget, ...form.querySelectorAll('[name="itineraryActivity"], #itinerary-scheduled-only')]) {
     control.addEventListener('change', edited);
   }
   form.addEventListener('submit', (event) => {
     event.preventDefault();
+    reconcileDistance(document.activeElement === min ? min : max);
     const request = readRequest();
     if (!catalog.has(request.startSlug)) {
       error.textContent = 'Kies een vertrekstad.';
@@ -97,7 +108,7 @@ export function bindItineraryEditor(form, {
     onBuild?.(request);
   });
   syncCities();
-  updateDistance();
+  reconcileDistance();
   submit.disabled = false;
   return { readRequest, setBusy: (active) => { submit.disabled = Boolean(active); } };
 }

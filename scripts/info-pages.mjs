@@ -69,6 +69,7 @@ export function aboutPage(layout) {
           link('het WK veldrijden', 'https://www.ostend2027.com/nl/programma') + '. Elke vermelding linkt naar de eigen bron.'],
       ])}
       ${sourceGroup('Kaarten, fietsroutes en meldingen onderweg', [
+        [link('iRail-stations', 'https://github.com/iRail/stations') + ' (' + link('CC0', 'https://creativecommons.org/publicdomain/zero/1.0/') + ') en ' + link('iRail', 'https://irail.be/'), 'Nabije stations bij het begin en einde van de fietsroute. De treinverbinding zoek je op bij iRail; controleer de fietsvoorwaarden bij NMBS.'],
         [link('SimpleMaps', 'https://simplemaps.com/gis/country/be') + ' (' + link('CC BY 4.0', cc) + ')', 'Voor de vereenvoudigde gewestgrenzen op de overzichtskaart en op de kaart om een vertrekstreek te kiezen.'],
         [from('osm', 'OpenStreetMap-bijdragers') + ' en ' + link('BRouter', 'https://brouter.de/brouter-web/'), 'OpenStreetMap levert de routekaart en soms openingsuren van bezienswaardigheden. BRouter berekent het traject en levert gegevens over hoogte en wegdek, waar beschikbaar. Wikidata helpt bij suggesties onderweg.'],
         [link('Nationaal Geografisch Instituut · AdminVector', 'https://www.geo.be/catalog/details/fb1e2993-2020-428c-9188-eb5f75e284b9') + ' (' + link('CC BY 4.0', cc) + ')', 'Voor de bewerkte gemeentegrenzen die bepalen door welke stadsgemeenten de fietsroute loopt.'],
@@ -106,6 +107,7 @@ export function privacyPage(layout) {
         <li>Voor je gekozen rit kan je browser automatisch het gebied opvragen bij Pin je punt en ChasseOnWeb; bij ChasseOnWeb ook voor de gekozen datum. Voor stopideeën kan Wikidata enkele punten op de route krijgen.</li>
         <li>Bij een rit door de gemeente Stad Brussel vraagt je browser de openbare toilettenlijst rechtstreeks bij Stad Brussel op, en buiten de winterstop ook de lijst met drinkwaterpunten. De aanbieder ziet je IP-adres, maar krijgt geen routepunten, datum of cookies van de site. Je browser zoekt lokaal welke voorzieningen dicht bij de route liggen.</li>
         <li>Bij een rit door het Brussels Hoofdstedelijk Gewest haalt je browser de openbare pompenlijst op bij Brussel Mobiliteit. De aanbieder ziet je IP-adres, maar krijgt geen routepunten, datum of cookies van de site.</li>
+        <li>De planner bepaalt nabije stations in je browser. Alleen als je op een treinlink klikt, krijgt iRail je IP-adres en de stations uit de link, en eventueel de fietsdatum voor de heenreis. Je routecoördinaten worden niet meegestuurd.</li>
         <li>Cloudflare vraagt voor RAVeL alleen de algemene meldingenlijst op. Je browser vergelijkt die lokaal met je route en datum, bepaalt de doorkruiste stadsgemeenten en maakt het GPX-bestand.</li>
       </ul>
     </section>

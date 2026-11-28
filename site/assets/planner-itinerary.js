@@ -1,8 +1,14 @@
-import { approxKm, calendarDay, scenicEvidence, validDay, validRoute, visitWindows } from './planner-core.js';
+import { approxKm, combineRouteLegs, calendarDay, scenicEvidence, validDay, validRoute, visitWindows } from './planner-core.js';
 import { fetchRoute as fetchBikeRoute, distanceToRoute } from './planner-routing.js';
 import { exteriorAlong, landmarkRouteFits, landmarkWaypoints, riddenLandmarks } from './planner-landmarks.js';
 
-export const distanceRouteLimits = Object.freeze({ min: 0, max: 250, results: 3, attempts: 9 });
+import { maximumItineraryKm, minimumItineraryMaxKm } from './planner-distance-scale.js';
+
+export const distanceRouteLimits = Object.freeze({ min: 0, max: maximumItineraryKm, results: 3, attempts: 9 });
+const longTargetKm = 150;
+const longLegChordKm = 80;
+const maxLongLegs = 10;
+const maxLongRequests = 16;
 const earthKm = 6371;
 const rad = (degrees) => degrees * Math.PI / 180;
 const deg = (radians) => radians * 180 / Math.PI;
@@ -82,6 +88,56 @@ function destinationCandidate(origin, destination, shape, heading, target, varia
   const via = pointAt(mid, heading + direction, width);
   return shape === 'oneway' ? [origin, via, destination] : variant % 2
     ? [origin, destination, via, origin] : [origin, via, destination, origin];
+}
+
+// The public router can reject a multi-hundred-kilometre request that works
+// as shorter sections. These are technical sections, never suggested days.
+function sectionAnchors(points, cities) {
+  const chain = [points[0]];
+  for (const [i,destination] of points.slice(1).entries()) {
+    const from = points[i], count = Math.ceil(approxKm(from,destination) / longLegChordKm);
+    for (let j=1;j<count;j++) {
+      const t = j/count, point = { lon:from.lon + t*(destination.lon-from.lon), lat:from.lat + t*(destination.lat-from.lat) };
+      const anchor = useCityAnchor(point,from,cities,longLegChordKm);
+      // City anchors avoid a midpoint in water or fields, without jumping over
+      // another waypoint or exceeding the bounded routing section.
+      chain.push(approxKm(anchor, chain.at(-1)) > .1 && approxKm(anchor, destination) > .1 ? anchor : point);
+    }
+    chain.push(destination);
+  }
+  return chain;
+}
+
+async function routeSections(points, cities, fetchRoute, signal) {
+  const chain = sectionAnchors(points,cities);
+  if (chain.length > maxLongLegs+1) throw new RangeError('Te veel tussenstukken voor de fietsrouter.');
+  const legs = [];
+  for (let i=1;i<chain.length;i++) {
+    signal.throwIfAborted();
+    // Start the next request where the provider actually ended the previous
+    // segment. Reject inconsistent snapping instead of inventing a connection.
+    const previous = legs.at(-1)?.coordinates.at(-1);
+    const from = previous ? fromPair(previous) : chain[i-1];
+    const anchors = [from,chain[i]];
+    const leg = await fetchRoute(anchors,{signal,longSection:true});
+    if (!followsAnchors(leg,anchors) || (previous && approxKm(from,fromPair(leg.coordinates[0])) > .002))
+      throw new Error('De tussenstukken sluiten niet op elkaar aan.');
+    legs.push(leg);
+  }
+  return combineRouteLegs(legs);
+}
+
+function longOneWayCandidate(origin,cities,heading,target,variant) {
+  if (variant < 3) {
+    const bend = variant === 0 ? -55 : variant === 1 ? 55 : 80;
+    // A long single ride can bend across the available region instead of
+    // requiring hundreds of kilometres of straight-line travel in one direction.
+    const reach = target / ratio / 2;
+    const first = useCityAnchor(pointAt(origin,heading+bend,reach),origin,cities,target);
+    const last = useCityAnchor(pointAt(first,heading-bend,reach),origin,cities,target);
+    return [origin,first,last];
+  }
+  return freeCandidate(origin,cities,'oneway',heading,target,true);
 }
 
 function followsAnchors(route, points) {
@@ -196,7 +252,7 @@ export async function generateDistanceRoutes(cities, options = {}, { fetchRoute 
   if (options.finish && (!finish || finish.slug === start.slug)) throw new RangeError('Kies een andere aankomststad dan je vertrekstad.');
   const min = options.minKm == null || options.minKm === '' ? 0 : Number(options.minKm);
   const max = options.maxKm == null || options.maxKm === '' ? 65 : Number(options.maxKm);
-  if (!Number.isFinite(min) || !Number.isFinite(max) || min < 0 || max < 2 || min > max || max > distanceRouteLimits.max)
+  if (!Number.isFinite(min) || !Number.isFinite(max) || min < 0 || max < minimumItineraryMaxKm || min > max || max > distanceRouteLimits.max)
     throw new RangeError('Kies een afstand tussen 0 en ' + distanceRouteLimits.max + ' km, met minstens 2 km als maximum.');
   const shape = shapeFor(options.loop ?? (options.roundtrip ? 'roundtrip' : 'oneway'));
   const date = options.date || calendarDay();
@@ -205,26 +261,40 @@ export async function generateDistanceRoutes(cities, options = {}, { fetchRoute 
   const attempts = Number.isInteger(options.attempts) ? Math.max(1, Math.min(distanceRouteLimits.attempts, options.attempts)) : distanceRouteLimits.attempts;
   const target = Math.max(2, min + (max - min) * .58);
   const heading = finish ? bearingTo(start, finish) : 0;
+  const long = target >= longTargetKm || (finish && approxKm(start, finish) >= longTargetKm);
   const candidates = new Set(), tracks = new Set(), trips = [];
   const anchors = new Map();
-  const budget = AbortSignal.timeout(28_000);
+  const budget = AbortSignal.timeout(long ? 82_000 : 28_000);
   const routingSignal = signal ? AbortSignal.any([signal, budget]) : budget;
-  let checkedRoutes = 0, failedRoutes = 0, scale = 1, reserveRefinement = false;
+  let checkedRoutes = 0, failedRoutes = 0, scale = 1, reserveRefinement = false, sectionRequests = 0;
+  const fetchSection = (points, options) => {
+    if (sectionRequests >= maxLongRequests) throw new RangeError('De zoeklimiet van de fietsrouter is bereikt.');
+    sectionRequests++;
+    return fetchRoute(points,options);
+  };
 
-  for (let n = 0; n < bearings.length && checkedRoutes < attempts && trips.length < limit && !budget.aborted; n++) {
+  // Long searches consume several requests per candidate. Keep the same
+  // sequential provider queue, avoid optional enrichment reroutes, and stop
+  // once a verified long itinerary is found.
+  const longBearings = [120, 175, 240, 55, 295, 0, 82, 202, 322];
+  const requestLimit = long ? Math.min(4,attempts) : attempts;
+  const resultLimit = long ? 1 : limit;
+  for (let n = 0; n < bearings.length && sectionRequests < maxLongRequests && checkedRoutes < requestLimit && trips.length < resultLimit && !budget.aborted; n++) {
     signal?.throwIfAborted();
     if (reserveRefinement && checkedRoutes >= attempts - 1) break;
     const variant = n >= 3 ? (n % 2 ? .86 : 1.15) : 1;
+    const freeHeading = long ? longBearings[n] : bearings[n];
     const aim = Math.max(1.4, target * variant * scale);
     const points = finish ? destinationCandidate(start, finish, shape, heading, aim, n) :
-      freeCandidate(start, cities, shape, bearings[n], aim, n % 3 !== 2);
+      long && shape === 'oneway' ? longOneWayCandidate(start,cities,freeHeading,aim,n)
+        : freeCandidate(start,cities,shape,freeHeading,aim,n % 3 !== 2);
     const fingerprint = candidateKey(points);
     if (!plausible(points) || candidates.has(fingerprint)) continue;
     candidates.add(fingerprint);
     checkedRoutes++;
     let route;
     try {
-      route = await fetchRoute(points, { signal: routingSignal });
+      route = long ? await routeSections(points,cities,fetchSection,routingSignal) : await fetchRoute(points, { signal: routingSignal });
     } catch {
       signal?.throwIfAborted();
       failedRoutes++;
@@ -251,7 +321,7 @@ export async function generateDistanceRoutes(cities, options = {}, { fetchRoute 
         const score = 100 - 45 * Math.abs(route.km - target) / max + scenicEvidence(route).score;
         const trip = asTrip(route, start, finish, date, shape, score, n, actualLoop, options.departure);
         const nearby = exteriorAlong(route, cities);
-        const proposal = landmarkWaypoints(route,points,nearby);
+        const proposal = long ? undefined : landmarkWaypoints(route,points,nearby);
         anchors.set(trip.id, {points, nearby, proposal});
         if (proposal) reserveRefinement = true;
         trips.push(trip);
@@ -294,7 +364,8 @@ export async function generateDistanceRoutes(cities, options = {}, { fetchRoute 
   }
   signal?.throwIfAborted();
   const notes = trips.length ? [] : [
-    failedRoutes && failedRoutes === checkedRoutes ? 'De fietsrouter kon de routes niet berekenen. Probeer opnieuw.'
+    budget.aborted ? 'De fietsrouter was niet op tijd klaar. Kies een ruimer bereik of een korter traject en probeer opnieuw.'
+      : failedRoutes && failedRoutes === checkedRoutes ? 'De fietsrouter kon de routes niet berekenen. Probeer opnieuw.'
       : shape === 'loop' ? 'Geen lus gevonden binnen deze afstand. Maak het afstandsbereik ruimer of kies heen en terug.'
       : 'Geen fietsroute gevonden binnen deze afstand. Maak het afstandsbereik ruimer.',
   ];

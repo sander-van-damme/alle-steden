@@ -1,6 +1,7 @@
 import { calendarMain, calendarHead } from './calendar-template.mjs';
 import { cityDirectoryMap } from './city-directory-map.mjs';
 
+import { itineraryDistanceSteps, maximumItineraryKm, minimumItineraryMaxKm, sliderIndexForKm } from '../site/assets/planner-distance-scale.js';
 import { visitorUrl } from '../site/assets/sources.js';
 import { creditLinks, staticCityCredit } from '../site/assets/city-credits.js';
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({
@@ -72,12 +73,20 @@ export function plannerPage(cities) {
               <legend>Fietsafstand</legend>
               <div class="planner-controls planner-range-controls">
                 <div class="planner-slider-label">
-                  <label for="itinerary-min-km">Minimaal</label> <output for="itinerary-min-km" id="itinerary-min-output" aria-hidden="true">15 km</output>
-                  <input id="itinerary-min-km" aria-label="Minimale fietsafstand" type="range" min="0" max="160" step="5" value="15">
+                  <label for="itinerary-min-km">Minimaal</label>
+                  <div class="itinerary-km-field">
+                    <input id="itinerary-min-km" aria-label="Minimale fietsafstand in kilometer" type="number" inputmode="numeric" min="0" max="${maximumItineraryKm}" step="1" value="15" required>
+                    <span aria-hidden="true">km</span>
+                  </div>
+                  <input id="itinerary-min-slider" aria-label="Minimale fietsafstand" aria-valuetext="15 km" type="range" min="0" max="${itineraryDistanceSteps.length-1}" value="${sliderIndexForKm(15)}">
                 </div>
                 <div class="planner-slider-label">
-                  <label for="itinerary-max-km">Maximaal</label> <output for="itinerary-max-km" id="itinerary-max-output" aria-hidden="true">45 km</output>
-                  <input id="itinerary-max-km" aria-label="Maximale fietsafstand" type="range" min="5" max="160" step="5" value="45">
+                  <label for="itinerary-max-km">Maximaal</label>
+                  <div class="itinerary-km-field">
+                    <input id="itinerary-max-km" aria-label="Maximale fietsafstand in kilometer" type="number" inputmode="numeric" min="${minimumItineraryMaxKm}" max="${maximumItineraryKm}" step="1" value="45" required>
+                    <span aria-hidden="true">km</span>
+                  </div>
+                  <input id="itinerary-max-slider" aria-label="Maximale fietsafstand" aria-valuetext="45 km" type="range" min="${sliderIndexForKm(minimumItineraryMaxKm)}" max="${itineraryDistanceSteps.length-1}" value="${sliderIndexForKm(45)}">
                 </div>
               </div>
             </fieldset>

@@ -220,6 +220,7 @@ async function loadPassages(view) {
   }
   if(selected===view){
     renderPassed(view); choices(view);
+    if(view.trip.multiDay)return; // No date-sensitive facility suggestions for unplanned stages.
     view.localServices=localRouteServices(view.trip,view.passage);
     if(view.localServices.length)updateServices(view);
     if(view.passage.cities.some(city=>city.slug==='brussel')){
@@ -235,7 +236,7 @@ async function loadPassages(view) {
 }
 async function loadPoi(view) {
   const coordinates=routeLegs(view.trip).flatMap(x=>x.coordinates);
-  if(view.model.request.scheduledOnly || view.model.request.include?.length===0 || !coordinates.length)return;
+  if(view.trip.multiDay || view.model.request.scheduledOnly || view.model.request.include?.length===0 || !coordinates.length)return;
   try{
     view.nearby=await findRoutePois({coordinates,km:view.trip.km},{signal:view.controller.signal,activityFilters:view.model.request});
   }catch(error){
@@ -307,14 +308,17 @@ function renderSelected(model,index) {
   if(search!==model||!model.trips[index])return;
   clearSelection(); model.index=index;
   model.choices?.querySelectorAll('[data-distance-route-choice]').forEach((button,i)=>button.setAttribute('aria-pressed',String(i===index)));
-  const trip={...model.trips[index],distanceDriven:true};
+  const trip={...model.trips[index],distanceDriven:true,multiDay:model.trips[index].km>=200};
   const article=el('article',null,'itinerary-route'); article.dataset.itineraryTrip=''; article.dataset.selectedDate=trip.date;
   const header=el('header',null,'itinerary-route-heading');
   const heading=el('h2',title(trip)), metrics=el('p',null,'itinerary-route-metrics');
   const km=el('strong',fmt(trip.km)+' km'); km.dataset.itineraryKm=String(trip.km);
   const minutes=duration(trip.bikeMinutes);
-  metrics.append(km,(minutes?' · ca. '+minutes+' fietsen':'')+' · '+dayName.format(new Date(trip.date+'T12:00:00Z')));
+  const long = trip.multiDay;
+  metrics.append(km,(minutes?' · ca. '+minutes+(long?' totale fietstijd':' fietsen'):'')+
+    (long?'':' · '+dayName.format(new Date(trip.date+'T12:00:00Z'))));
   header.append(heading,metrics);
+  if (long) header.append(el('p','Eén doorlopend traject. Dagetappes, overnachtingen, openingsuren en tijdelijke afsluitingen zijn niet ingepland of gecontroleerd.','planner-hint'));
   if(trip.landmarks?.length){
     const landmarks=el('p',null,'itinerary-route-landmarks');
     landmarks.dataset.itineraryLandmarks='';
@@ -325,14 +329,20 @@ function renderSelected(model,index) {
     passedSlot:el('div'),serviceSlot:el('div'),extrasStatus:el('p',null,'planner-hint itinerary-extras-status')};
   selected=view;
   view.extrasStatus.hidden=true;view.extrasStatus.setAttribute('role','status');
-  view.notices=renderRouteNotices(trip);
+  view.notices=long?null:renderRouteNotices(trip);
   view.map=renderRouteView(trip,{routeNotices:false,onStopToggle:key=>toggleMapStop(view,key)});
   article.append(header);
   if(view.notices)article.append(view.notices);
   article.append(view.map??el('p','De routekaart is niet beschikbaar.','planner-hint'));
-  article.append(view.passedSlot,view.serviceSlot,makeStopEditor(view),view.extrasStatus);
+  const railSlot=el('div');
+  article.append(view.passedSlot,view.serviceSlot,railSlot,makeStopEditor(view),view.extrasStatus);
   model.routeSlot.replaceChildren(article);
   view.notices?.startRouteNotices?.(); choices(view);
+  void import('./route-rail.js').then(({renderRouteRail})=>{
+    if(selected!==view)return;
+    const panel=renderRouteRail(trip);
+    if(panel)railSlot.append(panel);
+  }).catch(()=>{}); // Optional station information never blocks the bike route.
   // Only the chosen result runs these checks; alternatives stay passive.
   void loadPassages(view); void loadPoi(view);
 }
