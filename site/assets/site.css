@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  src: url("./barlow-semi-condensed-bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light;
   --paper: #fafafa;
@@ -9,7 +17,7 @@
   --signal: #a02925;
   --white: #fff;
   --corner: 0.15rem;
-  --display: system-ui, sans-serif;
+  --display: "Barlow Semi Condensed", system-ui, sans-serif;
   font: 100%/1.5 system-ui, sans-serif;
   background: var(--paper);
   color: var(--ink);
@@ -25,14 +33,14 @@ a { color: var(--accent); text-underline-offset: .19em; }
 .top { border-bottom: 1px solid var(--line); }
 .top-inner, .footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .1rem 1rem; }
 .top-inner { min-height: 3.65rem; }
-.brand { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--ink); text-decoration: none; font: 700 1.38rem/1 var(--display); letter-spacing: -.028em; }
+.brand { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--ink); text-decoration: none; font: 700 1.38rem/1 var(--display); letter-spacing: -.005em; }
 nav { display: flex; gap: clamp(.55rem, 2.1vw, 1.8rem); font-size: .88rem; }
 nav a { font-weight: 650; }
 .top nav a { display: inline-flex; align-items: center; min-height: 2.75rem; text-decoration: none; }
 .top nav a:hover, .top nav a[aria-current] { text-decoration: underline; text-decoration-color: var(--signal); text-decoration-thickness: .13em; }
 .footer { padding-block: .7rem; margin-top: 3rem; border-top: 1px solid var(--line); }
 
-h1, h2 { font-family: var(--display); font-weight: 720; letter-spacing: -.035em; }
+h1, h2 { font-family: var(--display); font-weight: 700; letter-spacing: -.012em; }
 .button {
   display: inline-flex; align-items: center; justify-content: center; gap: .69rem;
   min-height: 2.75rem; padding: .6rem .86rem;

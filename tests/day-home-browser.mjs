@@ -18,6 +18,14 @@ await withPlanner(4219,async(browser,origin)=>{
     });
     await gotoPlanner(page,origin,'/');
     assert.equal(await page.getByRole('heading',{level:1}).innerText(),'Plan je fietsdag');
+    const headingTypeface=await page.locator('h1').evaluate(async heading=>{
+      const family='Barlow Semi Condensed';
+      const faces=await document.fonts.load('700 1rem "'+family+'"',heading.textContent);
+      return {selected:getComputedStyle(heading).fontFamily.startsWith('"'+family+'"'),
+        loaded:faces.some(face=>face.family.replaceAll('"','')===family&&face.status==='loaded'),
+        bodyUnchanged:!getComputedStyle(document.body).fontFamily.includes(family)};
+    });
+    assert.deepEqual(headingTypeface,{selected:true,loaded:true,bodyUnchanged:true});
     assert.equal(await page.getByRole('link',{name:'Bekijk alle steden'}).getAttribute('href'),'/steden/');
     assert.equal(await page.locator('.planner-featured-list li').count(),4);
     assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),'rgb(250, 250, 250)');

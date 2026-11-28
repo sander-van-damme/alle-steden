@@ -218,10 +218,10 @@ await rm(output, { recursive: true, force: true });
 await cp(resolve(root, 'site'), output, { recursive: true });
 await mkdir(resolve(output, 'data'), { recursive: true });
 
-// Cloudflare serves scripts with substantial freshness; put each built module graph and stylesheet
+// Cloudflare serves scripts with substantial freshness; put each built module graph, stylesheet and font
 // under a content-specific URI so an upgraded planner never imports the previous coverage logic.
 const assetSource = resolve(root, 'site', 'assets');
-const assetNames = (await readdir(assetSource)).filter((name) => /\.(?:m?js|css)$/.test(name)).sort();
+const assetNames = (await readdir(assetSource)).filter((name) => /\.(?:m?js|css|woff2)$/.test(name)).sort();
 const assets = await Promise.all(assetNames.map(async (name) => {
   const data = await readFile(resolve(assetSource, name));
   if (!githubPages || name !== 'site-paths.js') return [name, data];
