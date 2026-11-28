@@ -52,7 +52,7 @@ export function plannerPage(cities) {
     main: `<main id="inhoud" class="wrap planner">
       <header class="planner-heading">
         <h1>Fietsplanner</h1>
-        <p>Kies waar je vertrekt en hoe ver je wilt fietsen.</p>
+        <p>Kies je vertrekstad en afstand. Waar mogelijk fiets je langs bezienswaardigheden.</p>
       </header>
       <section id="planner-itinerary" aria-labelledby="planner-itinerary-title">
         <form id="planner-itinerary-form" class="planner-panel itinerary-form" aria-labelledby="planner-itinerary-title">
