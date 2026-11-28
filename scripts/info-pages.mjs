@@ -45,6 +45,7 @@ export function aboutPage(layout) {
         [from('gentArt') + ' · Dienst Economie en Toerisme Gent', 'Voor een selectie van kunst in de publieke ruimte op de Gentse stadsfiche.'],
         [from('monsArt', 'Ville de Mons') + ' en ' + from('namurArt', 'Ville de Namur'), 'Voor kunst in de openbare ruimte.'],
         [from('brusselsParks', 'Stad Brussel · Parken en tuinen') + ' (' + link('CC BY 4.0', cc) + ')', 'Drie nagekeken groenruimten in Laken, zonder actuele toegangsuren.'],
+        [from('liegeParks') + ' (' + link('CC BY 4.0', cc) + ')', 'Vier nagekeken parken in Luik, zonder actuele toegangsuren.'],
         [from('monsParks') + ' (' + link('CC BY 4.0', cc) + ')', 'Voor twee nagekeken parken in Bergen en Jemappes, zonder actuele toegangsuren.'],
         [from('verviersParks', 'Ville de Verviers') + ' (' + link('CC BY 4.0', cc) + ')', 'Voor openbare parken en groenplekken op de stadsfiche, zonder bevestigde openingsuren.'],
         [link('Paradigm / Brussel Mobiliteit', 'https://opendata.brussels.be/explore/dataset/limites-administratives-des-communes-en-region-de-bruxelles-capitale/') + ' en ' + link('Open Data Wallonie-Bruxelles', 'https://www.odwb.be/explore/dataset/communesgemeente-belgium/information/'), 'Gemeentegrenzen voor het controleren van locaties.'],

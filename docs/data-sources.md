@@ -348,3 +348,8 @@ Beide periodes zijn overgenomen van de organisatoren. Per stad één datumvermel
 - De [stad](https://www.hamont-achel.be/activiteitendetail/6129/kerstmarkt-achelse-kluis) bevestigt de gratis kerstmarkt op 12 en 13 december, telkens 11–18 uur. Gebruik deze bezoekerslink: de Nederlandstalige organisatorstekst noemt 2026, maar bevat ook een jaartalfout in de praktische informatie en de oudere Engelse pagina heeft andere data.
 - [aha! culturele belevenissen](https://aha.hamont-achel.be/activiteitendetail/5884/polly-and-the-jester-and-sun-to-sheeva) bevestigt het dubbelconcert op 12 december van 20.30 tot 22.30 uur. Geen prijs of ticketvoorraad opgeslagen.
 - Twee eenmalige kalendervermeldingen met alleen bevestigde feiten. De gemeentelijke agenda verwijst naar de UiTdatabank voor invoer; geen bruikbare open agenda-export voor deze twee items gevonden. Geen doorlopende opening, automatisch bezoek of algemene agenda-extractie.
+
+## Publieke groenruimten in Luik · 28 november 2026
+
+- [Ville de Liège · Les espaces verts](https://www.odwb.be/explore/dataset/espaces-verts/information/) op ODWB, CC BY 4.0. Alleen vier afzonderlijke parken uit 26 bronrecords: Fayenbois, Droixhe, Sainte-Agathe en Xhovémont. De stedelijke kaart van openbare groenruimten ondersteunt naam en straat. Gebruik de gecontroleerde straat als oriëntatie, niet als ingang.
+- Vast begrensde rechtstreekse API-vraag op de Luikse stadsfiche; controle op record-ID, naam, stad, postcode, straat en positie. De oude detail-URL’s gaven 404 en worden niet getoond. Geen overgenomen HTML, algemene toegang of opening gegarandeerd, geen evenement of automatische fietsstop. Péralta blijft buiten deze selectie, onder meer wegens de officiële herinrichtingswerken.

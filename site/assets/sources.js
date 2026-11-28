@@ -74,6 +74,8 @@ export const sources = {
   monsArt: { label: 'Ville de Mons · L’Art habite la Ville',
     href: namur + '/explore/dataset/fresques-realisees/information/',
     visitorHref: 'https://www.visitmons.be/fr/l-art-habite-la-ville', license: ccby, attribution: 'Ville de Mons' },
+  liegeParks: { label: 'Ville de Liège · parken',
+    href: namur + '/explore/dataset/espaces-verts/information/', license: ccby },
   monsParks: { label: 'Ville de Mons · parken en tuinen',
     href: namur + '/explore/dataset/parc-jardin-square-atal/information/',
     license: ccby },

@@ -31,6 +31,9 @@ export function placeProviders(city, { expanded = true, origin = globalThis.loca
   if (expanded && city.slug === 'bergen') publicParks.push({
     key: 'monsParks', added: true, run: async () => (await import('./mons-parks.js')).getMonsParks(city, options),
   });
+  if (expanded && city.slug === 'luik' && city.code === '62063') publicParks.push({
+    key: 'liegeParks', added: true, run: async () => (await import('./liege-parks.js')).getLiegeParks(city, options),
+  });
   const wikidata = { key: 'wikidata', run: () => getWikidata(city, options).then(ready) };
   if (region === 'brussels') return [
     ...(expanded && city.slug==='brussel' && origin ? [
