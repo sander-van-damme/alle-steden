@@ -240,6 +240,14 @@ function entryList(title, intro, kind, items, linkIds) {
 }
 
 const cityRideLinks = {
+  brugge: {
+    intro: 'Door werken bij de Patentestraat moet je richting Zeebrugge omrijden. Check de omleiding vóór vertrek.',
+    rides: [
+      { name: 'Strandfietsroute Brugge–Zeebrugge', href: 'https://www.brugge.be/mobiliteit/duurzaam-verplaatsen/duurzaam-met-de-fiets/strandfietsroute',
+        details: 'Ca. 15 km zonder omleiding · start aan de Krakeleweg',
+        service: { name: 'Werken en omleiding', href: 'https://www.brugge.be/verkeershinder/ventilus-werkzaamheden-zeebrugge-lissewege' } },
+    ],
+  },
   poperinge: {
     intro: 'De twee hoofdroutes vertrekken op de Grote Markt. Kaart en GPX vind je bij Toerisme Poperinge.',
     rides: [

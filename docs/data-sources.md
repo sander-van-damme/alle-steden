@@ -363,3 +363,9 @@ Beide periodes zijn overgenomen van de organisatoren. Per stad één datumvermel
 ## Openbare toiletten van Stad Antwerpen · 28 november 2026
 
 [Gemeentelijke ArcGIS-laag 3](https://geodata.antwerpen.be/arcgissql/rest/services/P_Publiek/Astad_20160208/MapServer/3) vervangt twee oude lagen. [Gratis Open Data Licentie](https://www.antwerpen.be/info/gratis-open-data-licentie): bronvermelding ‘bron stad Antwerpen’ bij gebruikte resultaten en op Over. De browser haalt een vaste, kleine selectie uit de openbare API op zodra de gekozen rit Antwerpen aandoet, zonder routecoördinaten mee te sturen. Bij controle gaf de volledige laag 83 records en de selectie vijf operationele, door de stad beheerde, vrijstaande en niet-seizoensgebonden toiletten zonder einddatum. Het uitfilteren op maximaal 650 m van de route gebeurt lokaal. Geen urinoirs, horeca, stations, afgeleide openingsuren of toegangsbelofte. Nabije dubbels uit Pin je punt tonen maar één vermelding. Bij uitval blijven andere bronnen beschikbaar.
+
+
+## Brugge–Zeebrugge: Strandfietsroute · 28 november 2026
+
+- [Stad Brugge](https://www.brugge.be/mobiliteit/duurzaam-verplaatsen/duurzaam-met-de-fiets/strandfietsroute) en [Visit Bruges](https://www.visitbruges.be/nl/zeebrugge/bereikbaarheid) bevestigen de bewegwijzerde route, ca. 15 km voor het gewone tracé, begin aan de Krakeleweg tegenover de oude spoorwegbedding, einde aan de Kustlaan bij de Strandwijk.
+- De [gemeentelijke werkenfiche](https://www.brugge.be/verkeershinder/ventilus-werkzaamheden-zeebrugge-lissewege) vermeldt omleiding voor fietsers naar Zeebrugge en een voorziene werfperiode tot 16 juli 2027, onder voorbehoud van wijziging. De stadsfiche toont de omleiding apart; geen afgeleid aantal kilometers, heropening of stationstraject. Geen kopie van kaart, GPX, foto's of redactionele tekst. Geen nieuwe kalenderkaart of navigatie over de oorspronkelijke route.
