@@ -1,3 +1,4 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix schema: <https://schema.org/> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix wd: <http://www.wikidata.org/entity/> .
@@ -27,3 +28,27 @@ wd:Q2457816 a schema:LandmarksOrHistoricalBuildings ;
     schema:geo [ a schema:GeoCoordinates ; schema:latitude 51.25465 ; schema:longitude 5.47917 ] ;
     schema:url <https://id.erfgoed.net/erfgoedobjecten/80089> ;
     dcterms:source <https://id.erfgoed.net/erfgoedobjecten/80089> .
+
+<#kerstmarkt-achelse-kluis-2026> a schema:SaleEvent ;
+    schema:name "Kerstmarkt Achelse Kluis"@nl ;
+    schema:genre "Markt"@nl ;
+    schema:description "Gratis kerstmarkt op het binnenplein van de Achelse Kluis in Achel."@nl ;
+    schema:containedInPlace wd:Q499599 ;
+    schema:location [ a schema:Place ; schema:name "Achelse Kluis"@nl ] ;
+    schema:isAccessibleForFree true ;
+    schema:startDate "2026-12-12"^^xsd:date ;
+    schema:endDate "2026-12-13"^^xsd:date ;
+    schema:subEvent [ a schema:Event ; schema:startDate "2026-12-12T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-12T18:00:00+01:00"^^xsd:dateTime ],
+        [ a schema:Event ; schema:startDate "2026-12-13T11:00:00+01:00"^^xsd:dateTime ; schema:endDate "2026-12-13T18:00:00+01:00"^^xsd:dateTime ] ;
+    schema:url <https://www.hamont-achel.be/activiteitendetail/6129/kerstmarkt-achelse-kluis> ;
+    dcterms:source <https://www.hamont-achel.be/activiteitendetail/6129/kerstmarkt-achelse-kluis> .
+
+<#polly-sun-to-sheeva-2026> a schema:MusicEvent ;
+    schema:name "Polly and The Jester & Sun To Sheeva"@nl ;
+    schema:description "Dubbelconcert met twee lokale bands in De Posthoorn in Hamont."@nl ;
+    schema:containedInPlace wd:Q499599 ;
+    schema:location [ a schema:Place ; schema:name "De Posthoorn"@nl ] ;
+    schema:startDate "2026-12-12T20:30:00+01:00"^^xsd:dateTime ;
+    schema:endDate "2026-12-12T22:30:00+01:00"^^xsd:dateTime ;
+    schema:url <https://aha.hamont-achel.be/activiteitendetail/5884/polly-and-the-jester-and-sun-to-sheeva> ;
+    dcterms:source <https://aha.hamont-achel.be/activiteitendetail/5884/polly-and-the-jester-and-sun-to-sheeva> .

@@ -342,3 +342,9 @@ Beide periodes zijn overgenomen van de organisatoren. Per stad één datumvermel
 
 - [Visit Vlaams-Brabant](https://www.visitvlaamsbrabant.be/fietsen/vind-een-fietsroute/route-langs-pelgrimswegen) en Herita publiceren een bewegwijzerde fietslus van 20 km via Scherpenheuvel, Zichem en Diest, met vertrek aan het toerismekantoor, Isabellaplein 1. De gelinkte GPX was bereikbaar en bevat een gesloten traject.
 - Alleen de officiële routepagina staat bij de fietsroutes in Scherpenheuvel-Zichem. Geen overname van GPX, afbeeldingen of routebeschrijving en geen nieuwe kalenderkaart of automatische plannerroute. De officiële GPX bevestigt geen fietstoegang tot het terrein of de gebouwen zelf.
+
+## Decemberactiviteiten Hamont-Achel · 28 november 2026
+
+- De [stad](https://www.hamont-achel.be/activiteitendetail/6129/kerstmarkt-achelse-kluis) bevestigt de gratis kerstmarkt op 12 en 13 december, telkens 11–18 uur. Gebruik deze bezoekerslink: de Nederlandstalige organisatorstekst noemt 2026, maar bevat ook een jaartalfout in de praktische informatie en de oudere Engelse pagina heeft andere data.
+- [aha! culturele belevenissen](https://aha.hamont-achel.be/activiteitendetail/5884/polly-and-the-jester-and-sun-to-sheeva) bevestigt het dubbelconcert op 12 december van 20.30 tot 22.30 uur. Geen prijs of ticketvoorraad opgeslagen.
+- Twee eenmalige kalendervermeldingen met alleen bevestigde feiten. De gemeentelijke agenda verwijst naar de UiTdatabank voor invoer; geen bruikbare open agenda-export voor deze twee items gevonden. Geen doorlopende opening, automatisch bezoek of algemene agenda-extractie.
