@@ -353,3 +353,9 @@ Beide periodes zijn overgenomen van de organisatoren. Per stad één datumvermel
 
 - [Ville de Liège · Les espaces verts](https://www.odwb.be/explore/dataset/espaces-verts/information/) op ODWB, CC BY 4.0. Alleen vier afzonderlijke parken uit 26 bronrecords: Fayenbois, Droixhe, Sainte-Agathe en Xhovémont. De stedelijke kaart van openbare groenruimten ondersteunt naam en straat. Gebruik de gecontroleerde straat als oriëntatie, niet als ingang.
 - Vast begrensde rechtstreekse API-vraag op de Luikse stadsfiche; controle op record-ID, naam, stad, postcode, straat en positie. De oude detail-URL’s gaven 404 en worden niet getoond. Geen overgenomen HTML, algemene toegang of opening gegarandeerd, geen evenement of automatische fietsstop. Péralta blijft buiten deze selectie, onder meer wegens de officiële herinrichtingswerken.
+
+
+## Voormalig stadhuis van Eupen · 28 november 2026
+
+- [Stadsmarketing Eupen](https://eupenlives.be/nl/186-rathaus) en [monumentenregister 31138](https://ostbelgienkulturerbe.be/desktopdefault.aspx/tabid-3557/?back=0&catid=7&linkid=31138) bevestigen het voormalige stadhuis aan Rathausplatz 14, apart van de aangrenzende kerk. Eén vaste fiche met eigen korte tekst, adres en officiële link. Geen openingstijden, toegang tot het gebouw, hergebruik van foto's of kalendervermelding.
+- Alleen op de stadspagina. De routeproef Eupen–Limbourg bereikt de gebouwpin via een voetpad zonder geverifieerde fietstoegang. De fiche telt niet mee als automatisch aan te rijden bezienswaardigheid.

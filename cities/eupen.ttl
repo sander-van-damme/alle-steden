@@ -33,6 +33,16 @@ wd:Q151831 a schema:City ;
     schema:url <https://www.ostbelgien.eu/de/fiche/virtualtour/st-nikolaus-kirche> ;
     dcterms:source <https://www.ostbelgien.eu/de/fiche/virtualtour/st-nikolaus-kirche>, <https://www.eupen.be/leben-in-eupen/gesundheit-und-soziales/religion/>, <https://territoire.wallonie.be/fr/liendoc/BC_PAT/63023-CLT-0015-02> .
 
+# Stadsfiche, geen automatische routepunt: de gebouwpin ligt aan een voetpad.
+<https://eupenlives.be/nl/186-rathaus> a schema:LandmarksOrHistoricalBuildings ;
+    schema:name "Voormalig stadhuis van Eupen"@nl, "Ehemaliges Rathaus"@de ;
+    schema:description "Het voormalige stadhuis aan Rathausplatz 14. Je kunt de gevel vanaf het plein bekijken."@nl ;
+    schema:containedInPlace wd:Q151831 ;
+    schema:address [ a schema:PostalAddress ; schema:streetAddress "Rathausplatz 14" ; schema:addressLocality "Eupen" ] ;
+    schema:url <https://eupenlives.be/nl/186-rathaus> ;
+    dcterms:source <https://eupenlives.be/nl/186-rathaus>,
+        <https://ostbelgienkulturerbe.be/desktopdefault.aspx/tabid-3557/?back=0&catid=7&linkid=31138> .
+
 # Eén editie met verschillende daguren; geen doorlopend bezoekvenster.
 <#kerstmarkt-eupen-2026> a schema:SaleEvent ;
     schema:name "Kerstmarkt van Eupen"@nl, "54. Eupener Weihnachtsmarkt"@de ;
