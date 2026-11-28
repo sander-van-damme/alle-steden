@@ -36,3 +36,13 @@
   pointer-events: none; dominant-baseline: middle; font: 700 19px/1 system-ui, sans-serif;
   fill: #30221c; stroke: #fff9ed; stroke-width: 5px; stroke-linejoin: round; paint-order: stroke fill;
 }
+
+/* Keep both filters and the map visible below the two-row phone navigation. */
+@media (max-width: 33rem) {
+  .directory { margin-top: .9rem; }
+  .directory-heading { column-gap: .65rem; }
+  .directory-heading h1 { font-size: clamp(1.85rem, 8vw, 2.35rem); }
+  .directory .filters { margin-block: .7rem .65rem; gap: .46rem .55rem; }
+  .directory .filters label { font-size: .8rem; }
+  .directory-map-title { padding-block: .42rem .31rem; font-size: 1.24rem; }
+}
