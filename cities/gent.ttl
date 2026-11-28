@@ -23,6 +23,38 @@ wd:Q950300 a schema:LandmarksOrHistoricalBuildings ;
     schema:containedInPlace wd:Q1296 ;
     schema:url <https://visit.gent.be/nl/zien-doen/gravensteen> .
 
+<#winterwonderkasteel-2026> a schema:Event ;
+    schema:name "Winterwonderkasteel"@nl ;
+    schema:genre "Erfgoed"@nl ;
+    schema:description "Winters bezoek aan het Gravensteen met het Joelfeest als thema. De gewone toegangstarieven gelden. Gesloten op 24, 25 en 31 december en 1 januari."@nl ;
+    schema:location wd:Q950300 ;
+    schema:startDate "2026-12-05"^^xsd:date ;
+    schema:endDate "2027-01-03"^^xsd:date ;
+    schema:eventSchedule _:gravensteenWinterSchedule ;
+    schema:url <https://visit.gent.be/nl/agenda/winterwonderkasteel> ;
+    dcterms:source <https://historischehuizen.stad.gent/nl/gravensteen/bezoek/winterwonderkasteel-2026> .
+
+<#gravensteen-winterbar-2026> a schema:Event ;
+    schema:name "Gravensteen winterbar"@nl ;
+    schema:genre "Eten & drinken"@nl ;
+    schema:description "Winterbar in de stallingen van het Gravensteen. Je hebt geen kasteelticket nodig. Gesloten op 24, 25 en 31 december en 1 januari."@nl ;
+    schema:location wd:Q950300 ;
+    schema:startDate "2026-12-05"^^xsd:date ;
+    schema:endDate "2027-01-03"^^xsd:date ;
+    schema:eventSchedule _:gravensteenWinterSchedule ;
+    schema:url <https://visit.gent.be/nl/agenda/gravensteen-winterbar> ;
+    dcterms:source <https://historischehuizen.stad.gent/nl/gravensteen/bezoek/winterwonderkasteel-2026>,
+        <https://visit.gent.be/nl/agenda/gravensteen-winterbar> .
+
+# Both visitor options share published opening days, but not precise daily hours.
+_:gravensteenWinterSchedule a schema:Schedule ;
+    schema:startDate "2026-12-05"^^xsd:date ;
+    schema:endDate "2027-01-03"^^xsd:date ;
+    schema:repeatFrequency "P1W"^^xsd:duration ;
+    schema:scheduleTimezone "Europe/Brussels" ;
+    schema:byDay schema:Monday, schema:Tuesday, schema:Wednesday, schema:Thursday, schema:Friday, schema:Saturday, schema:Sunday ;
+    schema:exceptDate "2026-12-24"^^xsd:date, "2026-12-25"^^xsd:date, "2026-12-31"^^xsd:date, "2027-01-01"^^xsd:date .
+
 wd:Q2425969 a schema:EventSeries ;
     schema:name "Gentse Feesten"@nl ;
     schema:description "Jaarlijks stadsfestival met muziek, theater en straatanimatie."@nl ;

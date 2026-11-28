@@ -47,10 +47,14 @@ function sourceName(value) {
 
 function visitSessions(entries, day, last) {
   if (!Array.isArray(entries) || entries.length > 366) return undefined;
-  const seen = new Map();
+  const seen = new Map(), dates = new Set();
   for (const row of entries) {
     const start = dateValue(row?.start), end = dateValue(row?.end);
-    if (!start || dateOnly(start) || (row?.end != null && (!end || dateOnly(end)))) continue;
+    if (!start || (row?.end != null && (!end || dateOnly(end)))) continue;
+    if (dateOnly(start)) {
+      if (!end && start >= day && start <= last) dates.add(start);
+      continue;
+    }
     const sessionDay = brusselsDay(start);
     if (sessionDay < day || sessionDay > last) continue;
     const key = new Date(start).toISOString();
@@ -63,8 +67,10 @@ function visitSessions(entries, day, last) {
     seen.set(key + '|' + new Date(end).toISOString(), { day: sessionDay, start, end });
   }
   const timedKeys = new Set([...seen.values()].filter(({ end }) => end).map(({ start }) => Date.parse(start)));
-  return [...seen.values()].filter(({ start, end }) => end || !timedKeys.has(Date.parse(start)))
-    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start) || Date.parse(a.end) - Date.parse(b.end));
+  const timed = [...seen.values()].filter(({ start, end }) => end || !timedKeys.has(Date.parse(start)));
+  const timedDays = new Set(timed.map(({ day: date }) => date));
+  return timed.concat([...dates].filter((date) => !timedDays.has(date)).map((date) => ({ day: date, start: date })))
+    .sort((a, b) => a.day.localeCompare(b.day) || Date.parse(a.start) - Date.parse(b.start) || Date.parse(a.end) - Date.parse(b.end));
 }
 
 // Inputs to this module come exclusively from schema:Event entries and event-only feeds.
@@ -163,7 +169,7 @@ export function eventTime(item, selectedDay = '') {
   const time = (date) => clock.format(new Date(date));
   const sessionTime = ({ start, end, day }) => end
     ? time(start) + '–' + time(end) + (brusselsDay(end) > day ? ' (+1 dag)' : '')
-    : 'Start om ' + time(start);
+    : dateOnly(start) ? 'Bekijk de openingsuren bij de organisator' : 'Start om ' + time(start);
   if (item.sessions && (selectedDay || item.sessions.length === 1)) {
     const sessions = selectedDay ? item.sessions.filter(({ day }) => day === selectedDay) : item.sessions;
     return sessions.map(sessionTime).join(' en ') || 'Uur niet vermeld';
@@ -176,7 +182,7 @@ export function eventTime(item, selectedDay = '') {
       return labelDay(item.day) + ' ' + time(item.start) + ' – ' + labelDay(item.last) + ' ' + time(item.end);
     }
     const spans = labelDay(item.day) + ' t/m ' + labelDay(item.last);
-    return spans + (item.sessions ? ' · kies een dag voor de uren' : '');
+    return spans + (item.sessions?.some(({ start }) => !dateOnly(start)) ? ' · kies een dag voor de uren' : '');
   }
   if (item.sessions) return item.sessions.map(sessionTime).join(' en ');
   if (timedStart && timedEnd) return time(item.start) + '–' + time(item.end);

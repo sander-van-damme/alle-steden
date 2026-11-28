@@ -26,3 +26,33 @@ test('ambiguous or unbounded schedules fail closed', () => {
     { start:'2026-12-21', end:'2026-12-22', days:['Thursday'], exceptions:[] },
   ]) assert.throws(() => weeklyEventSessions({ ...range, ...changes }));
 });
+
+test('date-only opening days exclude closures and never invent hours or show as all day', () => {
+  const schedule = { ...range, days: ['Wednesday', 'Thursday', 'Sunday'], opens: undefined, closes: undefined };
+  const item = calendarEvent({ name: 'Expo', start: range.start, end: range.end, sessions: weeklyEventSessions(schedule) }, 'gent');
+  const dates = eventsByDay([item], ['2026-12-23', '2026-12-24']);
+  assert.deepEqual(dates.get('2026-12-23').map(({ name }) => name), ['Expo']);
+  assert.deepEqual(dates.get('2026-12-24'), []);
+  assert.equal(eventTime(item, '2026-12-23'), 'Bekijk de openingsuren bij de organisator');
+  assert.doesNotMatch(eventTime(item), /uren|Hele dag/i);
+  assert.throws(() => weeklyEventSessions({ ...schedule, opens: '11:00' }));
+});
+
+test('a future feed range cannot reopen a curated closure or merge separate options at one site', async () => {
+  const { mergeCalendarEvents } = await import('../site/assets/calendar-core.js');
+  const start = '2026-12-05', end = '2027-01-03';
+  const make = (name, url) => ({ name, start, end, url, venue: 'Gravensteen' });
+  const options = [
+    make('Winterwonderkasteel', 'https://visit.gent.be/nl/agenda/winterwonderkasteel'),
+    make('Gravensteen winterbar', 'https://visit.gent.be/nl/agenda/gravensteen-winterbar'),
+  ];
+  const sessions = [{ start }, { start: end }];
+  const events = mergeCalendarEvents(options.flatMap((row) => [
+    calendarEvent({ ...row, sessions }, 'gent'),
+    calendarEvent({ ...row, source: 'gent' }, 'gent'),
+  ]));
+  const days = eventsByDay(events, [start, '2026-12-24', end]);
+  assert.equal(days.get(start).length, 2);
+  assert.equal(days.get('2026-12-24').length, 0);
+  assert.equal(days.get(end).length, 2);
+});

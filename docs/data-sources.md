@@ -60,6 +60,10 @@ Op 27 november 2026: vier eindige activiteiten in Eeklo en Deinze. De [provincia
 | `brouter`, `osm` · actief | [Routebronnen](planner-sources.md); BRouter, OpenStreetMap (ODbL) · geometrie, OSM-openingsuren en feiten | Wegdek/hoogte zijn geen veiligheids- of toegangswaarborg. |
 | `uit` · optioneel/geblokkeerd zonder licentie | [UiTdatabank](https://www.publiq.be/nl/projecten/publiq-platform/gebruiksvoorwaarden) | Vereist geldige toestemming, sleutel en voorwaarden; lokale mirrors zijn geen sluipweg. [Prijzen op 24 november 2026](https://www.publiq.be/nl/projecten/publiq-platform/prijzen): gratis test, €125/jaar excl. btw voor productie op één website; lokale UiTnetwerk-partners komen mogelijk in aanmerking voor gratis gebruik. Geen publiek aangeboden productiesleutel voor hobbyprojecten aangetroffen. |
 
+### Winter in het Gentse Gravensteen · 28 november 2026
+
+De [Visit Gent-export](https://data.stad.gent/explore/assets/toeristische-evenementen-visit-gent/) bevatte op 28 november geen van beide winteractiviteiten. Daarom staan [Winterwonderkasteel](https://visit.gent.be/nl/agenda/winterwonderkasteel) en de [los toegankelijke winterbar](https://visit.gent.be/nl/agenda/gravensteen-winterbar) tijdelijk in Gent's Turtle-bestand, met de vier sluitingsdagen uit het [organisatorprogramma](https://historischehuizen.stad.gent/nl/gravensteen/bezoek/winterwonderkasteel-2026). De officiële programma- en bezoeklinks vervangen geen actuele uren of toegangsbewijs. Beide zijn optionele bezoeken; geen nieuwe routepunten of uitspraak over fietsdoorrit. De Visit Gent-links houden een later ongespecificeerd datumvenster van diezelfde activiteiten uit de kalender.
+
 ## Kandidaten en grenzen
 
 | Status | Bron / kans | Volgende stap |
