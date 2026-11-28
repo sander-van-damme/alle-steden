@@ -94,7 +94,7 @@ try {
   await desktop.getByText('Tu-Su 10:00-17:00', { exact: false }).waitFor();
   await desktop.getByRole('heading', { name: 'Volgend stadsevenement' }).waitFor();
   assert.equal(await desktop.getByText('Verlopen evenement').count(), 0);
-  assert.equal(await desktop.getByRole('heading', { name: 'Gravensteen' }).count(), 1);
+  assert.equal(await desktop.locator('#places').getByRole('heading', { name: 'Gravensteen', exact: true }).count(), 1);
   await desktop.getByText('In de lokale agenda vind je misschien meer evenementen.', { exact: false }).waitFor();
   assert.equal(await desktop.locator('a[href$=".ttl"], a[href*="wikidata.org"], #stadsdata').count(), 0);
   assert.equal(await desktop.getByRole('button', { name: /Turtle/ }).count(), 0);
@@ -139,7 +139,7 @@ try {
   const retry = mobile.locator('[data-live-places] [data-retry]');
   await retry.waitFor();
   assert.match(await mobile.locator('[data-live-places] [data-status]').innerText(), /Niet alle bronnen/);
-  assert.equal(await mobile.getByRole('heading', { name: 'Gravensteen' }).count(), 1);
+  assert.equal(await mobile.locator('#places').getByRole('heading', { name: 'Gravensteen', exact: true }).count(), 1);
   assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   const columns = await mobile.locator('.visit-grid').evaluate((element) =>
     getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length);
@@ -360,7 +360,7 @@ try {
   const fallback = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   pages.push(fallback);
   await fallback.goto(base + city);
-  assert.ok(await fallback.getByRole('heading', { name: 'Gravensteen' }).isVisible());
+  assert.ok(await fallback.locator('#places').getByRole('heading', { name: 'Gravensteen', exact: true }).isVisible());
   await checkInlineCredits(fallback, 3);
   assert.equal(await fallback.evaluate(() => document.documentElement.scrollWidth), 390);
   assert.ok(await fallback.getByText(/Je ziet hier een selectie van bezienswaardigheden/).isVisible());
