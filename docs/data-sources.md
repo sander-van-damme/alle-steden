@@ -337,3 +337,8 @@ Beide periodes zijn overgenomen van de organisatoren. Per stad één datumvermel
 
 - [Visit Tournai](https://www.visittournai.be/agenda/saint-nicolas-a-loffice-de-tourisme-au-beffroi-et-dans-les-musees/) en de [stad](https://www.tournai.be/agenda/saint-nicolas-a-loffice-de-tourisme-au-beffroi-et-dans-les-musees) bevestigen de gratis bezoekdag op zondag 6 december 2026. De normale openingstijden, toegang tot specifieke tijdelijke exposities en een jaarlijks patroon worden hier niet uit afgeleid.
 - Eén redactionele kalenderkaart in Turtle, met datum en de aparte uren per locatie volgens de organisator. Geen aankondigingstekst, afbeeldingen of hergebruik van het volledige programma. Geen gedocumenteerde agendafeed gevonden; het publieke stads-RSS betreft nieuws. De vermelding ontbrak in de live dagselectie en in de iMio-steekproef voor dat weekend.
+
+## Route langs pelgrimswegen · 28 november 2026
+
+- [Visit Vlaams-Brabant](https://www.visitvlaamsbrabant.be/fietsen/vind-een-fietsroute/route-langs-pelgrimswegen) en Herita publiceren een bewegwijzerde fietslus van 20 km via Scherpenheuvel, Zichem en Diest, met vertrek aan het toerismekantoor, Isabellaplein 1. De gelinkte GPX was bereikbaar en bevat een gesloten traject.
+- Alleen de officiële routepagina staat bij de fietsroutes in Scherpenheuvel-Zichem. Geen overname van GPX, afbeeldingen of routebeschrijving en geen nieuwe kalenderkaart of automatische plannerroute. De officiële GPX bevestigt geen fietstoegang tot het terrein of de gebouwen zelf.

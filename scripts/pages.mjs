@@ -259,6 +259,13 @@ const cityRideLinks = {
         service: { name: 'Veeruren en status', href: 'https://www.agentschapmdk.be/nl/veerdiensten/veerdienst-langerbrugge' } },
     ],
   },
+  'scherpenheuvel-zichem': {
+    intro: 'Start bij het toerismekantoor aan Isabellaplein 1 in Scherpenheuvel. Knooppunten, kaart en GPX staan bij Visit Vlaams-Brabant.',
+    rides: [
+      { name: 'Route langs pelgrimswegen', href: 'https://www.visitvlaamsbrabant.be/fietsen/vind-een-fietsroute/route-langs-pelgrimswegen',
+        details: '20 km · bewegwijzerde lus via Zichem en Diest' },
+    ],
+  },
   roeselare: {
     intro: 'Start bij KOERS aan het Polenplein 15. De lussen zijn bewegwijzerd; de kaarten staan bij Visit Roeselare.',
     rides: [
