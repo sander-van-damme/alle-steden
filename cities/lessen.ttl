@@ -2,6 +2,7 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <> a schema:Dataset ;
     schema:about wd:Q667790 ;
@@ -32,3 +33,29 @@ wd:Q667790 a schema:City ;
     ] ;
     schema:url <https://territoire.wallonie.be/fr/liendoc/BC_PAT/55023-CLT-0001-01> ;
     dcterms:source <https://territoire.wallonie.be/fr/liendoc/BC_PAT/55023-CLT-0001-01> .
+
+# Dit is de tentoonstellingsperiode, geen dagelijks bezoekrooster.
+<https://www.notredamealarose.be/event/exposition-les-deux-pieds-sur-les-etriers-et-si-la-femme-disposait-de-ses-parties-intimes/> a schema:ExhibitionEvent ;
+    schema:name "Les deux pieds sur les étriers"@fr ;
+    schema:description "Kunst en medische geschiedenis in het Hôpital Notre-Dame à la Rose. De einddatum valt op een maandag, de gewone sluitingsdag. Controleer de bezoekuren bij het museum. Afgeraden onder 12 jaar."@nl ;
+    schema:containedInPlace wd:Q667790 ;
+    schema:location [ a schema:Place ; schema:name "Hôpital Notre-Dame à la Rose"@fr ] ;
+    schema:startDate "2026-06-27"^^xsd:date ;
+    schema:endDate "2027-03-08"^^xsd:date ;
+    schema:url <https://www.notredamealarose.be/event/exposition-les-deux-pieds-sur-les-etriers-et-si-la-femme-disposait-de-ses-parties-intimes/> ;
+    dcterms:source <https://www.notredamealarose.be/event/exposition-les-deux-pieds-sur-les-etriers-et-si-la-femme-disposait-de-ses-parties-intimes/>, <https://www.notredamealarose.be/infos-pratiques/> .
+
+# Aparte reservatieplichtige rondleiding. De tijd hoort bij één agendadag.
+<https://www.notredamealarose.be/event/visite-sensible-de-lexposition-par-muriel-damien-samedi-12-decembre-2026-a-15h/> a schema:Event ;
+    schema:name "Rondleiding bij Les deux pieds sur les étriers"@nl ;
+    schema:genre "Tentoonstelling"@nl ;
+    schema:description "Rondleiding met Muriel Damien in het Hôpital Notre-Dame à la Rose. Alleen voor volwassenen en op reservatie."@nl ;
+    schema:containedInPlace wd:Q667790 ;
+    schema:location [ a schema:Place ; schema:name "Hôpital Notre-Dame à la Rose"@fr ] ;
+    schema:startDate "2026-12-12"^^xsd:date ;
+    schema:subEvent [ a schema:Event ;
+        schema:startDate "2026-12-12T15:00:00+01:00"^^xsd:dateTime ;
+        schema:endDate "2026-12-12T16:30:00+01:00"^^xsd:dateTime
+    ] ;
+    schema:url <https://www.notredamealarose.be/event/visite-sensible-de-lexposition-par-muriel-damien-samedi-12-decembre-2026-a-15h/> ;
+    dcterms:source <https://www.notredamealarose.be/event/visite-sensible-de-lexposition-par-muriel-damien-samedi-12-decembre-2026-a-15h/> .
